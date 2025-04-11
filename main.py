@@ -10,7 +10,7 @@ from schemas.member import MemberCreate, Member
 from schemas.login import LoginForm
 from crud.chat import save_chat_message, get_chat_history
 from crud.member import create_member, get_member, get_members, get_member_by_email
-from auth import create_access_token, verify_password
+from auth import create_access_token, verify_password, get_current_user
 
 
 Base.metadata.create_all(bind=engine)
@@ -20,7 +20,7 @@ app.add_middleware(
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*", "Authorization"],
 )
 
 
@@ -114,8 +114,32 @@ def login(login: LoginForm, db: SessionLocal = Depends(get_db)): # type: ignore
             detail="이메일이나 비밀번호가 올바르지 않습니다"
         )
 
+    # Convert SQLAlchemy model to dict for JWT token
+    member_data = {
+        "id": member.id,
+        "name": member.name,
+        "email": member.email,
+        "role": member.role,
+        "department": member.department,
+        "status": member.status,
+        "lastLogin": member.lastLogin,
+        "createdAt": member.createdAt,
+        "skills": member.skills,
+        "projects": member.projects,
+        "profileImage": member.profileImage,
+        "contactNumber": member.contactNumber,
+        "birthDate": member.birthDate,
+        "introduction": member.introduction,
+        "workingHours": member.workingHours,
+        "languages": member.languages,
+        "socialLinks": member.socialLinks
+    }
+    
     access_token = create_access_token(
-        data={"sub": member.email, "id": member.id}
+        data={
+            "sub": member.email,
+            "user_info": member_data
+        }
     )
     
     return {
@@ -125,3 +149,7 @@ def login(login: LoginForm, db: SessionLocal = Depends(get_db)): # type: ignore
         "user_name": member.name,
         "user_email": member.email
     }
+    
+@app.get("/me", response_model=Member)
+def get_me(current_user: dict = Depends(get_current_user)):
+    return current_user

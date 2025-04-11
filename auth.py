@@ -1,5 +1,7 @@
 from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
+from fastapi import Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
 import os
 from dotenv import load_dotenv
 import bcrypt
@@ -37,3 +39,20 @@ def verify_token(token: str):
         return payload
     except JWTError:
         return None
+      
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+
+def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
+    try:
+        payload = verify_token(token)
+        if payload is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        user_info = payload.get("user_info")
+        if not user_info:
+            raise HTTPException(status_code=401, detail="User info not found in token")
+
+        return user_info
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
