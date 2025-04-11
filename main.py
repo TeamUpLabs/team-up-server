@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
@@ -14,6 +15,22 @@ from routers import (
     video_call_routes,
     notification_routes
 )
+=======
+from fastapi import FastAPI, WebSocket, Depends, WebSocketDisconnect, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+import logging
+from database import SessionLocal, engine
+from models.chat import Base
+from websocket.chat import websocket_handler
+import schemas.login
+from schemas.chat import ChatCreate
+from schemas.member import MemberCreate, Member
+from schemas.login import LoginForm
+from crud.chat import save_chat_message, get_chat_history
+from crud.member import create_member, get_member, get_members, get_member_by_email
+from auth import create_access_token, verify_password
+
+>>>>>>> 6330fea (Add member management features with authentication and database integration)
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -25,6 +42,7 @@ app.add_middleware(
     allow_headers=["*", "Authorization"],
 )
 
+<<<<<<< HEAD
 # Include routers
 app.include_router(auth_routes.router)
 app.include_router(member_routes.router)
@@ -34,3 +52,107 @@ app.include_router(milestone_routes.router)
 app.include_router(chat_routes.router)
 app.include_router(video_call_routes.router)
 app.include_router(notification_routes.router)
+=======
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@app.websocket("/ws/chat/{channelId}")
+async def chat_endpoint(websocket: WebSocket, channelId: str):
+    try:
+        await websocket.accept()
+        logging.info(f"WebSocket connection established for channel: {channelId}")
+        await websocket_handler(websocket, channelId)
+    except WebSocketDisconnect:
+        logging.info(f"WebSocket disconnected for channel: {channelId}")
+    except Exception as e:
+        logging.error(f"WebSocket error in channel {channelId}: {str(e)}")
+        try:
+            await websocket.close()
+        except:
+            pass
+
+@app.post("/chat")
+def post_message(chat: ChatCreate, db: SessionLocal = Depends(get_db)): # type: ignore
+    return save_chat_message(db, chat)
+
+
+@app.get("/chat/{channelId}")
+def get_messages(channelId: str, db: SessionLocal = Depends(get_db)): # type: ignore
+    return get_chat_history(db, channelId)
+  
+@app.post("/member", response_model=Member)
+def handle_create_member(member: MemberCreate, db: SessionLocal = Depends(get_db)): # type: ignore
+    try:
+        logging.info(f"Creating new member with email: {member.email}")
+        existing_member = get_member_by_email(db, member.email)
+        if existing_member:
+            logging.warning(f"Email already exists: {member.email}")
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        db_member = create_member(db, member)
+        logging.info(f"Successfully created member with id: {db_member.id}")
+        return db_member
+    except HTTPException as he:
+        logging.error(f"HTTP Exception during member creation: {str(he)}")
+        raise
+    except Exception as e:
+        logging.error(f"Unexpected error during member creation: {str(e)}")
+        db.rollback()  # 트랜잭션 롤백
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error occurred while creating member"
+        )
+
+@app.get("/member")
+def read_members(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(get_db)): # type: ignore
+    try:
+        members = get_members(db, skip=skip, limit=limit)
+        return members
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/member/{member_id}", response_model=Member)
+def read_member(member_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
+    try:
+        member = get_member(db, member_id)
+        if member is None:
+            raise HTTPException(status_code=404, detail=f"Member {member_id} not found")
+        return member
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+      
+@app.post('/login', response_model=schemas.login.Token)
+def login(login: LoginForm, db: SessionLocal = Depends(get_db)): # type: ignore
+    member = get_member_by_email(db, login.userEmail)
+    if not member:
+        raise HTTPException(
+            status_code=401,
+            detail="이메일이나 비밀번호가 올바르지 않습니다"
+        )
+    
+    if not verify_password(login.password, member.password):
+        raise HTTPException(
+            status_code=401,
+            detail="이메일이나 비밀번호가 올바르지 않습니다"
+        )
+
+    access_token = create_access_token(
+        data={"sub": member.email, "id": member.id}
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user_id": member.id,
+        "user_name": member.name,
+        "user_email": member.email
+    }
+>>>>>>> 6330fea (Add member management features with authentication and database integration)
