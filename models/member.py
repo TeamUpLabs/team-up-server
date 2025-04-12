@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, JSON
+from sqlalchemy.dialects.postgresql import JSONB
 from database import Base
 
 class Member(Base):
@@ -14,7 +15,7 @@ class Member(Base):
     lastLogin = Column(String)
     createdAt = Column(String)
     skills = Column(JSON)
-    projects = Column(JSON)
+    projects = Column(JSONB)
     profileImage = Column(String)
     contactNumber = Column(String)
     birthDate = Column(String)

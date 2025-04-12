@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from models.member import Member as MemberModel
 from schemas.member import MemberCreate
 from auth import get_password_hash
+from models.project import Project as ProjectModel
 
 def create_member(db: Session, member: MemberCreate):
     try:
@@ -36,3 +37,18 @@ def get_member_by_email(db: Session, email: str):
 
 def get_members(db: Session, skip: int = 0, limit: int = 100):
     return db.query(MemberModel).offset(skip).limit(limit).all()
+  
+def get_member_projects(db: Session, member_id: int):
+    try:
+        member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+        if member:
+            projects = member.projects
+            project_list = []
+            for project in projects:
+              project_list.append(db.query(ProjectModel).filter(ProjectModel.id == project).first())
+            return project_list
+        else:
+            return None
+    except Exception as e:
+        logging.error(f"Error in get_member_projects: {str(e)}")
+        raise
