@@ -1,16 +1,19 @@
 from fastapi import FastAPI, WebSocket, Depends, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import logging
-from database import SessionLocal, engine
-from models.chat import Base
+from database import SessionLocal, engine, Base
 from websocket.chat import websocket_handler
 import schemas.login
 from schemas.chat import ChatCreate
 from schemas.member import MemberCreate, Member
 from schemas.login import LoginForm
 from crud.chat import save_chat_message, get_chat_history
-from crud.member import create_member, get_member, get_members, get_member_by_email
+from crud.member import create_member, get_member, get_members, get_member_by_email, get_member_projects
 from auth import create_access_token, verify_password, get_current_user
+from models.project import Project as ProjectModel
+from schemas.project import Project, ProjectCreate
+from crud.project import create_project as create_project_crud, get_project, get_all_projects
+from typing import List
 
 
 Base.metadata.create_all(bind=engine)
@@ -99,6 +102,16 @@ def read_member(member_id: int, db: SessionLocal = Depends(get_db)): # type: ign
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
       
+@app.get("/member/{member_id}/project", response_model=List[Project])
+def read_member_projects(member_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
+    try:
+        return get_member_projects(db, member_id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+      
+      
 @app.post('/login', response_model=schemas.login.Token)
 def login(login: LoginForm, db: SessionLocal = Depends(get_db)): # type: ignore
     member = get_member_by_email(db, login.userEmail)
@@ -153,3 +166,30 @@ def login(login: LoginForm, db: SessionLocal = Depends(get_db)): # type: ignore
 @app.get("/me", response_model=Member)
 def get_me(current_user: dict = Depends(get_current_user)):
     return current_user
+  
+  
+@app.post("/project")
+def create_project(project: ProjectCreate, db: SessionLocal = Depends(get_db)):
+    return create_project_crud(db, project)
+  
+  
+@app.get("/project", response_model=List[Project])
+def read_projects(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(get_db)):
+    try:
+        projects = get_all_projects(db, skip=skip, limit=limit)
+        return projects
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+      
+  
+@app.get("/project/{project_id}", response_model=Project)
+def read_project(project_id: str, db: SessionLocal = Depends(get_db)):
+    try:
+        project = get_project(db, project_id)
+        if project is None:
+            raise HTTPException(status_code=404, detail=f"Project {project_id} not found")
+        return project
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
