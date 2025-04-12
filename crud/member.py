@@ -44,8 +44,13 @@ def get_member_projects(db: Session, member_id: int):
         if member:
             projects = member.projects
             project_list = []
-            for project in projects:
-              project_list.append(db.query(ProjectModel).filter(ProjectModel.id == project).first())
+            for project_id in projects:
+              project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+              members = db.query(MemberModel).filter(
+                  MemberModel.projects.contains([project_id])
+              ).all()
+              project.members = members
+              project_list.append(project)
             return project_list
         else:
             return None
