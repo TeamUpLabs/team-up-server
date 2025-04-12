@@ -42,3 +42,13 @@ def get_project(db: Session, project_id: str):
     ).all()
     project.members = members
     return project
+  
+  
+def get_all_projects_excluding_my(db: Session, member_id: int):
+  member = db.query(Member).filter(Member.id == member_id).first()
+  other_projects = (
+    db.query(ProjectModel).filter(ProjectModel.id.not_in(member.projects))
+  )
+  
+  return other_projects
+  

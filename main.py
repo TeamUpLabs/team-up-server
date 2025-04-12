@@ -12,7 +12,7 @@ from crud.member import create_member, get_member, get_members, get_member_by_em
 from auth import create_access_token, verify_password, get_current_user
 from models.project import Project as ProjectModel
 from schemas.project import Project, ProjectCreate
-from crud.project import create_project as create_project_crud, get_project, get_all_projects
+from crud.project import create_project as create_project_crud, get_project, get_all_projects, get_all_projects_excluding_my
 from typing import List
 
 
@@ -169,12 +169,12 @@ def get_me(current_user: dict = Depends(get_current_user)):
   
   
 @app.post("/project")
-def create_project(project: ProjectCreate, db: SessionLocal = Depends(get_db)):
+def create_project(project: ProjectCreate, db: SessionLocal = Depends(get_db)): # type: ignore
     return create_project_crud(db, project)
   
   
 @app.get("/project", response_model=List[Project])
-def read_projects(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(get_db)):
+def read_projects(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(get_db)): # type: ignore
     try:
         projects = get_all_projects(db, skip=skip, limit=limit)
         return projects
@@ -183,7 +183,7 @@ def read_projects(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(ge
       
   
 @app.get("/project/{project_id}", response_model=Project)
-def read_project(project_id: str, db: SessionLocal = Depends(get_db)):
+def read_project(project_id: str, db: SessionLocal = Depends(get_db)): # type: ignore
     try:
         project = get_project(db, project_id)
         if project is None:
@@ -193,3 +193,16 @@ def read_project(project_id: str, db: SessionLocal = Depends(get_db)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+      
+
+@app.get("/project/exclude/{member_id}", response_model=List[Project])
+def get_projects_excluding_my_project(member_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    other_projects = get_all_projects_excluding_my(db, member_id)
+    if other_projects is None:
+      raise HTTPException(status_code=404, detail=f"Projects not found")
+    return other_projects
+  except HTTPException:
+    raise
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
