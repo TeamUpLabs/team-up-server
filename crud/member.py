@@ -57,3 +57,12 @@ def get_member_projects(db: Session, member_id: int):
     except Exception as e:
         logging.error(f"Error in get_member_projects: {str(e)}")
         raise
+      
+def get_member_by_project_id(db: Session, project_id: str):
+  try:
+    members = db.query(MemberModel).filter(
+      MemberModel.projects.contains([project_id])
+    )
+    return members
+  except Exception as e:
+    logging.error(e)

@@ -8,12 +8,11 @@ from schemas.chat import ChatCreate
 from schemas.member import MemberCreate, Member
 from schemas.login import LoginForm
 from crud.chat import save_chat_message, get_chat_history
-from crud.member import create_member, get_member, get_members, get_member_by_email, get_member_projects
 from auth import create_access_token, verify_password, get_current_user
-from models.project import Project as ProjectModel
 from schemas.project import Project, ProjectCreate
-from crud.project import create_project as create_project_crud, get_project, get_all_projects, get_all_projects_excluding_my
 from typing import List
+from crud.project import create_project as create_project_crud, get_project, get_all_projects, get_all_projects_excluding_my
+from crud.member import create_member, get_member, get_members, get_member_by_email, get_member_projects, get_member_by_project_id
 
 
 Base.metadata.create_all(bind=engine)
@@ -82,7 +81,7 @@ def handle_create_member(member: MemberCreate, db: SessionLocal = Depends(get_db
             detail="Internal server error occurred while creating member"
         )
 
-@app.get("/member")
+@app.get("/member", response_model=List[Member])
 def read_members(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(get_db)): # type: ignore
     try:
         members = get_members(db, skip=skip, limit=limit)
@@ -193,6 +192,11 @@ def read_project(project_id: str, db: SessionLocal = Depends(get_db)): # type: i
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+      
+
+@app.get("/project/{project_id}/member", response_model=List[Member])
+def read_member_by_project_id(project_id: str, db: SessionLocal = Depends(get_db)): # type: ignore
+  return get_member_by_project_id(db, project_id)
       
 
 @app.get("/project/exclude/{member_id}", response_model=List[Project])
