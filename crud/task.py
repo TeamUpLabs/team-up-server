@@ -38,5 +38,9 @@ def get_tasks(db: Session, skip: int = 0, limit: int = 100):
       task.assignee = assignee
       
   return tasks
+
+def get_tasks_by_project_id(db: Session, project_id: str):
+  tasks = db.query(TaskModel).filter(TaskModel.project_id == project_id).all()
+  return tasks
         
         

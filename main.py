@@ -14,7 +14,7 @@ from schemas.project import Project, ProjectCreate
 from typing import List
 from crud.project import create_project as create_project_crud, get_project, get_all_projects, get_all_projects_excluding_my
 from crud.member import create_member, get_member, get_members, get_member_by_email, get_member_projects, get_member_by_project_id
-from crud.task import create_task, get_tasks
+from crud.task import create_task, get_tasks, get_tasks_by_project_id
 
 
 Base.metadata.create_all(bind=engine)
@@ -237,4 +237,9 @@ def get_all_tasks(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(ge
     return tasks
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
+  
+@app.get('/project/{project_id}/task', response_model=List[Task])
+def get_all_tasks_by_project_id(project_id: str, db: SessionLocal = Depends(get_db)): # type: ignore
+  tasks = get_tasks_by_project_id(db, project_id)
+  return tasks
     
