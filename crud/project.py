@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 import logging
 import json
 from models.project import Project as ProjectModel
-from models.member import Member  # ✅ SQLAlchemy 모델 import
+from models.member import Member
 
 def create_project(db: Session, project: ProjectCreate):
     try:

@@ -19,7 +19,7 @@ class ProjectCreate(ProjectBase):
     pass
   
     class Config:
-        from_attributes = True
+      from_attributes = True
         
 class Project(ProjectBase):
     members: Optional[List[Member]] = []  # List of member IDs associated with the project
