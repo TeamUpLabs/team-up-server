@@ -3,18 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 from database import SessionLocal, engine, Base
 from websocket.chat import websocket_handler
+from typing import List
+from auth import create_access_token, verify_password, get_current_user
 import schemas.login
 from schemas.chat import ChatCreate
 from schemas.member import MemberCreate, Member
 from schemas.login import LoginForm
 from schemas.task import TaskCreate, Task
-from crud.chat import save_chat_message, get_chat_history
-from auth import create_access_token, verify_password, get_current_user
 from schemas.project import Project, ProjectCreate
-from typing import List
-from crud.project import create_project as create_project_crud, get_project, get_all_projects, get_all_projects_excluding_my
-from crud.member import create_member, get_member, get_members, get_member_by_email, get_member_projects, get_member_by_project_id
-from crud.task import create_task, get_tasks, get_tasks_by_project_id
+from schemas.milestone import MileStone, MileStoneCreate
+from crud.chat import *
+from crud.project import *
+from crud.member import *
+from crud.task import *
+from crud.milestone import *
 
 
 Base.metadata.create_all(bind=engine)
@@ -170,8 +172,8 @@ def get_me(current_user: dict = Depends(get_current_user)):
   
   
 @app.post("/project")
-def create_project(project: ProjectCreate, db: SessionLocal = Depends(get_db)): # type: ignore
-    return create_project_crud(db, project)
+def create_project_route(project: ProjectCreate, db: SessionLocal = Depends(get_db)): # type: ignore
+    return create_project(db, project)
   
   
 @app.get("/project", response_model=List[Project])
@@ -242,4 +244,30 @@ def get_all_tasks(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(ge
 def get_all_tasks_by_project_id(project_id: str, db: SessionLocal = Depends(get_db)): # type: ignore
   tasks = get_tasks_by_project_id(db, project_id)
   return tasks
+
+
+@app.post('/milestone', response_model=MileStone)
+def handle_create_milestone(milestone: MileStoneCreate, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    db_milestone = create_milestone(db, milestone)
+    logging.info(f"Successfully created milestone with id: {db_milestone}")
+    return db_milestone
+  except HTTPException as he:
+    logging.error(f"HTTP Exception during milestone creation: {str(he)}")
+    raise
+  except Exception as e:
+    logging.error(f"Unexpected error during milestone creation: {str(e)}")
+    db.rollback()  # 트랜잭션 롤백
+    raise HTTPException(
+        status_code=500,
+        detail="Internal server error occurred while creating milestone"
+    )
+    
+@app.get('/milestone', response_model=List[MileStone])
+def get_all_milestones(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    milestones = get_milestones(db, skip=skip, limit=limit)
+    return milestones
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
     

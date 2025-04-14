@@ -6,7 +6,7 @@ import json
 
 def create_task(db: Session, task: TaskCreate):
     try:
-        json_fields = ['tags', 'subtasks', 'comments']
+        json_fields = ['assignee_id', 'tags', 'subtasks', 'comments']
         task_data = task.dict()
 
         for field in json_fields:
