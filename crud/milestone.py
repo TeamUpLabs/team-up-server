@@ -1,7 +1,5 @@
 from schemas.milestone import MileStoneCreate
 from models.milestone import Milestone as MileStoneModel
-from models.task import Task as TaskModel
-from models.member import Member as MemberModel
 from sqlalchemy.orm import Session
 import json
 from crud.task import get_tasks_by_project_id

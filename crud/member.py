@@ -4,7 +4,6 @@ from sqlalchemy.orm import Session
 from models.member import Member as MemberModel
 from schemas.member import MemberCreate
 from auth import get_password_hash
-from models.project import Project as ProjectModel
 
 def create_member(db: Session, member: MemberCreate):
     try:
@@ -34,26 +33,28 @@ def get_member(db: Session, member_id: int):
 
 def get_member_by_email(db: Session, email: str):
     return db.query(MemberModel).filter(MemberModel.email == email).first()
+  
+def get_member_by_id(db: Session, id: int):
+  return db.query(MemberModel).filter(MemberModel.id == id).first()
 
 def get_members(db: Session, skip: int = 0, limit: int = 100):
     return db.query(MemberModel).offset(skip).limit(limit).all()
   
 def get_member_projects(db: Session, member_id: int):
     try:
-        member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-        if member:
-            projects = member.projects
-            project_list = []
-            for project_id in projects:
-              project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
-              members = db.query(MemberModel).filter(
-                  MemberModel.projects.contains([project_id])
-              ).all()
-              project.members = members
-              project_list.append(project)
-            return project_list
-        else:
-            return None
+      from crud.project import get_project
+      member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+      if member:
+          projects = member.projects
+          project_list = []
+          for project_id in projects:
+            project = get_project(db, project_id)
+            members = get_member_by_project_id(db, member_id)
+            project.members = members
+            project_list.append(project)
+          return project_list
+      else:
+          return None
     except Exception as e:
         logging.error(f"Error in get_member_projects: {str(e)}")
         raise
@@ -62,7 +63,7 @@ def get_member_by_project_id(db: Session, project_id: str):
   try:
     members = db.query(MemberModel).filter(
       MemberModel.projects.contains([project_id])
-    )
+    ).all()
     return members
   except Exception as e:
     logging.error(e)

@@ -1,8 +1,8 @@
 from schemas.task import TaskCreate
 from models.task import Task as TaskModel
-from models.member import Member as MemberModel
 from sqlalchemy.orm import Session
 import json
+from crud.member import get_member_by_id
 
 def create_task(db: Session, task: TaskCreate):
     try:
@@ -31,9 +31,7 @@ def get_tasks(db: Session, skip: int = 0, limit: int = 100):
     for task in tasks:
       assignee = []
       for assignee_id in task.assignee_id:
-        member = db.query(MemberModel).filter(
-          MemberModel.id == assignee_id
-        ).first()
+        member = get_member_by_id(db, assignee_id)
         assignee.append(member)
       task.assignee = assignee
       
@@ -45,9 +43,7 @@ def get_tasks_by_project_id(db: Session, project_id: str):
   for task in tasks:
     assignee = []
     for assignee_id in task.assignee_id:
-      member = db.query(MemberModel).filter(
-        MemberModel.id == assignee_id
-      ).first()
+      member = get_member_by_id(db, assignee_id)
       assignee.append(member)
     task.assignee = assignee
   return tasks
