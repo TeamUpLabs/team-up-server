@@ -6,6 +6,7 @@ class Task(Base):
   __tablename__ = "task"
   
   id = Column(Integer, primary_key=True, index=True, nullable=False)
+  project_id = Column(String, nullable=False)
   title = Column(String, nullable=False)
   description = Column(Text, nullable=False)
   status = Column(Enum("todo", "in-progress", "done", name="status"), nullable=False)
