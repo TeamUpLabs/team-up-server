@@ -53,6 +53,15 @@ def get_project(db: Session, project_id: str):
       TaskModel.project_id == project_id
     ).all()
     
+    for task in tasks:
+      assignee = []
+      for assignee_id in task.assignee_id:
+        member = db.query(MemberModel).filter(
+          MemberModel.id == assignee_id
+        ).first()
+        assignee.append(member)
+      task.assignee = assignee
+    
     project.members = members
     project.tasks = tasks
     return project
