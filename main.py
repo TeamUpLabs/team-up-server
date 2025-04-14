@@ -7,12 +7,14 @@ import schemas.login
 from schemas.chat import ChatCreate
 from schemas.member import MemberCreate, Member
 from schemas.login import LoginForm
+from schemas.task import TaskCreate, Task
 from crud.chat import save_chat_message, get_chat_history
 from auth import create_access_token, verify_password, get_current_user
 from schemas.project import Project, ProjectCreate
 from typing import List
 from crud.project import create_project as create_project_crud, get_project, get_all_projects, get_all_projects_excluding_my
 from crud.member import create_member, get_member, get_members, get_member_by_email, get_member_projects, get_member_by_project_id
+from crud.task import create_task, get_tasks
 
 
 Base.metadata.create_all(bind=engine)
@@ -210,3 +212,29 @@ def get_projects_excluding_my_project(member_id: int, db: SessionLocal = Depends
     raise
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
+  
+@app.post("/task", response_model=Task)
+def handle_create_task(task: TaskCreate, db: SessionLocal = Depends(get_db)): # type: ignore
+    try:
+        db_task = create_task(db, task)
+        logging.info(f"Successfully created task with id: {db_task}")
+        return db_task
+    except HTTPException as he:
+        logging.error(f"HTTP Exception during task creation: {str(he)}")
+        raise
+    except Exception as e:
+        logging.error(f"Unexpected error during task creation: {str(e)}")
+        db.rollback()  # 트랜잭션 롤백
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error occurred while creating task"
+        )
+        
+@app.get('/task', response_model=List[Task])
+def get_all_tasks(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    tasks = get_tasks(db, skip=skip, limit=limit)
+    return tasks
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+    
