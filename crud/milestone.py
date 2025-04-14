@@ -41,4 +41,17 @@ def get_milestones(db: Session, skip: int = 0, limit: int = 100):
       milestone.assignee = members
       
   return milestones
+
+def get_milestones_by_project_id(db: Session, project_id: str):
+  milestones = db.query(MileStoneModel).filter(MileStoneModel.project_id == project_id).all()
+  
+  if milestones:
+    for milestone in milestones:
+      subtasks = get_tasks_by_project_id(db, milestone.project_id)
+      milestone.subtasks = subtasks
+      
+      members = get_member_by_project_id(db, milestone.project_id)
+      milestone.assignee = members
+      
+  return milestones
       

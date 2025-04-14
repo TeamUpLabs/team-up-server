@@ -5,6 +5,8 @@ import json
 from models.project import Project as ProjectModel
 from models.member import Member as MemberModel
 from models.task import Task as TaskModel
+from crud.task import get_tasks_by_project_id
+from crud.member import get_member_by_project_id
 
 def create_project(db: Session, project: ProjectCreate):
     try:
@@ -30,16 +32,10 @@ def create_project(db: Session, project: ProjectCreate):
 def get_all_projects(db: Session, skip: int = 0, limit: int = 100):
     projects = db.query(ProjectModel).offset(skip).limit(limit).all()
     for project in projects:
-        members = db.query(MemberModel).filter(
-            MemberModel.projects.contains([project.id])
-        ).all()
-        
+        members = get_member_by_project_id(db, project.id)
         project.members = members
         
-        tasks = db.query(TaskModel).filter(
-          TaskModel.project_id == project.id
-        ).all()
-        
+        tasks = get_tasks_by_project_id(db, project.id)
         project.tasks = tasks
     return projects
 

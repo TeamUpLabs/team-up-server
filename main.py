@@ -270,4 +270,12 @@ def get_all_milestones(skip: int = 0, limit: int = 100, db: SessionLocal = Depen
     return milestones
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
+  
+@app.get('/milestone/{project_id}', response_model=List[MileStone])
+def get_all_milestones_by_project_id(project_id: str, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    milestones = get_milestones_by_project_id(db, project_id)
+    return milestones
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
     
