@@ -7,7 +7,7 @@ class SubTask(BaseModel):
   completed: bool
   
 class Comment(BaseModel):
-  author: Member
+  author_id: int
   content: str
   createdAt: str
 

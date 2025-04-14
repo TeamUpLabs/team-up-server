@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from schemas.member import Member
+from schemas.task import Task
 
 class ProjectBase(BaseModel):
     id: str
@@ -22,7 +23,8 @@ class ProjectCreate(ProjectBase):
       from_attributes = True
         
 class Project(ProjectBase):
-    members: Optional[List[Member]] = []  # List of member IDs associated with the project
+    members: Optional[List[Member]] = []
+    tasks: Optional[List[Task]] = []
 
     class Config:
         from_attributes = True
