@@ -67,7 +67,7 @@ def get_all_projects_excluding_my(db: Session, member_id: int):
   other_projects = db.query(ProjectModel).filter(ProjectModel.id.not_in(member.projects)).all()
   
   for other_project in other_projects:
-    members = get_member_by_project_id(other_project.id)
+    members = get_member_by_project_id(db, other_project.id)
     other_project.members = members
     
     tasks = get_tasks_by_project_id(db, other_project.id)
