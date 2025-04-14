@@ -5,6 +5,7 @@ import json
 from models.project import Project as ProjectModel
 from crud.task import get_tasks_by_project_id
 from crud.member import get_member_by_project_id, get_member_by_id
+from crud.milestone import get_milestones_by_project_id
 
 def create_project(db: Session, project: ProjectCreate):
     try:
@@ -33,12 +34,16 @@ def get_all_projects(db: Session, skip: int = 0, limit: int = 100):
         members = get_member_by_project_id(db, project.id)
         project.members = members
         
-        tasks = get_tasks_by_project_id(db, project.zid)
+        tasks = get_tasks_by_project_id(db, project.id)
         project.tasks = tasks
+        
+        milestones = get_milestones_by_project_id(db, project.id)
+        project.milestones = milestones
     return projects
 
 def get_project(db: Session, project_id: str):
     project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    
     members = get_member_by_project_id(db, project_id)
     project.members = members
     
@@ -51,6 +56,9 @@ def get_project(db: Session, project_id: str):
         assignee.append(member)
       task.assignee = assignee
     project.tasks = tasks
+    
+    milestones = get_milestones_by_project_id(db, project_id)
+    project.milestones = milestones
     return project
   
   
@@ -63,8 +71,9 @@ def get_all_projects_excluding_my(db: Session, member_id: int):
     other_project.members = members
     
     tasks = get_tasks_by_project_id(db, other_project.id)
-    
     other_project.tasks = tasks
-  
+
+    milestones = get_milestones_by_project_id(db, other_project.id)
+    other_project.milestones = milestones
   return other_projects
   
