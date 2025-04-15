@@ -49,8 +49,6 @@ def get_member_projects(db: Session, member_id: int):
           project_list = []
           for project_id in projects:
             project = get_project(db, project_id)
-            members = get_member_by_project_id(db, member_id)
-            project.members = members
             project_list.append(project)
           return project_list
       else:
