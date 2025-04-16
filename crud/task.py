@@ -1,4 +1,4 @@
-from schemas.task import TaskCreate
+from schemas.task import TaskCreate, Task
 from models.task import Task as TaskModel
 from sqlalchemy.orm import Session
 import json
@@ -18,7 +18,7 @@ def create_task(db: Session, task: TaskCreate):
         db.add(db_task)
         db.commit()
         db.refresh(db_task)
-        return db_task
+        return Task.model_validate(db_task)
     except Exception as e:
         print(f"Error in create_task: {str(e)}")
         db.rollback()
@@ -26,6 +26,7 @@ def create_task(db: Session, task: TaskCreate):
       
 def get_tasks(db: Session, skip: int = 0, limit: int = 100):
   tasks = db.query(TaskModel).offset(skip).limit(limit).all()
+  result = []
   
   if tasks:
     for task in tasks:
@@ -35,10 +36,14 @@ def get_tasks(db: Session, skip: int = 0, limit: int = 100):
         assignee.append(member)
       task.assignee = assignee
       
-  return tasks
+      # Convert SQLAlchemy model to Pydantic model
+      result.append(Task.model_validate(task))
+      
+  return result
 
 def get_tasks_by_project_id(db: Session, project_id: str):
   tasks = db.query(TaskModel).filter(TaskModel.project_id == project_id).all()
+  result = []
   
   for task in tasks:
     assignee = []
@@ -46,6 +51,30 @@ def get_tasks_by_project_id(db: Session, project_id: str):
       member = get_member_by_id(db, assignee_id)
       assignee.append(member)
     task.assignee = assignee
-  return tasks
+    
+    # Convert SQLAlchemy model to Pydantic model
+    result.append(Task.model_validate(task))
+    
+  return result
         
-        
+def get_tasks_by_member_id(db: Session, member_id: int):
+  from sqlalchemy import cast
+  from sqlalchemy.dialects.postgresql import JSONB
+
+  tasks = db.query(TaskModel).filter(
+      cast(TaskModel.assignee_id, JSONB).contains([member_id])
+  ).all()
+  
+  result = []
+  
+  for task in tasks:
+    assignee = []
+    for assignee_id in task.assignee_id:
+      member = get_member_by_id(db, assignee_id)
+      assignee.append(member)
+    task.assignee = assignee
+    
+    # Convert SQLAlchemy model to Pydantic model
+    result.append(Task.model_validate(task))
+    
+  return result

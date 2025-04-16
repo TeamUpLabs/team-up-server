@@ -2,7 +2,7 @@ import logging
 import json
 from sqlalchemy.orm import Session
 from models.member import Member as MemberModel
-from schemas.member import MemberCreate
+from schemas.member import MemberCreate, Member
 from auth import get_password_hash
 
 def create_member(db: Session, member: MemberCreate):
@@ -22,23 +22,41 @@ def create_member(db: Session, member: MemberCreate):
         db.add(db_member)
         db.commit()
         db.refresh(db_member)
-        return db_member
+        return Member.model_validate(db_member)
     except Exception as e:
         logging.error(f"Error in create_member: {str(e)}")
         db.rollback()
         raise
 
 def get_member(db: Session, member_id: int):
-    return db.query(MemberModel).filter(MemberModel.id == member_id).first()
+  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+  if not member:
+    return None
+  from crud.task import get_tasks_by_member_id
+  tasks = get_tasks_by_member_id(db, member_id)
+  member.currentTask = tasks
+  return Member.model_validate(member)
 
 def get_member_by_email(db: Session, email: str):
-    return db.query(MemberModel).filter(MemberModel.email == email).first()
-  
-def get_member_by_id(db: Session, id: int):
-  return db.query(MemberModel).filter(MemberModel.id == id).first()
+    member = db.query(MemberModel).filter(MemberModel.email == email).first()
+    if member:
+        from crud.task import get_tasks_by_member_id
+        tasks = get_tasks_by_member_id(db, member.id)
+        member.currentTask = tasks
+        return Member.model_validate(member)
+    return None
 
 def get_members(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(MemberModel).offset(skip).limit(limit).all()
+    members = db.query(MemberModel).offset(skip).limit(limit).all()
+    from crud.task import get_tasks_by_member_id
+    result = []
+    
+    for member in members:
+        tasks = get_tasks_by_member_id(db, member.id)
+        member.currentTask = tasks
+        result.append(Member.model_validate(member))
+    
+    return result
   
 def get_member_projects(db: Session, member_id: int):
     try:
@@ -62,6 +80,20 @@ def get_member_by_project_id(db: Session, project_id: str):
     members = db.query(MemberModel).filter(
       MemberModel.projects.contains([project_id])
     ).all()
-    return members
+    from crud.task import get_tasks_by_member_id
+    result = []
+    
+    for member in members:
+        tasks = get_tasks_by_member_id(db, member.id)
+        member.currentTask = tasks
+        result.append(Member.model_validate(member))
+    
+    return result
   except Exception as e:
     logging.error(e)
+    
+def get_member_by_id(db: Session, member_id: int):
+    member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+    if member:
+        return Member.model_validate(member)
+    return None

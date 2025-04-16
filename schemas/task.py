@@ -1,6 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional, List
-from schemas.member import Member
+from pydantic import BaseModel, ConfigDict
+from typing import Optional, List, Any
 
 class SubTask(BaseModel):
   title: str
@@ -27,12 +26,11 @@ class TaskBase(BaseModel):
 class TaskCreate(TaskBase):
   assignee_id: List[int] = []
 
-  class Config:
-    from_attributes = True
+  model_config = ConfigDict(from_attributes=True)
         
 class Task(TaskBase):
   id: int
-  assignee: List[Member] = []
-  
-  class Config:
-    from_attributes = True
+  assignee_id: List[int] = []
+  assignee: List[Any] = []  # Using Any to avoid circular import
+
+  model_config = ConfigDict(from_attributes=True)

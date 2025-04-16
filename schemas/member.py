@@ -1,6 +1,5 @@
-from pydantic import BaseModel
-from typing import Optional, List
-from datetime import datetime
+from pydantic import BaseModel, ConfigDict
+from typing import Optional, List, Any
 
 class LanguageInfo(BaseModel):
     name: str
@@ -29,7 +28,7 @@ class MemberBase(BaseModel):
     profileImage: Optional[str] = None
     contactNumber: Optional[str] = None
     birthDate: Optional[str] = None
-    introduction: Optional[str] = None  # Fixed typo here
+    introduction: Optional[str] = None
     workingHours: Optional[WorkingHoursInfo] = None
     languages: Optional[List[LanguageInfo]] = []
     socialLinks: Optional[List[SocialLinksInfo]] = []
@@ -38,12 +37,11 @@ class MemberBase(BaseModel):
 class MemberCreate(MemberBase):
     password: str  # Password only required when creating
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Schema for returning member data
 class Member(MemberBase):
     id: int  # ID included in response but not in create request
+    currentTask: Optional[List[Any]] = []  # Using Any to avoid circular import
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -7,11 +7,13 @@ from typing import List
 from auth import create_access_token, verify_password, get_current_user
 import schemas.login
 from schemas.chat import ChatCreate
-from schemas.member import MemberCreate, Member
 from schemas.login import LoginForm
+# Import models and schemas in the correct order to avoid circular reference issues
+from schemas.member import MemberCreate, Member
 from schemas.task import TaskCreate, Task
 from schemas.project import Project, ProjectCreate
 from schemas.milestone import MileStone, MileStoneCreate
+# Then import the CRUD modules
 from crud.chat import *
 from crud.project import *
 from crud.member import *
@@ -239,6 +241,12 @@ def get_all_tasks(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(ge
     return tasks
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
+  
+  
+@app.get('/member/{member_id}/task', response_model=List[Task])
+def get_all_tasks_by_member_id(member_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
+  tasks = get_tasks_by_member_id(db, member_id)
+  return tasks
   
 @app.get('/project/{project_id}/task', response_model=List[Task])
 def get_all_tasks_by_project_id(project_id: str, db: SessionLocal = Depends(get_db)): # type: ignore
