@@ -18,8 +18,9 @@ class SocialLinksInfo(BaseModel):
 class MemberBase(BaseModel):
     name: str
     email: str
+    password: Optional[str] = None
     role: str
-    department: str
+    department: Optional[str] = None
     status: str
     lastLogin: Optional[str] = None
     createdAt: Optional[str] = None
@@ -35,13 +36,11 @@ class MemberBase(BaseModel):
 
 # Schema for creating a new member
 class MemberCreate(MemberBase):
-    password: str  # Password only required when creating
-
     model_config = ConfigDict(from_attributes=True)
 
 # Schema for returning member data
 class Member(MemberBase):
     id: int  # ID included in response but not in create request
     currentTask: Optional[List[Any]] = []  # Using Any to avoid circular import
-
+    
     model_config = ConfigDict(from_attributes=True)

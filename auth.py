@@ -27,10 +27,24 @@ def get_password_hash(password: str) -> str:
     # Return the hash as a string
     return hashed.decode('utf-8')
 
+def serialize_data(data):
+    """Recursively convert non-serializable objects to dictionaries."""
+    if isinstance(data, list):
+        return [serialize_data(item) for item in data]
+    elif isinstance(data, dict):
+        return {key: serialize_data(value) for key, value in data.items()}
+    elif hasattr(data, 'dict'):
+        return data.dict()  # Convert Pydantic models to dict
+    return data  # Return the data as is if it's already serializable
+
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
+    
+    # Serialize the data to ensure all objects are JSON serializable
+    to_encode = serialize_data(to_encode)
+    
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def verify_token(token: str):

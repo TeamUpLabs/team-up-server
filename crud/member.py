@@ -35,7 +35,7 @@ def get_member(db: Session, member_id: int):
   from crud.task import get_tasks_by_member_id
   tasks = get_tasks_by_member_id(db, member_id)
   member.currentTask = tasks
-  return Member.model_validate(member)
+  return Member.model_validate(member.__dict__)
 
 def get_member_by_email(db: Session, email: str):
     member = db.query(MemberModel).filter(MemberModel.email == email).first()
@@ -43,7 +43,7 @@ def get_member_by_email(db: Session, email: str):
         from crud.task import get_tasks_by_member_id
         tasks = get_tasks_by_member_id(db, member.id)
         member.currentTask = tasks
-        return Member.model_validate(member)
+        return Member.model_validate(member.__dict__)
     return None
 
 def get_members(db: Session, skip: int = 0, limit: int = 100):
@@ -54,7 +54,7 @@ def get_members(db: Session, skip: int = 0, limit: int = 100):
     for member in members:
         tasks = get_tasks_by_member_id(db, member.id)
         member.currentTask = tasks
-        result.append(Member.model_validate(member))
+        result.append(Member.model_validate(member.__dict__))
     
     return result
   
@@ -86,7 +86,7 @@ def get_member_by_project_id(db: Session, project_id: str):
     for member in members:
         tasks = get_tasks_by_member_id(db, member.id)
         member.currentTask = tasks
-        result.append(Member.model_validate(member))
+        result.append(Member.model_validate(member.__dict__))
     
     return result
   except Exception as e:
@@ -95,5 +95,5 @@ def get_member_by_project_id(db: Session, project_id: str):
 def get_member_by_id(db: Session, member_id: int):
     member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
     if member:
-        return Member.model_validate(member)
+        return Member.model_validate(member.__dict__)
     return None
