@@ -138,7 +138,6 @@ def login(login: LoginForm, db: SessionLocal = Depends(get_db)): # type: ignore
         "name": member.name,
         "email": member.email,
         "role": member.role,
-        "department": member.department,
         "status": member.status,
         "lastLogin": member.lastLogin,
         "createdAt": member.createdAt,
