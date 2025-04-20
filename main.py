@@ -11,7 +11,7 @@ from schemas.login import LoginForm
 # Import models and schemas in the correct order to avoid circular reference issues
 from schemas.member import MemberCreate, Member
 from schemas.task import TaskCreate, Task
-from schemas.project import Project, ProjectCreate
+from schemas.project import Project, ProjectCreate, ProjectMemberAdd
 from schemas.milestone import MileStone, MileStoneCreate
 # Then import the CRUD modules
 from crud.chat import *
@@ -285,4 +285,16 @@ def get_all_milestones_by_project_id(project_id: str, db: SessionLocal = Depends
     return milestones
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/project/{project_id}/member")
+def add_member_to_project_route(project_id: str, member_data: ProjectMemberAdd, db: SessionLocal = Depends(get_db)): # type: ignore
+    try:
+        result = add_member_to_project(db, project_id, member_data.member_id)
+        if result.get("status") == "error":
+            raise HTTPException(status_code=400, detail=result.get("message"))
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     

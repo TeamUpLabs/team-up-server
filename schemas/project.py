@@ -30,3 +30,9 @@ class Project(ProjectBase):
 
     class Config:
         from_attributes = True
+        
+class ProjectMemberAdd(BaseModel):
+    member_id: int
+    
+    class Config:
+        from_attributes = True

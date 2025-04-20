@@ -6,6 +6,7 @@ from models.project import Project as ProjectModel
 from crud.task import get_tasks_by_project_id
 from crud.member import get_member_by_project_id, get_member_by_id
 from crud.milestone import get_milestones_by_project_id
+from models.member import Member as MemberModel
 
 def create_project(db: Session, project: ProjectCreate):
     try:
@@ -76,4 +77,37 @@ def get_all_projects_excluding_my(db: Session, member_id: int):
     milestones = get_milestones_by_project_id(db, other_project.id)
     other_project.milestones = milestones
   return other_projects
+  
+def add_member_to_project(db: Session, project_id: str, member_id: int):
+  try:
+    # Get the member
+    member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+    if not member:
+      return {"status": "error", "message": "Member not found"}
+      
+    # Get the project
+    project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    if not project:
+      return {"status": "error", "message": "Project not found"}
+    
+    # Check if member is already in the project
+    if member.projects and project_id in member.projects:
+      return {"status": "error", "message": "Member already in project"}
+    
+    # Add project to member's projects list
+    current_projects = member.projects or []
+    if not isinstance(current_projects, list):
+      current_projects = []
+    
+    current_projects.append(project_id)
+    member.projects = current_projects
+    
+    db.commit()
+    db.refresh(member)
+    
+    return {"status": "success", "message": "Member added to project"}
+  except Exception as e:
+    logging.error(f"Error in add_member_to_project: {str(e)}")
+    db.rollback()
+    raise
   
