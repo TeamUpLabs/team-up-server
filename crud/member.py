@@ -38,13 +38,12 @@ def get_member(db: Session, member_id: int):
 
   project_ids = db.query(MemberModel).filter(MemberModel.id == member_id).first().projects
   project_list = []
-  from crud.project import get_project
-  from schemas.project import Project as ProjectSchema
-  for project_id in project_ids:
-    project = get_project(db, project_id)
-    if project:
-      # Convert to Pydantic schema to ensure it can be serialized
-      project_list.append(ProjectSchema.model_validate(project.__dict__))
+  from crud.project import get_project_basic_info
+  if project_ids:
+    for project_id in project_ids:
+      project = get_project_basic_info(db, project_id)
+      if project:
+        project_list.append(project)
   member.projectDetails = project_list
   return Member.model_validate(member.__dict__)
 
@@ -54,14 +53,25 @@ def get_member_by_email(db: Session, email: str):
         from crud.task import get_tasks_by_member_id
         tasks = get_tasks_by_member_id(db, member.id)
         member.currentTask = tasks
+        
+        # Add project details
+        project_ids = member.projects
+        project_list = []
+        from crud.project import get_project_basic_info
+        if project_ids:
+            for project_id in project_ids:
+                project = get_project_basic_info(db, project_id)
+                if project:
+                    project_list.append(project)
+        member.projectDetails = project_list
+        
         return Member.model_validate(member.__dict__)
     return None
 
 def get_members(db: Session, skip: int = 0, limit: int = 100):
     members = db.query(MemberModel).offset(skip).limit(limit).all()
     from crud.task import get_tasks_by_member_id
-    from crud.project import get_project
-    from schemas.project import Project as ProjectSchema
+    from crud.project import get_project_basic_info
     result = []
     
     for member in members:
@@ -69,13 +79,13 @@ def get_members(db: Session, skip: int = 0, limit: int = 100):
         member.currentTask = tasks
         
         # Add project details
+        project_ids = member.projects
         project_list = []
-        if member.projects:
-            for project_id in member.projects:
-                project = get_project(db, project_id)
+        if project_ids:
+            for project_id in project_ids:
+                project = get_project_basic_info(db, project_id)
                 if project:
-                    # Convert to Pydantic schema to ensure it can be serialized
-                    project_list.append(ProjectSchema.model_validate(project.__dict__))
+                    project_list.append(project)
         member.projectDetails = project_list
         
         result.append(Member.model_validate(member.__dict__))
@@ -84,17 +94,17 @@ def get_members(db: Session, skip: int = 0, limit: int = 100):
   
 def get_member_projects(db: Session, member_id: int):
     try:
-      from crud.project import get_project
-      from schemas.project import Project as ProjectSchema
+      from crud.project import get_project_basic_info
       member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
       if member:
           projects = member.projects
           project_list = []
-          for project_id in projects:
-            project = get_project(db, project_id)
-            if project:
-              # Convert to Pydantic schema to ensure it can be serialized
-              project_list.append(ProjectSchema.model_validate(project.__dict__))
+          if projects:
+            for project_id in projects:
+              project = get_project_basic_info(db, project_id)
+              print(project)
+              if project:
+                project_list.append(project)
           return project_list
       else:
           return None
@@ -108,8 +118,7 @@ def get_member_by_project_id(db: Session, project_id: str):
       MemberModel.projects.contains([project_id])
     ).all()
     from crud.task import get_tasks_by_member_id
-    from crud.project import get_project
-    from schemas.project import Project as ProjectSchema
+    from crud.project import get_project_basic_info
     result = []
     
     for member in members:
@@ -117,13 +126,13 @@ def get_member_by_project_id(db: Session, project_id: str):
         member.currentTask = tasks
         
         # Add project details
+        project_ids = member.projects
         project_list = []
-        if member.projects:
-            for pid in member.projects:
-                project = get_project(db, pid)
+        if project_ids:
+            for pid in project_ids:
+                project = get_project_basic_info(db, pid)
                 if project:
-                    # Convert to Pydantic schema to ensure it can be serialized
-                    project_list.append(ProjectSchema.model_validate(project.__dict__))
+                    project_list.append(project)
         member.projectDetails = project_list
         
         result.append(Member.model_validate(member.__dict__))

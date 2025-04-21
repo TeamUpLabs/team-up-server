@@ -2,8 +2,7 @@ from schemas.milestone import MileStoneCreate
 from models.milestone import Milestone as MileStoneModel
 from sqlalchemy.orm import Session
 import json
-from crud.task import get_tasks_by_project_id
-from crud.member import get_member_by_project_id
+from crud.task import get_tasks_by_project_id, get_basic_member_info
 
 def create_milestone(db: Session, milestone: MileStoneCreate):
   try:
@@ -28,6 +27,7 @@ def create_milestone(db: Session, milestone: MileStoneCreate):
   
   
 def get_milestones(db: Session, skip: int = 0, limit: int = 100):
+  from schemas.member import Member as MemberSchema
   milestones = db.query(MileStoneModel).offset(skip).limit(limit).all()
   
   if milestones:
@@ -35,12 +35,20 @@ def get_milestones(db: Session, skip: int = 0, limit: int = 100):
       subtasks = get_tasks_by_project_id(db, milestone.project_id)
       milestone.subtasks = subtasks
       
-      members = get_member_by_project_id(db, milestone.project_id)
-      milestone.assignee = members
+      # Initialize assignee as empty list if None
+      milestone.assignee = []
+      
+      # Only try to get members if assignee_id exists and isn't empty
+      if milestone.assignee_id and isinstance(milestone.assignee_id, list):
+        for member_id in milestone.assignee_id:
+          member = get_basic_member_info(db, member_id)
+          if member:
+            milestone.assignee.append(member)
       
   return milestones
 
 def get_milestones_by_project_id(db: Session, project_id: str):
+  from schemas.member import Member as MemberSchema
   milestones = db.query(MileStoneModel).filter(MileStoneModel.project_id == project_id).all()
   
   if milestones:
@@ -48,8 +56,15 @@ def get_milestones_by_project_id(db: Session, project_id: str):
       subtasks = get_tasks_by_project_id(db, milestone.project_id)
       milestone.subtasks = subtasks
       
-      members = get_member_by_project_id(db, milestone.project_id)
-      milestone.assignee = members
+      # Initialize assignee as empty list if None
+      milestone.assignee = []
+      
+      # Only try to get members if assignee_id exists and isn't empty
+      if milestone.assignee_id and isinstance(milestone.assignee_id, list):
+        for member_id in milestone.assignee_id:
+          member = get_basic_member_info(db, member_id)
+          if member:
+            milestone.assignee.append(member)
       
   return milestones
       

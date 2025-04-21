@@ -2,7 +2,33 @@ from schemas.task import TaskCreate, Task
 from models.task import Task as TaskModel
 from sqlalchemy.orm import Session
 import json
-from crud.member import get_member_by_id
+from models.member import Member as MemberModel
+from schemas.member import Member as MemberSchema
+
+def get_basic_member_info(db: Session, member_id: int):
+    """Get basic member info without loading related data to avoid circular references"""
+    member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+    if not member:
+        return None
+    
+    # Create a basic info dict with all required fields
+    basic_info = {
+        "id": member.id,
+        "name": member.name,
+        "email": member.email,
+        "role": member.role,
+        "status": member.status,
+        "profileImage": member.profileImage,
+        "contactNumber": member.contactNumber,
+        "workingHours": member.workingHours,
+        # Include other required fields from the Member schema
+        "skills": member.skills or [],
+        "projects": member.projects or [],
+        "languages": member.languages or [],
+        "password": None  # Include as None since it's optional
+    }
+    
+    return MemberSchema.model_validate(basic_info)
 
 def create_task(db: Session, task: TaskCreate):
     try:
@@ -31,9 +57,11 @@ def get_tasks(db: Session, skip: int = 0, limit: int = 100):
   if tasks:
     for task in tasks:
       assignee = []
-      for assignee_id in task.assignee_id:
-        member = get_member_by_id(db, assignee_id)
-        assignee.append(member)
+      if task.assignee_id:
+        for assignee_id in task.assignee_id:
+          member = get_basic_member_info(db, assignee_id)
+          if member:
+            assignee.append(member)
       task.assignee = assignee
       
       # Convert SQLAlchemy model to Pydantic model
@@ -47,9 +75,11 @@ def get_tasks_by_project_id(db: Session, project_id: str):
   
   for task in tasks:
     assignee = []
-    for assignee_id in task.assignee_id:
-      member = get_member_by_id(db, assignee_id)
-      assignee.append(member)
+    if task.assignee_id:
+      for assignee_id in task.assignee_id:
+        member = get_basic_member_info(db, assignee_id)
+        if member:
+          assignee.append(member)
     task.assignee = assignee
     
     # Convert SQLAlchemy model to Pydantic model
@@ -69,9 +99,11 @@ def get_tasks_by_member_id(db: Session, member_id: int):
   
   for task in tasks:
     assignee = []
-    for assignee_id in task.assignee_id:
-      member = get_member_by_id(db, assignee_id)
-      assignee.append(member)
+    if task.assignee_id:
+      for assignee_id in task.assignee_id:
+        member = get_basic_member_info(db, assignee_id)
+        if member:
+          assignee.append(member)
     task.assignee = assignee
     
     # Convert SQLAlchemy model to Pydantic model
