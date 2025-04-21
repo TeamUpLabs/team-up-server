@@ -37,5 +37,6 @@ class MemberCreate(MemberBase):
 class Member(MemberBase):
     id: int  # ID included in response but not in create request
     currentTask: Optional[List[Any]] = []  # Using Any to avoid circular import
+    projectDetails: Optional[List[Any]] = []
     
     model_config = ConfigDict(from_attributes=True)
