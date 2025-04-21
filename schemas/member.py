@@ -40,3 +40,9 @@ class Member(MemberBase):
     projectDetails: Optional[List[Any]] = []
     
     model_config = ConfigDict(from_attributes=True)
+    
+class MemberCheck(BaseModel):
+    email: str
+    
+    class Config:
+        from_attributes = True

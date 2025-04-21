@@ -9,7 +9,7 @@ import schemas.login
 from schemas.chat import ChatCreate
 from schemas.login import LoginForm
 # Import models and schemas in the correct order to avoid circular reference issues
-from schemas.member import MemberCreate, Member
+from schemas.member import MemberCreate, Member, MemberCheck
 from schemas.task import TaskCreate, Task
 from schemas.project import Project, ProjectCreate, ProjectMemberAdd
 from schemas.milestone import MileStone, MileStoneCreate
@@ -86,6 +86,18 @@ def handle_create_member(member: MemberCreate, db: SessionLocal = Depends(get_db
             status_code=500,
             detail="Internal server error occurred while creating member"
         )
+        
+@app.post("/member/check")
+def check_member(member_check: MemberCheck, db: SessionLocal = Depends(get_db)): # type: ignore
+    try:
+        member = get_member_by_email(db, member_check.email)
+        if member:
+            return {"status": "exists", "message": "Member already exists"}
+        else:
+            return {"status": "not_exists", "message": "Member does not exist"}
+    except Exception as e:
+        logging.error(f"Unexpected error during member check: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/member", response_model=List[Member])
 def read_members(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(get_db)): # type: ignore
