@@ -90,17 +90,26 @@ def add_member_to_project(db: Session, project_id: str, member_id: int):
     if not project:
       return {"status": "error", "message": "Project not found"}
     
-    # Check if member is already in the project
-    if member.projects and project_id in member.projects:
+    # Initialize projects list if it's None
+    if member.projects is None:
+      member.projects = []
+    
+    # Check if project_id already exists in member's projects
+    if project_id in member.projects:
       return {"status": "error", "message": "Member already in project"}
     
-    # Add project to member's projects list
-    current_projects = member.projects or []
-    if not isinstance(current_projects, list):
-      current_projects = []
+    # Add project_id to member's projects list and ensure it's a proper JSON array
+    if isinstance(member.projects, list):
+      member.projects.append(project_id)
+    else:
+      # Convert to list if it's not already a list
+      member.projects = [project_id]
     
-    current_projects.append(project_id)
-    member.projects = current_projects
+    # Explicitly update the member object
+    db.query(MemberModel).filter(MemberModel.id == member_id).update(
+      {"projects": member.projects},
+      synchronize_session="fetch"
+    )
     
     db.commit()
     db.refresh(member)
