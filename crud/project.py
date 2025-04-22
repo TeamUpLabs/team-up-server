@@ -260,3 +260,13 @@ def get_project_basic_info(db: Session, project_id: str):
     
     return ProjectSchema.model_validate(basic_info)
   
+  
+def get_all_project_ids(db: Session):
+  projects = db.query(ProjectModel).all()
+  
+  project_ids = []
+  for project in projects:
+    project_ids.append(project.id)
+    
+  return project_ids
+  

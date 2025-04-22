@@ -197,6 +197,14 @@ def read_projects(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(ge
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
       
+@app.get("/project/id", response_model=List[str])
+def read_all_projects_ids(db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    project_ids = get_all_project_ids(db)
+    return project_ids
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+      
   
 @app.get("/project/{project_id}", response_model=Project)
 def read_project(project_id: str, db: SessionLocal = Depends(get_db)): # type: ignore
