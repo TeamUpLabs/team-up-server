@@ -8,6 +8,7 @@ class Project(Base):
     title = Column(String, nullable=False)
     status = Column(String, nullable=False)
     description = Column(Text, nullable=False)
+    leader_id = Column(Integer, nullable=False)
     roles = Column(JSON)
     techStack = Column(JSON)
     startDate = Column(String, nullable=False)

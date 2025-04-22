@@ -63,6 +63,9 @@ def get_all_projects(db: Session, skip: int = 0, limit: int = 100):
         for milestone in milestones:
             # Convert to Pydantic schema
             processed_milestones.append(MileStoneSchema.model_validate(milestone.__dict__))
+            
+        leader = get_member_by_id(db, project.leader_id)
+        project.leader = leader
         
         project.milestones = processed_milestones
     
@@ -104,6 +107,9 @@ def get_project(db: Session, project_id: str):
     
     project.milestones = processed_milestones
     
+    leader = get_member_by_id(db, project.leader_id)
+    project.leader = leader
+    
     return project
   
   
@@ -142,7 +148,10 @@ def get_all_projects_excluding_my(db: Session, member_id: int):
         processed_milestones.append(MileStoneSchema.model_validate(milestone.__dict__))
     
     other_project.milestones = processed_milestones
-  
+    
+    leader = get_member_by_id(db, other_project.leader_id)
+    other_project.leader = leader
+    
   return other_projects
   
 def add_member_to_project(db: Session, project_id: str, member_id: int):

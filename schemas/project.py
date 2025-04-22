@@ -18,7 +18,7 @@ class ProjectBase(BaseModel):
     projectType: str
     
 class ProjectCreate(ProjectBase):
-    pass
+    leader_id: int
   
     class Config:
       from_attributes = True
@@ -27,7 +27,7 @@ class Project(ProjectBase):
     members: Optional[List[Member]] = []
     tasks: Optional[List[Task]] = []
     milestones: Optional[List[MileStone]] = []
-
+    leader: Optional[Member] = None
     class Config:
         from_attributes = True
         
