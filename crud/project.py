@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 import logging
 import json
 from models.project import Project as ProjectModel
-from crud.task import get_tasks_by_project_id
+from crud.task import get_tasks_by_project_id, delete_task_by_id
 from crud.member import get_member_by_project_id, get_member_by_id
-from crud.milestone import get_milestones_by_project_id
+from crud.milestone import get_milestones_by_project_id, delete_milestone_by_id
 from models.member import Member as MemberModel
 from schemas.member import Member as MemberSchema
 from schemas.task import Task as TaskSchema
@@ -279,3 +279,24 @@ def get_all_project_ids(db: Session):
     
   return project_ids
   
+  
+def delete_project_by_id(db: Session, project_id: str):
+  project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+  tasks = get_tasks_by_project_id(db, project_id)
+  milestones = get_milestones_by_project_id(db, project_id)
+  members = get_member_by_project_id(db, project_id)
+  if project:
+    for task in tasks:
+      delete_task_by_id(db, task.id)
+    for milestone in milestones:
+      delete_milestone_by_id(db, milestone.id)
+    for member in members:
+      member.projects = [p_id for p_id in member.projects if p_id != project_id]
+      db.query(MemberModel).filter(MemberModel.id == member.id).update(
+        {"projects": member.projects},
+        synchronize_session="fetch"
+      )
+    db.delete(project)
+    db.commit()
+    return True
+  return False

@@ -236,6 +236,14 @@ def get_projects_excluding_my_project(member_id: int, db: SessionLocal = Depends
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
   
+@app.delete("/project/{project_id}")
+def delete_project(project_id: str, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    delete_project_by_id(db, project_id)
+    return {"status": "success", "message": "Project deleted successfully"}
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+  
 @app.post("/task", response_model=Task)
 def handle_create_task(task: TaskCreate, db: SessionLocal = Depends(get_db)): # type: ignore
     try:
