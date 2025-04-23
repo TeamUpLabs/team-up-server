@@ -12,6 +12,7 @@ class Comment(BaseModel):
 
 class TaskBase(BaseModel):
   project_id: str
+  milestone_id: int
   title: str
   description: str
   status: str
