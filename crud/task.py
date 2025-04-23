@@ -105,6 +105,24 @@ def get_tasks_by_project_id(db: Session, project_id: str):
     result.append(Task.model_validate(task))
     
   return result
+
+def get_task_by_project_id_and_milestone_id(db: Session, project_id: str, milestone_id: int):
+  tasks = db.query(TaskModel).filter(TaskModel.project_id == project_id, TaskModel.milestone_id == milestone_id).all()
+  result = []
+  
+  for task in tasks:
+    assignee = [] 
+    if task.assignee_id:
+      for assignee_id in task.assignee_id:
+        member = get_basic_member_info(db, assignee_id)
+        if member:
+          assignee.append(member)
+    task.assignee = assignee
+    
+    # Convert SQLAlchemy model to Pydantic model
+    result.append(Task.model_validate(task))
+    
+  return result
         
 def get_tasks_by_member_id(db: Session, member_id: int):
   from sqlalchemy import cast

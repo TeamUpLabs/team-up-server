@@ -2,7 +2,7 @@ from schemas.milestone import MileStoneCreate
 from models.milestone import Milestone as MileStoneModel
 from sqlalchemy.orm import Session
 import json
-from crud.task import get_tasks_by_project_id, get_basic_member_info, get_tasks_by_milestone_id
+from crud.task import get_tasks_by_project_id, get_basic_member_info, get_task_by_project_id_and_milestone_id
 
 def create_milestone(db: Session, milestone: MileStoneCreate):
   try:
@@ -32,7 +32,7 @@ def get_milestones(db: Session, skip: int = 0, limit: int = 100):
   
   if milestones:
     for milestone in milestones:
-      subtasks = get_tasks_by_milestone_id(db, milestone.id)
+      subtasks = get_task_by_project_id_and_milestone_id(db, milestone.project_id, milestone.id)
       milestone.subtasks = subtasks
       
       # Initialize assignee as empty list if None
@@ -53,7 +53,7 @@ def get_milestones_by_project_id(db: Session, project_id: str):
   
   if milestones:
     for milestone in milestones:
-      subtasks = get_tasks_by_milestone_id(db, milestone.id)
+      subtasks = get_task_by_project_id_and_milestone_id(db, project_id, milestone.id)
       milestone.subtasks = subtasks
       
       # Initialize assignee as empty list if None
