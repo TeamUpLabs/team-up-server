@@ -147,3 +147,11 @@ def get_tasks_by_member_id(db: Session, member_id: int):
     result.append(Task.model_validate(task))
     
   return result
+
+def delete_task_by_id(db: Session, task_id: int):
+  task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
+  if task:
+    db.delete(task)
+    db.commit()
+    return True
+  return False

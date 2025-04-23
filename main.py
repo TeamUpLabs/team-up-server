@@ -272,6 +272,14 @@ def get_all_tasks_by_project_id(project_id: str, db: SessionLocal = Depends(get_
   tasks = get_tasks_by_project_id(db, project_id)
   return tasks
 
+@app.delete('/task/{task_id}')
+def delete_task(task_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    delete_task_by_id(db, task_id)
+    return {"status": "success", "message": "Task deleted successfully"}
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post('/milestone', response_model=MileStone)
 def handle_create_milestone(milestone: MileStoneCreate, db: SessionLocal = Depends(get_db)): # type: ignore
@@ -303,6 +311,14 @@ def get_all_milestones_by_project_id(project_id: str, db: SessionLocal = Depends
   try:
     milestones = get_milestones_by_project_id(db, project_id)
     return milestones
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+  
+@app.delete("/milestone/{milestone_id}")
+def delete_milestone(milestone_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    delete_milestone_by_id(db, milestone_id)
+    return {"status": "success", "message": "Milestone deleted successfully"}
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
     

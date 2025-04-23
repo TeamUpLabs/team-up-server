@@ -2,7 +2,7 @@ from schemas.milestone import MileStoneCreate
 from models.milestone import Milestone as MileStoneModel
 from sqlalchemy.orm import Session
 import json
-from crud.task import get_tasks_by_project_id, get_basic_member_info, get_task_by_project_id_and_milestone_id
+from crud.task import get_basic_member_info, get_task_by_project_id_and_milestone_id, delete_task_by_id
 
 def create_milestone(db: Session, milestone: MileStoneCreate):
   try:
@@ -67,4 +67,15 @@ def get_milestones_by_project_id(db: Session, project_id: str):
             milestone.assignee.append(member)
       
   return milestones
+
+def delete_milestone_by_id(db: Session, milestone_id: int):
+  milestone = db.query(MileStoneModel).filter(MileStoneModel.id == milestone_id).first()
+  tasks = get_task_by_project_id_and_milestone_id(db, milestone.project_id, milestone.id)
+  if milestone:
+    for task in tasks:
+      delete_task_by_id(db, task.id)
+    db.delete(milestone)
+    db.commit()
+    return True
+  return False
       
