@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Literal
 from schemas.member import Member
 from schemas.task import Task
 
@@ -9,8 +9,8 @@ class MileStoneBase(BaseModel):
   description: str
   startDate: str
   endDate: str
-  status: str
-  priority: str
+  status: Literal["not-started", "in-progress", "done"]
+  priority: Literal["low", "medium", "high"]
   tags: Optional[List[str]] = []
   
 class MileStoneCreate(MileStoneBase):
