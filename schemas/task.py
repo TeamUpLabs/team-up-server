@@ -35,3 +35,8 @@ class Task(TaskBase):
   assignee: List[Any] = []  # Using Any to avoid circular import
 
   model_config = ConfigDict(from_attributes=True)
+  
+class TaskStatusUpdate(BaseModel):
+  status: str
+  
+  model_config = ConfigDict(from_attributes=True)

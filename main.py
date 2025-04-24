@@ -10,7 +10,7 @@ from schemas.chat import ChatCreate
 from schemas.login import LoginForm
 # Import models and schemas in the correct order to avoid circular reference issues
 from schemas.member import MemberCreate, Member, MemberCheck, MemberUpdate
-from schemas.task import TaskCreate, Task
+from schemas.task import TaskCreate, Task, TaskStatusUpdate
 from schemas.project import Project, ProjectCreate, ProjectMemberAdd, ProjectInfoUpdate, ProjectMemberPermission
 from schemas.milestone import MileStone, MileStoneCreate
 # Then import the CRUD modules
@@ -309,6 +309,14 @@ def delete_task(task_id: int, db: SessionLocal = Depends(get_db)): # type: ignor
   try:
     delete_task_by_id(db, task_id)
     return {"status": "success", "message": "Task deleted successfully"}
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+  
+@app.put('/project/{project_id}/task/{task_id}/status')
+def update_task_status_endpoint(project_id: str, task_id: int, status: TaskStatusUpdate, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    update_task_status(db, project_id, task_id, status)
+    return {"status": "success", "message": "Task status updated successfully"}
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
 
