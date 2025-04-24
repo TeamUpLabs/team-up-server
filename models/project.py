@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, JSON
+from sqlalchemy.dialects.postgresql import JSONB
 from database import Base
 
 class Project(Base):
@@ -9,6 +10,7 @@ class Project(Base):
     status = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     leader_id = Column(Integer, nullable=False)
+    manager_id = Column(JSONB, nullable=True)
     roles = Column(JSON)
     techStack = Column(JSON)
     startDate = Column(String, nullable=False)

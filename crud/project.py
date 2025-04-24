@@ -38,6 +38,9 @@ def get_all_projects(db: Session, skip: int = 0, limit: int = 100):
     for project in projects:
         # Process members
         members = get_member_by_project_id(db, project.id)
+        for member in members:
+          if member.id in project.manager_id:
+            project.manager = member
         project.members = members
         
         # Process tasks
@@ -79,6 +82,9 @@ def get_project(db: Session, project_id: str):
     
     # Process members
     members = get_member_by_project_id(db, project_id)
+    for member in members:
+      if member.id in project.manager_id:
+        project.manager = member
     project.members = members
     
     # Process tasks
@@ -121,6 +127,9 @@ def get_all_projects_excluding_my(db: Session, member_id: int):
   for other_project in other_projects:
     # Process members
     members = get_member_by_project_id(db, other_project.id)
+    for member in members:
+      if member.id in other_project.manager_id:
+        other_project.manager = member
     other_project.members = members
     
     # Process tasks
