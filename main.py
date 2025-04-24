@@ -9,7 +9,7 @@ import schemas.login
 from schemas.chat import ChatCreate
 from schemas.login import LoginForm
 # Import models and schemas in the correct order to avoid circular reference issues
-from schemas.member import MemberCreate, Member, MemberCheck
+from schemas.member import MemberCreate, Member, MemberCheck, MemberUpdate
 from schemas.task import TaskCreate, Task
 from schemas.project import Project, ProjectCreate, ProjectMemberAdd, ProjectInfoUpdate, ProjectMemberPermission
 from schemas.milestone import MileStone, MileStoneCreate
@@ -127,6 +127,14 @@ def read_member_projects(member_id: int, db: SessionLocal = Depends(get_db)): # 
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+      
+@app.put("/member/{member_id}")
+def update_member(member_id: int, member_update: MemberUpdate, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    updated_member = update_member_by_id(db, member_id, member_update)
+    return updated_member
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
       
       
 @app.post('/login', response_model=schemas.login.Token)

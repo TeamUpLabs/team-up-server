@@ -2,7 +2,7 @@ import logging
 import json
 from sqlalchemy.orm import Session
 from models.member import Member as MemberModel
-from schemas.member import MemberCreate, Member
+from schemas.member import MemberCreate, Member, MemberUpdate
 from auth import get_password_hash
 
 def create_member(db: Session, member: MemberCreate):
@@ -145,3 +145,18 @@ def get_member_by_id(db: Session, member_id: int):
     if member:
         return Member.model_validate(member.__dict__)
     return None
+  
+  
+def update_member_by_id(db: Session, member_id: int, member_update: MemberUpdate):
+  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+  if not member:
+    return None
+  
+  member_data = member_update.dict(exclude_unset=True, exclude_none=True)
+  for field, value in member_data.items():
+    setattr(member, field, value)
+  
+  db.commit()
+  db.refresh(member)
+  return member
+  
