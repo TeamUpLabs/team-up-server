@@ -10,7 +10,7 @@ from models.member import Member as MemberModel
 from schemas.member import Member as MemberSchema
 from schemas.task import Task as TaskSchema
 from schemas.milestone import MileStone as MileStoneSchema
-from schemas.project import ProjectInfoUpdate
+from schemas.project import ProjectInfoUpdate, ProjectMemberPermission
 
 def create_project(db: Session, project: ProjectCreate):
     try:
@@ -326,6 +326,39 @@ def update_project_by_id(db: Session, project_id: str, project_update: ProjectIn
   project_data = project_update.dict(exclude_unset=True, exclude_none=True)
   for field, value in project_data.items():
     setattr(project, field, value) 
+  
+  db.commit()
+  db.refresh(project)
+  return project
+
+def update_project_member_permission(db: Session, project_id: str, member_id: int, permission: ProjectMemberPermission):
+  project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+  if not project:
+    return None
+  
+  if permission.permission == "manager":
+    # Initialize manager_id if it's None
+    if project.manager_id is None:
+      project.manager_id = []
+    
+    # Only add if not already in the list
+    if member_id not in project.manager_id:
+      project.manager_id.append(member_id)
+      # Explicitly mark as modified for SQLAlchemy to detect change
+      db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+        {"manager_id": project.manager_id},
+        synchronize_session="fetch"
+      )
+  elif permission.permission == "member":
+    if project.manager_id is not None:
+      project.manager_id = [m_id for m_id in project.manager_id if m_id != member_id]
+      # Explicitly mark as modified
+      db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+        {"manager_id": project.manager_id},
+        synchronize_session="fetch"
+      )
+  else:
+    return None
   
   db.commit()
   db.refresh(project)

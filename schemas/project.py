@@ -50,6 +50,13 @@ class ProjectInfoUpdate(BaseModel):
     teamSize: Optional[int] = None
     location: Optional[str] = None
     projectType: Optional[str] = None
-    manager_id: Optional[List[int]] = []
     class Config:
         from_attributes = True
+        
+class ProjectMemberPermission(BaseModel):
+    permission: str
+    
+    class Config:
+        from_attributes = True
+        
+        

@@ -11,7 +11,7 @@ from schemas.login import LoginForm
 # Import models and schemas in the correct order to avoid circular reference issues
 from schemas.member import MemberCreate, Member, MemberCheck
 from schemas.task import TaskCreate, Task
-from schemas.project import Project, ProjectCreate, ProjectMemberAdd, ProjectInfoUpdate
+from schemas.project import Project, ProjectCreate, ProjectMemberAdd, ProjectInfoUpdate, ProjectMemberPermission
 from schemas.milestone import MileStone, MileStoneCreate
 # Then import the CRUD modules
 from crud.chat import *
@@ -248,6 +248,14 @@ def delete_project(project_id: str, db: SessionLocal = Depends(get_db)): # type:
 def update_project(project_id: str, project: ProjectInfoUpdate, db: SessionLocal = Depends(get_db)): # type: ignore
   try:
     updated_project = update_project_by_id(db, project_id, project)
+    return updated_project
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+  
+@app.put("/project/{project_id}/member/{member_id}/permission")
+def update_project_member_permission_endpoint(project_id: str, member_id: int, permission: ProjectMemberPermission, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    updated_project = update_project_member_permission(db, project_id, member_id, permission)
     return updated_project
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
