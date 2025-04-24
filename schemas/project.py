@@ -36,3 +36,18 @@ class ProjectMemberAdd(BaseModel):
     
     class Config:
         from_attributes = True
+        
+class ProjectInfoUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    roles: Optional[List[str]] = []
+    techStack: Optional[List[str]] = []
+    startDate: Optional[str] = None
+    endDate: Optional[str] = None
+    teamSize: Optional[int] = None
+    location: Optional[str] = None
+    projectType: Optional[str] = None
+
+    class Config:
+        from_attributes = True

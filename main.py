@@ -11,7 +11,7 @@ from schemas.login import LoginForm
 # Import models and schemas in the correct order to avoid circular reference issues
 from schemas.member import MemberCreate, Member, MemberCheck
 from schemas.task import TaskCreate, Task
-from schemas.project import Project, ProjectCreate, ProjectMemberAdd
+from schemas.project import Project, ProjectCreate, ProjectMemberAdd, ProjectInfoUpdate
 from schemas.milestone import MileStone, MileStoneCreate
 # Then import the CRUD modules
 from crud.chat import *
@@ -241,6 +241,14 @@ def delete_project(project_id: str, db: SessionLocal = Depends(get_db)): # type:
   try:
     delete_project_by_id(db, project_id)
     return {"status": "success", "message": "Project deleted successfully"}
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+  
+@app.put("/project/{project_id}")
+def update_project(project_id: str, project: ProjectInfoUpdate, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    updated_project = update_project_by_id(db, project_id, project)
+    return updated_project
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
   

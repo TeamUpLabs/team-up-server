@@ -10,6 +10,7 @@ from models.member import Member as MemberModel
 from schemas.member import Member as MemberSchema
 from schemas.task import Task as TaskSchema
 from schemas.milestone import MileStone as MileStoneSchema
+from schemas.project import ProjectInfoUpdate
 
 def create_project(db: Session, project: ProjectCreate):
     try:
@@ -300,3 +301,17 @@ def delete_project_by_id(db: Session, project_id: str):
     db.commit()
     return True
   return False
+
+
+def update_project_by_id(db: Session, project_id: str, project_update: ProjectInfoUpdate):
+  project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+  if not project:
+    return None
+  
+  project_data = project_update.dict(exclude_unset=True, exclude_none=True)
+  for field, value in project_data.items():
+    setattr(project, field, value) 
+  
+  db.commit()
+  db.refresh(project)
+  return project
