@@ -121,6 +121,13 @@ def get_project(db: Session, project_id: str):
     leader = get_member_by_id(db, project.leader_id)
     project.leader = leader
     
+    participationRequestMembers = []
+    for member_id in project.participationRequest:
+      member = get_member_by_id(db, member_id)
+      if member:
+        participationRequestMembers.append(member)
+    project.participationRequestMembers = participationRequestMembers
+    
     return project
   
   
@@ -167,6 +174,13 @@ def get_all_projects_excluding_my(db: Session, member_id: int):
     
     leader = get_member_by_id(db, other_project.leader_id)
     other_project.leader = leader
+    
+    participationRequestMembers = []
+    for member_id in other_project.participationRequest:
+      member = get_member_by_id(db, member_id)
+      if member:
+        participationRequestMembers.append(member)
+    other_project.participationRequestMembers = participationRequestMembers
     
   return other_projects
   
@@ -373,7 +387,8 @@ def send_project_participation_request(db: Session, project_id: str, member_id: 
   if project.participationRequest is None:
     project.participationRequest = []
   
-  project.participationRequest.append(member_id)
+  if member_id not in project.participationRequest:
+    project.participationRequest.append(member_id)
   
   member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
   if not member:
@@ -381,7 +396,8 @@ def send_project_participation_request(db: Session, project_id: str, member_id: 
   if member.participationRequest is None:
     member.participationRequest = []
     
-  member.participationRequest.append(project_id)
+  if project_id not in member.participationRequest:
+    member.participationRequest.append(project_id)
   db.query(MemberModel).filter(MemberModel.id == member_id).update(
     {"participationRequest": member.participationRequest},
     synchronize_session="fetch"
@@ -402,17 +418,21 @@ def allow_project_participation_request(db: Session, project_id: str, member_id:
   if not project:
     return None
   
-  project.participationRequest = [m_id for m_id in project.participationRequest if m_id != member_id]
-  add_member_to_project(db, project_id, member_id)
-  db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
-    {"participationRequest": project.participationRequest},
-    synchronize_session="fetch"
-  )
+  if member_id in project.participationRequest:
+    project.participationRequest = [m_id for m_id in project.participationRequest if m_id != member_id]
+    
+    add_member_to_project(db, project_id, member_id)
+    db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+      {"participationRequest": project.participationRequest},
+      synchronize_session="fetch"
+    )
   
   member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
   if not member:
     return None
-  member.participationRequest = [m_id for m_id in member.participationRequest if m_id != project_id]
+  
+  if project_id in member.participationRequest:
+    member.participationRequest = [m_id for m_id in member.participationRequest if m_id != project_id]
   db.query(MemberModel).filter(MemberModel.id == member_id).update(
     {"participationRequest": member.participationRequest},
     synchronize_session="fetch"
@@ -428,16 +448,19 @@ def reject_project_participation_request(db: Session, project_id: str, member_id
   if not project:
     return None
   
-  project.participationRequest = [m_id for m_id in project.participationRequest if m_id != member_id]
-  db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
-    {"participationRequest": project.participationRequest},
-    synchronize_session="fetch"
-  )
+  if member_id in project.participationRequest:
+    project.participationRequest = [m_id for m_id in project.participationRequest if m_id != member_id]
+    db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+      {"participationRequest": project.participationRequest},
+      synchronize_session="fetch"
+    )
   
   member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
   if not member:
     return None
-  member.participationRequest = [m_id for m_id in member.participationRequest if m_id != project_id]
+  
+  if project_id in member.participationRequest:
+    member.participationRequest = [m_id for m_id in member.participationRequest if m_id != project_id]
   db.query(MemberModel).filter(MemberModel.id == member_id).update(
     {"participationRequest": member.participationRequest},
     synchronize_session="fetch"

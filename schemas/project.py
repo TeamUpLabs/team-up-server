@@ -30,7 +30,7 @@ class Project(ProjectBase):
     milestones: Optional[List[MileStone]] = []
     leader: Optional[Member] = None
     manager: Optional[List[Member]] = []
-    participationRequest: Optional[List[int]] = []
+    participationRequestMembers: Optional[List[Member]] = []
     class Config:
         from_attributes = True
         
