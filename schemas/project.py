@@ -51,6 +51,7 @@ class ProjectInfoUpdate(BaseModel):
     teamSize: Optional[int] = None
     location: Optional[str] = None
     projectType: Optional[str] = None
+    status: Optional[str] = None
     class Config:
         from_attributes = True
         
