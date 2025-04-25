@@ -18,3 +18,4 @@ class Project(Base):
     teamSize = Column(Integer, nullable=False)
     location = Column(String, nullable=False)
     projectType = Column(String, nullable=False)
+    participationRequest = Column(JSONB, nullable=True)

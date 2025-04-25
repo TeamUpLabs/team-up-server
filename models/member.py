@@ -22,5 +22,6 @@ class Member(Base):
     workingHours = Column(JSON, nullable=False)
     languages = Column(JSON)
     socialLinks = Column(JSON)
+    participationRequest = Column(JSONB, nullable=True)
 
 

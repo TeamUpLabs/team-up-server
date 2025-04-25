@@ -304,6 +304,28 @@ def get_all_tasks_by_project_id(project_id: str, db: SessionLocal = Depends(get_
   tasks = get_tasks_by_project_id(db, project_id)
   return tasks
 
+@app.put('/project/{project_id}/participationRequest/{member_id}/send')
+def send_project_participation_request_endpoint(project_id: str, member_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    return send_project_participation_request(db, project_id, member_id)
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+
+@app.put('/project/{project_id}/participationRequest/{member_id}/allow')
+def allow_project_participation_request_endpoint(project_id: str, member_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    return allow_project_participation_request(db, project_id, member_id)
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+
+@app.put('/project/{project_id}/participationRequest/{member_id}/reject')
+def reject_project_participation_request_endpoint(project_id: str, member_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    return reject_project_participation_request(db, project_id, member_id)
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.delete('/task/{task_id}')
 def delete_task(task_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
   try:

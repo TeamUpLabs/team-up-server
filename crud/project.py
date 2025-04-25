@@ -363,3 +363,87 @@ def update_project_member_permission(db: Session, project_id: str, member_id: in
   db.commit()
   db.refresh(project)
   return project
+
+
+def send_project_participation_request(db: Session, project_id: str, member_id: int):
+  project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+  if not project:
+    return None
+  
+  if project.participationRequest is None:
+    project.participationRequest = []
+  
+  project.participationRequest.append(member_id)
+  
+  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+  if not member:
+    return None
+  if member.participationRequest is None:
+    member.participationRequest = []
+    
+  member.participationRequest.append(project_id)
+  db.query(MemberModel).filter(MemberModel.id == member_id).update(
+    {"participationRequest": member.participationRequest},
+    synchronize_session="fetch"
+  )
+  
+  db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+    {"participationRequest": project.participationRequest},
+    synchronize_session="fetch"
+  )
+  
+  db.commit()
+  db.refresh(project)
+  db.refresh(member)
+  return project, member
+  
+def allow_project_participation_request(db: Session, project_id: str, member_id: int):
+  project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+  if not project:
+    return None
+  
+  project.participationRequest = [m_id for m_id in project.participationRequest if m_id != member_id]
+  add_member_to_project(db, project_id, member_id)
+  db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+    {"participationRequest": project.participationRequest},
+    synchronize_session="fetch"
+  )
+  
+  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+  if not member:
+    return None
+  member.participationRequest = [m_id for m_id in member.participationRequest if m_id != project_id]
+  db.query(MemberModel).filter(MemberModel.id == member_id).update(
+    {"participationRequest": member.participationRequest},
+    synchronize_session="fetch"
+  )
+  
+  db.commit()
+  db.refresh(project)
+  db.refresh(member)
+  return project, member
+
+def reject_project_participation_request(db: Session, project_id: str, member_id: int):
+  project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+  if not project:
+    return None
+  
+  project.participationRequest = [m_id for m_id in project.participationRequest if m_id != member_id]
+  db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+    {"participationRequest": project.participationRequest},
+    synchronize_session="fetch"
+  )
+  
+  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+  if not member:
+    return None
+  member.participationRequest = [m_id for m_id in member.participationRequest if m_id != project_id]
+  db.query(MemberModel).filter(MemberModel.id == member_id).update(
+    {"participationRequest": member.participationRequest},
+    synchronize_session="fetch"
+  )
+  
+  db.commit()
+  db.refresh(project)
+  db.refresh(member)
+  return project, member
