@@ -149,36 +149,6 @@ def get_all_projects_excluding_my(db: Session, member_id: int):
     other_project.manager = managers
     other_project.members = members
     
-    # Process tasks
-    tasks = get_tasks_by_project_id(db, other_project.id)
-    processed_tasks = []
-    
-    for task in tasks:
-        assignee = []
-        if task.assignee_id:
-            for assignee_id in task.assignee_id:
-                member_info = get_member_by_id(db, assignee_id)
-                if member_info:
-                    assignee.append(member_info)
-        task.assignee = assignee
-        # Convert to Pydantic schema
-        processed_tasks.append(TaskSchema.model_validate(task.__dict__))
-    
-    other_project.tasks = processed_tasks
-    
-    # Process milestones
-    milestones = get_milestones_by_project_id(db, other_project.id)
-    processed_milestones = []
-    
-    for milestone in milestones:
-        # Convert to Pydantic schema
-        processed_milestones.append(MileStoneSchema.model_validate(milestone.__dict__))
-    
-    other_project.milestones = processed_milestones
-    
-    leader = get_member_by_id(db, other_project.leader_id)
-    other_project.leader = leader
-    
     participationRequestMembers = []
     for req_member_id in other_project.participationRequest if other_project.participationRequest else []:
       req_member = get_member_by_id(db, req_member_id)
