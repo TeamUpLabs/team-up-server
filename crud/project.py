@@ -474,3 +474,69 @@ def reject_project_participation_request(db: Session, project_id: str, member_id
   db.refresh(project)
   db.refresh(member)
   return project, member
+
+def kick_out_member_from_project(db: Session, project_id: str, member_id: int):
+  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+  if not member:
+    return None
+  
+  # Remove project from member's projects list
+  member.projects = [p_id for p_id in member.projects if p_id != project_id]
+  db.query(MemberModel).filter(MemberModel.id == member_id).update(
+    {"projects": member.projects},
+    synchronize_session="fetch" 
+  )
+  
+  project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+  if not project:
+    return None
+  
+  # Remove member from manager_id list
+  if project.manager_id:
+    project.manager_id = [m_id for m_id in project.manager_id if m_id != member_id]
+    db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+      {"manager_id": project.manager_id},
+      synchronize_session="fetch"
+    )
+  
+  # Remove member from participation requests if present
+  if project.participationRequest and member_id in project.participationRequest:
+    project.participationRequest = [m_id for m_id in project.participationRequest if m_id != member_id]
+    db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+      {"participationRequest": project.participationRequest},
+      synchronize_session="fetch"
+    )
+  
+  # Remove member from leader position if they are the leader
+  if project.leader_id == member_id:
+    project.leader_id = None
+    db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+      {"leader_id": None},
+      synchronize_session="fetch"
+    )
+  
+  # Get all tasks for this project and remove member from assignee lists
+  tasks = get_tasks_by_project_id(db, project_id)
+  for task in tasks:
+    if task.assignee_id and member_id in task.assignee_id:
+      task.assignee_id = [a_id for a_id in task.assignee_id if a_id != member_id]
+      db.query(task.__class__).filter(task.__class__.id == task.id).update(
+        {"assignee_id": task.assignee_id},
+        synchronize_session="fetch"
+      )
+  
+  # Get all milestones for this project and remove member from assignee lists
+  milestones = get_milestones_by_project_id(db, project_id)
+  for milestone in milestones:
+    if milestone.assignee_id and member_id in milestone.assignee_id:
+      milestone.assignee_id = [a_id for a_id in milestone.assignee_id if a_id != member_id]
+      db.query(milestone.__class__).filter(milestone.__class__.id == milestone.id).update(
+        {"assignee_id": milestone.assignee_id},
+        synchronize_session="fetch"
+      )
+  
+  db.commit()
+  db.refresh(member)
+  db.refresh(project)
+  return member, project
+  

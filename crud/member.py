@@ -116,12 +116,12 @@ def get_member_by_project_id(db: Session, project_id: str):
     members = db.query(MemberModel).filter(
       MemberModel.projects.contains([project_id])
     ).all()
-    from crud.task import get_tasks_by_member_id
+    from crud.task import get_tasks_by_member_id_and_project_id
     from crud.project import get_project_basic_info
     result = []
     
     for member in members:
-        tasks = get_tasks_by_member_id(db, member.id)
+        tasks = get_tasks_by_member_id_and_project_id(db, member.id, project_id)
         member.currentTask = tasks
         
         # Add project details

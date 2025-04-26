@@ -268,6 +268,13 @@ def update_project_member_permission_endpoint(project_id: str, member_id: int, p
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
   
+@app.put("/project/{project_id}/member/{member_id}/kick")
+def kick_out_member_from_project_endpoint(project_id: str, member_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    return kick_out_member_from_project(db, project_id, member_id)
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+  
 @app.post("/task", response_model=Task)
 def handle_create_task(task: TaskCreate, db: SessionLocal = Depends(get_db)): # type: ignore
     try:

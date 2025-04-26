@@ -148,6 +148,31 @@ def get_tasks_by_member_id(db: Session, member_id: int):
     
   return result
 
+def get_tasks_by_member_id_and_project_id(db: Session, member_id: int, project_id: str):
+  from sqlalchemy import cast
+  from sqlalchemy.dialects.postgresql import JSONB
+
+  tasks = db.query(TaskModel).filter(
+      cast(TaskModel.assignee_id, JSONB).contains([member_id]),
+      TaskModel.project_id == project_id
+  ).all()
+  
+  result = []
+  
+  for task in tasks:
+    assignee = []
+    if task.assignee_id:
+      for assignee_id in task.assignee_id:
+        member = get_basic_member_info(db, assignee_id)
+        if member:
+          assignee.append(member)
+    task.assignee = assignee
+    
+    # Convert SQLAlchemy model to Pydantic model
+    result.append(Task.model_validate(task))
+    
+  return result
+
 def delete_task_by_id(db: Session, task_id: int):
   task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
   if task:
