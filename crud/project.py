@@ -133,15 +133,19 @@ def get_project(db: Session, project_id: str):
   
 def get_all_projects_excluding_my(db: Session, member_id: int):
   member = get_member_by_id(db, member_id)
-  other_projects = db.query(ProjectModel).filter(ProjectModel.id.not_in(member.projects)).all()
+  
+  # Handle the case where member.projects is None
+  projects_to_exclude = member.projects if member.projects is not None else []
+  
+  other_projects = db.query(ProjectModel).filter(ProjectModel.id.not_in(projects_to_exclude)).all()
   
   for other_project in other_projects:
     # Process members
     members = get_member_by_project_id(db, other_project.id)
     managers = []
-    for member in members:
-      if member.id in other_project.manager_id:
-        managers.append(member)
+    for project_member in members:
+      if project_member.id in other_project.manager_id:
+        managers.append(project_member)
     other_project.manager = managers
     other_project.members = members
     
@@ -153,9 +157,9 @@ def get_all_projects_excluding_my(db: Session, member_id: int):
         assignee = []
         if task.assignee_id:
             for assignee_id in task.assignee_id:
-                member = get_member_by_id(db, assignee_id)
-                if member:
-                    assignee.append(member)
+                member_info = get_member_by_id(db, assignee_id)
+                if member_info:
+                    assignee.append(member_info)
         task.assignee = assignee
         # Convert to Pydantic schema
         processed_tasks.append(TaskSchema.model_validate(task.__dict__))
@@ -176,10 +180,10 @@ def get_all_projects_excluding_my(db: Session, member_id: int):
     other_project.leader = leader
     
     participationRequestMembers = []
-    for member_id in other_project.participationRequest:
-      member = get_member_by_id(db, member_id)
-      if member:
-        participationRequestMembers.append(member)
+    for req_member_id in other_project.participationRequest if other_project.participationRequest else []:
+      req_member = get_member_by_id(db, req_member_id)
+      if req_member:
+        participationRequestMembers.append(req_member)
     other_project.participationRequestMembers = participationRequestMembers
     
   return other_projects
