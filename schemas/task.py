@@ -40,3 +40,16 @@ class TaskStatusUpdate(BaseModel):
   status: str
   
   model_config = ConfigDict(from_attributes=True)
+  
+class TaskUpdate(BaseModel):
+  title: Optional[str] = None
+  description: Optional[str] = None
+  status: Optional[str] = None
+  priority: Optional[str] = None
+  dueDate: Optional[str] = None
+  assignee_id: Optional[List[int]] = None
+  tags: Optional[List[str]] = None
+  subtasks: Optional[List[SubTask]] = None
+  comments: Optional[List[Comment]] = None
+  
+  model_config = ConfigDict(from_attributes=True)

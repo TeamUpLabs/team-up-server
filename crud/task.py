@@ -1,4 +1,4 @@
-from schemas.task import TaskCreate, Task, TaskStatusUpdate
+from schemas.task import TaskCreate, Task, TaskStatusUpdate, TaskUpdate
 from models.task import Task as TaskModel
 from sqlalchemy.orm import Session
 import json
@@ -187,5 +187,18 @@ def update_task_status(db: Session, project_id: str, task_id: int, status: TaskS
     task.status = status.status
     db.commit()
     db.refresh(task)
+    return Task.model_validate(task)
+  return None
+
+def update_task_by_id(db: Session, project_id: str, task_id: int, task_update: TaskUpdate):
+  task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
+  
+  if task:
+    task_data = task_update.dict(exclude_unset=True, exclude_none=True)
+    for field, value in task_data.items():
+      setattr(task, field, value)
+    db.commit()
+    db.refresh(task)
+    
     return Task.model_validate(task)
   return None
