@@ -2,6 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Any
 
 class SubTask(BaseModel):
+  id: int
   title: str
   completed: bool
   
@@ -52,5 +53,10 @@ class TaskUpdate(BaseModel):
   tags: Optional[List[str]] = None
   subtasks: Optional[List[SubTask]] = None
   comments: Optional[List[Comment]] = None
+  
+  model_config = ConfigDict(from_attributes=True)
+
+class UpdateSubTaskState(BaseModel):
+  completed: bool
   
   model_config = ConfigDict(from_attributes=True)

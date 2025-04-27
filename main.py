@@ -365,6 +365,14 @@ def upload_task_comment_endpoint(project_id: str, task_id: int, comment: Comment
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
 
+@app.put('/project/{project_id}/task/{task_id}/subtask/{subtask_id}/state')
+def update_subtask_state_endpoint(project_id: str, task_id: int, subtask_id: int, subtask_update: UpdateSubTaskState, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    updated_task = update_subtask_state_by_id(db, project_id, task_id, subtask_id, subtask_update)
+    return updated_task
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+
 @app.post('/milestone', response_model=MileStone)
 def handle_create_milestone(milestone: MileStoneCreate, db: SessionLocal = Depends(get_db)): # type: ignore
   try:

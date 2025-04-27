@@ -1,4 +1,4 @@
-from schemas.task import TaskCreate, Task, TaskStatusUpdate, TaskUpdate, Comment
+from schemas.task import TaskCreate, Task, TaskStatusUpdate, TaskUpdate, Comment, UpdateSubTaskState
 from models.task import Task as TaskModel
 from sqlalchemy.orm import Session
 import json
@@ -202,6 +202,21 @@ def update_task_by_id(db: Session, project_id: str, task_id: int, task_update: T
     db.refresh(task)
     
     return Task.model_validate(task)
+  return None
+
+def update_subtask_state_by_id(db: Session, project_id: str, task_id: int, subtask_id: int, subtask_update: UpdateSubTaskState):
+  task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
+  if task:
+    subtask = next((subtask for subtask in task.subtasks if subtask['id'] == subtask_id), None)
+    if subtask:
+      subtask['completed'] = subtask_update.completed
+      db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).update(
+        {"subtasks": task.subtasks},
+        synchronize_session="fetch"
+      )
+      db.commit()
+      db.refresh(task)
+      return Task.model_validate(task)
   return None
 
 def upload_task_comment(db: Session, project_id: str, task_id: int, comment: Comment):
