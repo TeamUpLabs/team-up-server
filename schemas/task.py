@@ -33,6 +33,7 @@ class Task(TaskBase):
   id: int
   assignee_id: List[int] = []
   assignee: List[Any] = []  # Using Any to avoid circular import
+  comments: List[Comment] | None
 
   model_config = ConfigDict(from_attributes=True)
   

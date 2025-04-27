@@ -1,7 +1,8 @@
-from schemas.task import TaskCreate, Task, TaskStatusUpdate, TaskUpdate
+from schemas.task import TaskCreate, Task, TaskStatusUpdate, TaskUpdate, Comment
 from models.task import Task as TaskModel
 from sqlalchemy.orm import Session
 import json
+from typing import List
 from models.member import Member as MemberModel
 from schemas.member import Member as MemberSchema
 
@@ -202,3 +203,46 @@ def update_task_by_id(db: Session, project_id: str, task_id: int, task_update: T
     
     return Task.model_validate(task)
   return None
+
+def upload_task_comment(db: Session, project_id: str, task_id: int, comment: Comment):
+  try:
+    # Get task
+    task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
+    if not task:
+      print("Task not found")
+      return None
+    
+    current_comments = []
+    if task.comments:
+      if isinstance(task.comments, list):
+        current_comments = task.comments.copy()
+      elif isinstance(task.comments, str):
+        current_comments = json.loads(task.comments)
+    
+    comment_dict = {
+      "author_id": comment.author_id,
+      "content": comment.content,
+      "createdAt": comment.createdAt
+    }
+    
+    current_comments.append(comment_dict)
+
+    from sqlalchemy import update
+    stmt = update(TaskModel).where(
+      TaskModel.id == task_id,
+      TaskModel.project_id == project_id
+    ).values(
+      comments=current_comments
+    )
+    
+    db.execute(stmt)
+    db.commit()
+    
+    # Return updated task
+    return Task.model_validate(task)
+  except Exception as e:
+    db.rollback()
+    print(f"Error in upload_task_comment: {str(e)}")
+    import traceback
+    print(traceback.format_exc())
+    raise

@@ -10,7 +10,7 @@ from schemas.chat import ChatCreate
 from schemas.login import LoginForm
 # Import models and schemas in the correct order to avoid circular reference issues
 from schemas.member import MemberCreate, Member, MemberCheck, MemberUpdate
-from schemas.task import TaskCreate, Task, TaskStatusUpdate, TaskUpdate
+from schemas.task import TaskCreate, Task, TaskStatusUpdate, TaskUpdate, Comment
 from schemas.project import Project, ProjectCreate, ProjectMemberAdd, ProjectInfoUpdate, ProjectMemberPermission
 from schemas.milestone import MileStone, MileStoneCreate
 # Then import the CRUD modules
@@ -356,7 +356,14 @@ def update_task_endpoint(project_id: str, task_id: int, task: TaskUpdate, db: Se
     return updated_task
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
-
+  
+@app.post('/project/{project_id}/task/{task_id}/comment')
+def upload_task_comment_endpoint(project_id: str, task_id: int, comment: Comment, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    updated_task = upload_task_comment(db, project_id, task_id, comment)
+    return updated_task
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
 
 @app.post('/milestone', response_model=MileStone)
 def handle_create_milestone(milestone: MileStoneCreate, db: SessionLocal = Depends(get_db)): # type: ignore
