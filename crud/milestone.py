@@ -1,4 +1,4 @@
-from schemas.milestone import MileStoneCreate
+from schemas.milestone import MileStoneCreate, MileStoneUpdate, MileStone
 from models.milestone import Milestone as MileStoneModel
 from sqlalchemy.orm import Session
 import json
@@ -78,4 +78,14 @@ def delete_milestone_by_id(db: Session, milestone_id: int):
     db.commit()
     return True
   return False
-      
+
+def update_milestone_by_id(db: Session, project_id: str, milestone_id: int, milestone_update: MileStoneUpdate):
+  db_milestone = db.query(MileStoneModel).filter(MileStoneModel.id == milestone_id, MileStoneModel.project_id == project_id).first()
+  if db_milestone:
+    milestone_data = milestone_update.dict(exclude_unset=True, exclude_none=True)
+    for field, value in milestone_data.items():
+      setattr(db_milestone, field, value)
+    db.commit()
+    db.refresh(db_milestone)
+    return MileStone.model_validate(db_milestone)
+  return None

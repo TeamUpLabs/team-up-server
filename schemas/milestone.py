@@ -26,3 +26,15 @@ class MileStone(MileStoneBase):
   
   class Config:
     from_attributes = True
+    
+class MileStoneUpdate(BaseModel):
+  title: Optional[str] = None
+  description: Optional[str] = None
+  startDate: Optional[str] = None
+  endDate: Optional[str] = None
+  assignee_id: Optional[List[int]] = None
+  status: Optional[Literal["not-started", "in-progress", "done"]] = None
+  priority: Optional[Literal["low", "medium", "high"]] = None
+  tags: Optional[List[str]] = None
+  class Config:
+    from_attributes = True

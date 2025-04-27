@@ -398,7 +398,7 @@ def get_all_milestones(skip: int = 0, limit: int = 100, db: SessionLocal = Depen
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
   
-@app.get('/milestone/{project_id}', response_model=List[MileStone])
+@app.get('/project/{project_id}/milestone', response_model=List[MileStone])
 def get_all_milestones_by_project_id(project_id: str, db: SessionLocal = Depends(get_db)): # type: ignore
   try:
     milestones = get_milestones_by_project_id(db, project_id)
@@ -411,6 +411,14 @@ def delete_milestone(milestone_id: int, db: SessionLocal = Depends(get_db)): # t
   try:
     delete_milestone_by_id(db, milestone_id)
     return {"status": "success", "message": "Milestone deleted successfully"}
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+  
+@app.put("/project/{project_id}/milestone/{milestone_id}")
+def update_milestone_endpoint(project_id: str, milestone_id: int, milestone: MileStoneUpdate, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    updated_milestone = update_milestone_by_id(db, project_id, milestone_id, milestone)
+    return updated_milestone
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
     
