@@ -9,13 +9,13 @@ class MileStoneBase(BaseModel):
   description: str
   startDate: str
   endDate: str
+  assignee_id: List[int] = []
   status: Literal["not-started", "in-progress", "done"]
   priority: Literal["low", "medium", "high"]
   tags: Optional[List[str]] = []
   
 class MileStoneCreate(MileStoneBase):
-  assignee_id: List[int] = []
-  
+  pass
   class Config:
     from_attributes = True
     
