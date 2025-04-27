@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Any
 
 class SubTask(BaseModel):
-  id: int
+  id: Optional[int] = None
   title: str
   completed: bool
   
