@@ -43,7 +43,6 @@ def get_db():
 @app.websocket("/ws/chat/{channelId}")
 async def chat_endpoint(websocket: WebSocket, channelId: str):
     try:
-        await websocket.accept()
         logging.info(f"WebSocket connection established for channel: {channelId}")
         await websocket_handler(websocket, channelId)
     except WebSocketDisconnect:
