@@ -3,22 +3,26 @@ from fastapi.middleware.cors import CORSMiddleware
 import logging
 from database import SessionLocal, engine, Base
 from websocket.chat import websocket_handler
-from typing import List
+from typing import List, Dict, Any
 from auth import create_access_token, verify_password, get_current_user
 import schemas.login
 from schemas.chat import ChatCreate
 from schemas.login import LoginForm
 # Import models and schemas in the correct order to avoid circular reference issues
 from schemas.member import MemberCreate, Member, MemberCheck, MemberUpdate
-from schemas.task import TaskCreate, Task, TaskStatusUpdate, TaskUpdate, Comment
+from schemas.task import TaskCreate, Task, TaskStatusUpdate, TaskUpdate, Comment, UpdateSubTaskState
 from schemas.project import Project, ProjectCreate, ProjectMemberAdd, ProjectInfoUpdate, ProjectMemberPermission
-from schemas.milestone import MileStone, MileStoneCreate
+from schemas.milestone import MileStone, MileStoneCreate, MileStoneUpdate
+import json
 # Then import the CRUD modules
 from crud.chat import *
 from crud.project import *
 from crud.member import *
 from crud.task import *
 from crud.milestone import *
+
+# Add this for WebRTC signaling
+active_connections: Dict[str, Dict[str, Dict[str, WebSocket]]] = {}
 
 
 Base.metadata.create_all(bind=engine)
@@ -432,4 +436,72 @@ def add_member_to_project_route(project_id: str, member_data: ProjectMemberAdd, 
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+# WebRTC signaling endpoints
+@app.websocket("/project/{project_id}/ws/call/{channelId}/{userId}")
+async def video_call_signaling(websocket: WebSocket, project_id: str, channelId: str, userId: str):
+    await websocket.accept()
+    
+    # Store connection with project_id separation
+    if project_id not in active_connections:
+        active_connections[project_id] = {}
+    if channelId not in active_connections[project_id]:
+        active_connections[project_id][channelId] = {}
+    active_connections[project_id][channelId][userId] = websocket
+    
+    try:
+        # Notify others about new user joining
+        join_message = {
+            "type": "user-joined",
+            "userId": userId
+        }
+        
+        for user_id, conn in active_connections[project_id][channelId].items():
+            if user_id != userId:
+                await conn.send_text(json.dumps(join_message))
+        
+        # Listen for messages
+        while True:
+            message = await websocket.receive_text()
+            data = json.loads(message)
+            
+            # Handle different signal types
+            if data["type"] == "offer" or data["type"] == "answer" or data["type"] == "ice-candidate":
+                # Forward to the specific recipient
+                target_id = data.get("target")
+                if target_id and target_id in active_connections[project_id][channelId]:
+                    await active_connections[project_id][channelId][target_id].send_text(message)
+            
+            elif data["type"] == "disconnect":
+                # Notify others about user disconnecting
+                break
+    
+    except WebSocketDisconnect:
+        logging.info(f"WebSocket disconnected for project: {project_id}, channel: {channelId}, user: {userId}")
+    except Exception as e:
+        logging.error(f"WebSocket error in video call: {str(e)}")
+    finally:
+        # Remove connection on disconnect
+        if project_id in active_connections and channelId in active_connections[project_id] and userId in active_connections[project_id][channelId]:
+            del active_connections[project_id][channelId][userId]
+            
+            # Notify others about user leaving
+            leave_message = {
+                "type": "user-left",
+                "userId": userId
+            }
+            
+            if project_id in active_connections and channelId in active_connections[project_id]:
+                for user_id, conn in active_connections[project_id][channelId].items():
+                    try:
+                        await conn.send_text(json.dumps(leave_message))
+                    except:
+                        pass
+                    
+                # Clean up empty channels
+                if not active_connections[project_id][channelId]:
+                    del active_connections[project_id][channelId]
+                    # Clean up empty projects
+                    if not active_connections[project_id]:
+                        del active_connections[project_id]
     
