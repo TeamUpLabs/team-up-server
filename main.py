@@ -44,15 +44,15 @@ def get_db():
         db.close()
 
 
-@app.websocket("/ws/chat/{channelId}")
-async def chat_endpoint(websocket: WebSocket, channelId: str):
+@app.websocket("/ws/chat/{projectId}/{channelId}")
+async def chat_endpoint(websocket: WebSocket, projectId: str, channelId: str):
     try:
-        logging.info(f"WebSocket connection established for channel: {channelId}")
-        await websocket_handler(websocket, channelId)
+        logging.info(f"WebSocket connection established for project: {projectId}, channel: {channelId}")
+        await websocket_handler(websocket, channelId, projectId)
     except WebSocketDisconnect:
-        logging.info(f"WebSocket disconnected for channel: {channelId}")
+        logging.info(f"WebSocket disconnected for project: {projectId}, channel: {channelId}")
     except Exception as e:
-        logging.error(f"WebSocket error in channel {channelId}: {str(e)}")
+        logging.error(f"WebSocket error in project {projectId}, channel {channelId}: {str(e)}")
         try:
             await websocket.close()
         except:
@@ -63,9 +63,9 @@ def post_message(chat: ChatCreate, db: SessionLocal = Depends(get_db)): # type: 
     return save_chat_message(db, chat)
 
 
-@app.get("/chat/{channelId}")
-def get_messages(channelId: str, db: SessionLocal = Depends(get_db)): # type: ignore
-    return get_chat_history(db, channelId)
+@app.get("/chat/{projectId}/{channelId}")
+def get_messages(projectId: str, channelId: str, db: SessionLocal = Depends(get_db)): # type: ignore
+    return get_chat_history(db, projectId, channelId)
   
 @app.post("/member", response_model=Member)
 def handle_create_member(member: MemberCreate, db: SessionLocal = Depends(get_db)): # type: ignore

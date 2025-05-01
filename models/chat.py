@@ -5,6 +5,7 @@ class ChatMessage(Base):
     __tablename__ = "chat"
 
     id = Column(Integer, primary_key=True, index=True)
+    projectId = Column(String, index=True)
     channelId = Column(String, index=True)
     userId = Column(Integer)
     user = Column(String)
