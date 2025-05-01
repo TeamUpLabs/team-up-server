@@ -50,6 +50,7 @@ class MemberCheck(BaseModel):
 class MemberUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
+    status: Optional[str] = None
     role: Optional[str] = None
     contactNumber: Optional[str] = None
     birthDate: Optional[str] = None
