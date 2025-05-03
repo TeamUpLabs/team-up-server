@@ -51,7 +51,7 @@ def get_all_projects(db: Session, skip: int = 0, limit: int = 100):
         
         for task in tasks:
             assignee = []
-            if task.assignee_id:
+            if task.assignee_id and isinstance(task.assignee_id, list):
                 for assignee_id in task.assignee_id:
                     member = get_member_by_id(db, assignee_id)
                     if member:
@@ -79,11 +79,9 @@ def get_all_projects(db: Session, skip: int = 0, limit: int = 100):
 
 def get_project(db: Session, project_id: str):
     project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
-    if not project:
-        return None
     
     # Process members
-    members = get_member_by_project_id(db, project_id)
+    members = get_member_by_project_id(db, project_id) or []
     managers = []
     for member in members:
       if member.id in project.manager_id:
@@ -97,7 +95,7 @@ def get_project(db: Session, project_id: str):
     
     for task in tasks:
       assignee = []
-      if task.assignee_id:
+      if task.assignee_id and isinstance(task.assignee_id, list):
         for assignee_id in task.assignee_id:
           member = get_member_by_id(db, assignee_id)
           if member:
@@ -119,10 +117,14 @@ def get_project(db: Session, project_id: str):
     project.milestones = processed_milestones
     
     leader = get_member_by_id(db, project.leader_id)
-    project.leader = leader
+    try:
+      project.leader = leader
+    except Exception as e:
+      logging.error(e)
+      project.leader = None
     
     participationRequestMembers = []
-    for member_id in project.participationRequest:
+    for member_id in project.participationRequest if project.participationRequest else []:
       member = get_member_by_id(db, member_id)
       if member:
         participationRequestMembers.append(member)

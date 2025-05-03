@@ -218,7 +218,7 @@ def read_all_projects_ids(db: SessionLocal = Depends(get_db)): # type: ignore
       
   
 @app.get("/project/{project_id}", response_model=Project)
-def read_project(project_id: str, db: SessionLocal = Depends(get_db)): # type: ignore
+def read_project_endpoint(project_id: str, db: SessionLocal = Depends(get_db)): # type: ignore
     try:
         project = get_project(db, project_id)
         if project is None:
@@ -232,7 +232,12 @@ def read_project(project_id: str, db: SessionLocal = Depends(get_db)): # type: i
 
 @app.get("/project/{project_id}/member", response_model=List[Member])
 def read_member_by_project_id(project_id: str, db: SessionLocal = Depends(get_db)): # type: ignore
-  return get_member_by_project_id(db, project_id)
+  try:
+    members = get_member_by_project_id(db, project_id)
+    return members
+  except Exception as e:
+    logging.error(e)
+    return []
       
 
 @app.get("/project/exclude/{member_id}", response_model=List[Project])

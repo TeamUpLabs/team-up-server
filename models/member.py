@@ -23,5 +23,6 @@ class Member(Base):
     languages = Column(JSON)
     socialLinks = Column(JSON)
     participationRequest = Column(JSONB, nullable=True)
+    notification = Column(JSON, nullable=True)
 
 

@@ -139,7 +139,8 @@ def get_member_by_project_id(db: Session, project_id: str):
     return result
   except Exception as e:
     logging.error(e)
-    
+    return []
+  
 def get_member_by_id(db: Session, member_id: int):
     member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
     if member:

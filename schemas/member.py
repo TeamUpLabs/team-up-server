@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Literal
 
 class WorkingHoursInfo(BaseModel):
     start: str
@@ -9,6 +9,13 @@ class WorkingHoursInfo(BaseModel):
 class SocialLinksInfo(BaseModel):
     name: str
     url: str
+    
+class NotificationInfo(BaseModel):
+    title: str
+    message: str
+    timestamp: str
+    isRead: bool
+    type: Literal["info", "message", "task", "milestone", "chat"]
 
 # Base class for shared attributes
 class MemberBase(BaseModel):
@@ -28,7 +35,6 @@ class MemberBase(BaseModel):
     workingHours: WorkingHoursInfo
     languages: Optional[List[str]] = []
     socialLinks: Optional[List[SocialLinksInfo]] = []
-
 # Schema for creating a new member
 class MemberCreate(MemberBase):
     model_config = ConfigDict(from_attributes=True)
@@ -38,6 +44,7 @@ class Member(MemberBase):
     id: int  # ID included in response but not in create request
     currentTask: Optional[List[Any]] = []  # Using Any to avoid circular import
     projectDetails: Optional[List[Any]] = []
+    notification: Optional[List[NotificationInfo]] = []
     
     model_config = ConfigDict(from_attributes=True)
     
@@ -59,6 +66,7 @@ class MemberUpdate(BaseModel):
     languages: Optional[List[str]] = []
     workingHours: Optional[WorkingHoursInfo] = None
     socialLinks: Optional[List[SocialLinksInfo]] = []
+    notification: Optional[List[NotificationInfo]] = []
     
     class Config:
         from_attributes = True
