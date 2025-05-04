@@ -20,6 +20,7 @@ from crud.project import *
 from crud.member import *
 from crud.task import *
 from crud.milestone import *
+from crud.notification import *
 
 # Add this for WebRTC signaling
 active_connections: Dict[str, Dict[str, Dict[str, WebSocket]]] = {}
@@ -172,7 +173,8 @@ def login(login: LoginForm, db: SessionLocal = Depends(get_db)): # type: ignore
         "introduction": member.introduction,
         "workingHours": member.workingHours,
         "languages": member.languages,
-        "socialLinks": member.socialLinks
+        "socialLinks": member.socialLinks,
+        "notification": member.notification
     }
     
     access_token = create_access_token(
@@ -191,8 +193,15 @@ def login(login: LoginForm, db: SessionLocal = Depends(get_db)): # type: ignore
     }
     
 @app.get("/me", response_model=Member)
-def get_me(current_user: dict = Depends(get_current_user)):
-    return current_user
+def get_me(current_user: dict = Depends(get_current_user), db: SessionLocal = Depends(get_db)): # type: ignore
+    # Fetch fresh user data from the database using the email from token
+    member = get_member_by_email(db, current_user['email'])
+    if not member:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+    return member
   
   
 @app.post("/project")
@@ -509,4 +518,11 @@ async def video_call_signaling(websocket: WebSocket, project_id: str, channelId:
                     # Clean up empty projects
                     if not active_connections[project_id]:
                         del active_connections[project_id]
-    
+
+@app.put("/member/{member_id}/notification/{notification_id}")
+def update_notification_endpoint(member_id: int, notification_id: int, notification_update: NotificationUpdate, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    updated_notification = update_notification(db, member_id, notification_id, notification_update)
+    return updated_notification
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))

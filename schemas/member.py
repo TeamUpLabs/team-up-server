@@ -11,6 +11,7 @@ class SocialLinksInfo(BaseModel):
     url: str
     
 class NotificationInfo(BaseModel):
+    id: int
     title: str
     message: str
     timestamp: str
@@ -70,3 +71,14 @@ class MemberUpdate(BaseModel):
     
     class Config:
         from_attributes = True
+        
+class NotificationUpdate(BaseModel):
+    title: Optional[str] = None
+    message: Optional[str] = None
+    timestamp: Optional[str] = None
+    isRead: Optional[bool] = None
+    type: Optional[Literal["info", "message", "task", "milestone", "chat"]] = None
+    
+    class Config:
+        from_attributes = True
+

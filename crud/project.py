@@ -1,16 +1,18 @@
 from schemas.project import ProjectCreate, Project
 from sqlalchemy.orm import Session
 import logging
+from datetime import datetime
 import json
 from models.project import Project as ProjectModel
 from crud.task import get_tasks_by_project_id, delete_task_by_id
 from crud.member import get_member_by_project_id, get_member_by_id
 from crud.milestone import get_milestones_by_project_id, delete_milestone_by_id
 from models.member import Member as MemberModel
-from schemas.member import Member as MemberSchema
+from schemas.member import Member as MemberSchema, NotificationInfo
 from schemas.task import Task as TaskSchema
 from schemas.milestone import MileStone as MileStoneSchema
 from schemas.project import ProjectInfoUpdate, ProjectMemberPermission
+
 
 def create_project(db: Session, project: ProjectCreate):
     try:
@@ -411,6 +413,28 @@ def allow_project_participation_request(db: Session, project_id: str, member_id:
     member.participationRequest = [m_id for m_id in member.participationRequest if m_id != project_id]
   db.query(MemberModel).filter(MemberModel.id == member_id).update(
     {"participationRequest": member.participationRequest},
+    synchronize_session="fetch"
+  )
+  
+  # Add notification to member
+  if not hasattr(member, 'notification') or member.notification is None:
+    member.notification = []
+    
+  notification = NotificationInfo(
+    id=int(datetime.now().timestamp()),
+    title="참여 승인",
+    message=f'"{project.title}" 프로젝트 참여가 승인되었습니다.',
+    type="info",
+    timestamp=datetime.now().isoformat().split('T')[0],
+    isRead=False
+  )
+  
+  # Convert the Pydantic model to a dictionary
+  member.notification.append(notification.model_dump())
+  
+  # Update the member's notification in the database
+  db.query(MemberModel).filter(MemberModel.id == member.id).update(
+    {"notification": member.notification},
     synchronize_session="fetch"
   )
   

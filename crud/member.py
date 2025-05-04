@@ -45,6 +45,10 @@ def get_member(db: Session, member_id: int):
       if project:
         project_list.append(project)
   member.projectDetails = project_list
+  
+  notification = member.notification
+  if not notification:
+    member.notification = []
   return Member.model_validate(member.__dict__)
 
 def get_member_by_email(db: Session, email: str):
