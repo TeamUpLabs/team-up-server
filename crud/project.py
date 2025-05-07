@@ -224,7 +224,7 @@ def scout_member(db: Session, project_id: str, member_id: int, member_data: Proj
     id=int(datetime.now().timestamp()),
     title="스카우트 요청",
     message=f'"{sender_member.name}" 님이 "{project.title}" 프로젝트에 참여 요청을 보냈습니다.',
-    type="project",
+    type="scout",
     timestamp=datetime.now().isoformat().split('T')[0],
     isRead=False
   )
