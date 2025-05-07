@@ -1,0 +1,91 @@
+from fastapi import APIRouter, Depends, HTTPException
+from database import SessionLocal
+from typing import List
+import logging
+from schemas.member import MemberCreate, Member, MemberCheck, MemberUpdate
+from schemas.project import Project
+from crud.member import create_member, get_member_by_email, get_members, get_member, get_member_projects, update_member_by_id
+
+router = APIRouter(
+    prefix="/member",
+    tags=["member"]
+)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@router.post("", response_model=Member)
+def handle_create_member(member: MemberCreate, db: SessionLocal = Depends(get_db)):
+    try:
+        logging.info(f"Creating new member with email: {member.email}")
+        existing_member = get_member_by_email(db, member.email)
+        if existing_member:
+            logging.warning(f"Email already exists: {member.email}")
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        db_member = create_member(db, member)
+        logging.info(f"Successfully created member with id: {db_member.id}")
+        return db_member
+    except HTTPException as he:
+        logging.error(f"HTTP Exception during member creation: {str(he)}")
+        raise
+    except Exception as e:
+        logging.error(f"Unexpected error during member creation: {str(e)}")
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error occurred while creating member"
+        )
+        
+@router.post("/check")
+def check_member(member_check: MemberCheck, db: SessionLocal = Depends(get_db)):
+    try:
+        member = get_member_by_email(db, member_check.email)
+        if member:
+            return {"status": "exists", "message": "Member already exists"}
+        else:
+            return {"status": "not_exists", "message": "Member does not exist"}
+    except Exception as e:
+        logging.error(f"Unexpected error during member check: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("", response_model=List[Member])
+def read_members(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(get_db)):
+    try:
+        members = get_members(db, skip=skip, limit=limit)
+        return members
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/{member_id}", response_model=Member)
+def read_member(member_id: int, db: SessionLocal = Depends(get_db)):
+    try:
+        member = get_member(db, member_id)
+        if member is None:
+            raise HTTPException(status_code=404, detail=f"Member {member_id} not found")
+        return member
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+      
+@router.get("/{member_id}/project", response_model=List[Project])
+def read_member_projects(member_id: int, db: SessionLocal = Depends(get_db)):
+    try:
+        return get_member_projects(db, member_id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+      
+@router.put("/{member_id}")
+def update_member(member_id: int, member_update: MemberUpdate, db: SessionLocal = Depends(get_db)):
+    try:
+        updated_member = update_member_by_id(db, member_id, member_update)
+        return updated_member
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) 
