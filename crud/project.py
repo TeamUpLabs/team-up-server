@@ -11,7 +11,7 @@ from models.member import Member as MemberModel
 from schemas.member import Member as MemberSchema, NotificationInfo
 from schemas.task import Task as TaskSchema
 from schemas.milestone import MileStone as MileStoneSchema
-from schemas.project import ProjectInfoUpdate, ProjectMemberPermission
+from schemas.project import ProjectInfoUpdate, ProjectMemberPermission, ProjectMemberScout
 
 
 def create_project(db: Session, project: ProjectCreate):
@@ -203,6 +203,45 @@ def add_member_to_project(db: Session, project_id: str, member_id: int):
     logging.error(f"Error in add_member_to_project: {str(e)}")
     db.rollback()
     raise
+
+def scout_member(db: Session, project_id: str, member_id: int, member_data: ProjectMemberScout):
+  project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+  if not project:
+    return None
+  
+  sender_member = db.query(MemberModel).filter(MemberModel.id == member_data.sender_id).first()
+  if not sender_member:
+    return None
+  
+  receiver_member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+  if not receiver_member and member_data.sender_id != member_id:
+    return None
+  
+  if project.participationRequest is not None and member_id in project.participationRequest:
+    return None
+  
+  notification = NotificationInfo(
+    id=int(datetime.now().timestamp()),
+    title="스카우트 요청",
+    message=f'"{sender_member.name}" 님이 "{project.title}" 프로젝트에 참여 요청을 보냈습니다.',
+    type="project",
+    timestamp=datetime.now().isoformat().split('T')[0],
+    isRead=False
+  )
+  
+  # Initialize notification list if it doesn't exist
+  if not hasattr(receiver_member, 'notification') or receiver_member.notification is None:
+    receiver_member.notification = []
+    
+  receiver_member.notification.append(notification.model_dump())
+  db.query(MemberModel).filter(MemberModel.id == member_id).update(
+    {"notification": receiver_member.notification},
+    synchronize_session="fetch"
+  )
+  
+  db.commit()
+  db.refresh(receiver_member)
+  return receiver_member
   
 def get_project_basic_info(db: Session, project_id: str):
     """

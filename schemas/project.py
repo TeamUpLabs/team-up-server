@@ -40,6 +40,13 @@ class ProjectMemberAdd(BaseModel):
     class Config:
         from_attributes = True
         
+class ProjectMemberScout(BaseModel):
+    sender_id: int
+    receiver_id: int
+    
+    class Config:
+        from_attributes = True
+        
 class ProjectInfoUpdate(BaseModel):
     title: Optional[str] = None
     description: Optional[str] = None

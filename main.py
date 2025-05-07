@@ -11,7 +11,7 @@ from schemas.login import LoginForm
 # Import models and schemas in the correct order to avoid circular reference issues
 from schemas.member import MemberCreate, Member, MemberCheck, MemberUpdate
 from schemas.task import TaskCreate, Task, TaskStatusUpdate, TaskUpdate, Comment, UpdateSubTaskState
-from schemas.project import Project, ProjectCreate, ProjectMemberAdd, ProjectInfoUpdate, ProjectMemberPermission
+from schemas.project import Project, ProjectCreate, ProjectMemberAdd, ProjectInfoUpdate, ProjectMemberPermission, ProjectMemberScout
 from schemas.milestone import MileStone, MileStoneCreate, MileStoneUpdate
 import json
 # Then import the CRUD modules
@@ -450,7 +450,14 @@ def add_member_to_project_route(project_id: str, member_data: ProjectMemberAdd, 
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+@app.post("/project/{project_id}/member/{member_id}/scout")
+def scout_member_endpoint(project_id: str, member_id: int, member_data: ProjectMemberScout, db: SessionLocal = Depends(get_db)): # type: ignore
+  try:
+    return scout_member(db, project_id, member_id, member_data)
+  except Exception as e:
+    raise HTTPException(status_code=500, detail=str(e))
+
 # WebRTC signaling endpoints
 @app.websocket("/project/{project_id}/ws/call/{channelId}/{userId}")
 async def video_call_signaling(websocket: WebSocket, project_id: str, channelId: str, userId: str):
