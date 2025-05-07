@@ -16,7 +16,7 @@ class NotificationInfo(BaseModel):
     message: str
     timestamp: str
     isRead: bool
-    type: Literal["info", "message", "task", "milestone", "chat", "scout"]
+    type: Literal["info", "message", "task", "milestone", "chat", "scout", "project"]
 
 # Base class for shared attributes
 class MemberBase(BaseModel):
@@ -77,7 +77,7 @@ class NotificationUpdate(BaseModel):
     message: Optional[str] = None
     timestamp: Optional[str] = None
     isRead: Optional[bool] = None
-    type: Optional[Literal["info", "message", "task", "milestone", "chat", "scout"]] = None
+    type: Optional[Literal["info", "message", "task", "milestone", "chat", "scout", "project"]] = None
     
     class Config:
         from_attributes = True
