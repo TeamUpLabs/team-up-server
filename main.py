@@ -292,10 +292,10 @@ def kick_out_member_from_project_endpoint(project_id: str, member_id: int, db: S
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
   
-@app.post("/task", response_model=Task)
-def handle_create_task(task: TaskCreate, db: SessionLocal = Depends(get_db)): # type: ignore
+@app.post("/project/{project_id}/task", response_model=Task)
+def handle_create_task(project_id: str, task: TaskCreate, db: SessionLocal = Depends(get_db)): # type: ignore
     try:
-        db_task = create_task(db, task)
+        db_task = create_task(db, project_id, task)
         logging.info(f"Successfully created task with id: {db_task}")
         return db_task
     except HTTPException as he:
@@ -350,10 +350,10 @@ def reject_project_participation_request_endpoint(project_id: str, member_id: in
     raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.delete('/task/{task_id}')
-def delete_task(task_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
+@app.delete('/project/{project_id}/task/{task_id}')
+def delete_task(project_id: str, task_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
   try:
-    delete_task_by_id(db, task_id)
+    delete_task_by_id(db, project_id, task_id)
     return {"status": "success", "message": "Task deleted successfully"}
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
@@ -390,10 +390,10 @@ def update_subtask_state_endpoint(project_id: str, task_id: int, subtask_id: int
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
 
-@app.post('/milestone', response_model=MileStone)
-def handle_create_milestone(milestone: MileStoneCreate, db: SessionLocal = Depends(get_db)): # type: ignore
+@app.post('/project/{project_id}/milestone', response_model=MileStone)
+def handle_create_milestone(project_id: str, milestone: MileStoneCreate, db: SessionLocal = Depends(get_db)): # type: ignore
   try:
-    db_milestone = create_milestone(db, milestone)
+    db_milestone = create_milestone(db, project_id, milestone)
     logging.info(f"Successfully created milestone with id: {db_milestone}")
     return db_milestone
   except HTTPException as he:
@@ -423,10 +423,10 @@ def get_all_milestones_by_project_id(project_id: str, db: SessionLocal = Depends
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
   
-@app.delete("/milestone/{milestone_id}")
-def delete_milestone(milestone_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
+@app.delete("/project/{project_id}/milestone/{milestone_id}")
+def delete_milestone(project_id: str, milestone_id: int, db: SessionLocal = Depends(get_db)): # type: ignore
   try:
-    delete_milestone_by_id(db, milestone_id)
+    delete_milestone_by_id(db, project_id, milestone_id)
     return {"status": "success", "message": "Milestone deleted successfully"}
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))

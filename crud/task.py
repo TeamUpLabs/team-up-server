@@ -31,10 +31,11 @@ def get_basic_member_info(db: Session, member_id: int):
     
     return MemberSchema.model_validate(basic_info)
 
-def create_task(db: Session, task: TaskCreate):
+def create_task(db: Session, project_id: str, task: TaskCreate):
     try:
         json_fields = ['assignee_id', 'tags', 'subtasks', 'comments']
         task_data = task.dict()
+        task_data['project_id'] = project_id
 
         for field in json_fields:
             if field in task_data and task_data[field] is not None:
@@ -174,8 +175,8 @@ def get_tasks_by_member_id_and_project_id(db: Session, member_id: int, project_i
     
   return result
 
-def delete_task_by_id(db: Session, task_id: int):
-  task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
+def delete_task_by_id(db: Session, project_id: str, task_id: int):
+  task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
   if task:
     db.delete(task)
     db.commit()

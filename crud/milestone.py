@@ -4,10 +4,11 @@ from sqlalchemy.orm import Session
 import json
 from crud.task import get_basic_member_info, get_task_by_project_id_and_milestone_id, delete_task_by_id
 
-def create_milestone(db: Session, milestone: MileStoneCreate):
+def create_milestone(db: Session, project_id: str, milestone: MileStoneCreate):
   try:
     json_fields = ['assignee_id', 'tags']
     milestone_data = milestone.dict()
+    milestone_data['project_id'] = project_id
     
     for field in json_fields:
       if field in milestone_data and milestone_data[field] is not None:
@@ -68,12 +69,12 @@ def get_milestones_by_project_id(db: Session, project_id: str):
       
   return milestones
 
-def delete_milestone_by_id(db: Session, milestone_id: int):
-  milestone = db.query(MileStoneModel).filter(MileStoneModel.id == milestone_id).first()
-  tasks = get_task_by_project_id_and_milestone_id(db, milestone.project_id, milestone.id)
+def delete_milestone_by_id(db: Session, project_id: str, milestone_id: int):
+  milestone = db.query(MileStoneModel).filter(MileStoneModel.id == milestone_id, MileStoneModel.project_id == project_id).first()
+  tasks = get_task_by_project_id_and_milestone_id(db, project_id, milestone.id)
   if milestone:
     for task in tasks:
-      delete_task_by_id(db, task.id)
+      delete_task_by_id(db, project_id, task.id)
     db.delete(milestone)
     db.commit()
     return True
