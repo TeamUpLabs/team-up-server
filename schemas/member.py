@@ -77,7 +77,7 @@ class NotificationUpdate(BaseModel):
     message: Optional[str] = None
     timestamp: Optional[str] = None
     isRead: Optional[bool] = None
-    type: Optional[Literal["info", "message", "task", "milestone", "chat"]] = None
+    type: Optional[Literal["info", "message", "task", "milestone", "chat", "scout"]] = None
     
     class Config:
         from_attributes = True
