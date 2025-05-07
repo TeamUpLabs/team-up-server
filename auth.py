@@ -1,10 +1,7 @@
 from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
-<<<<<<< HEAD
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
-=======
->>>>>>> 6330fea (Add member management features with authentication and database integration)
 import os
 from dotenv import load_dotenv
 import bcrypt
@@ -30,7 +27,6 @@ def get_password_hash(password: str) -> str:
     # Return the hash as a string
     return hashed.decode('utf-8')
 
-<<<<<<< HEAD
 def serialize_data(data):
     """Recursively convert non-serializable objects to dictionaries."""
     if isinstance(data, list):
@@ -41,19 +37,14 @@ def serialize_data(data):
         return data.dict()  # Convert Pydantic models to dict
     return data  # Return the data as is if it's already serializable
 
-=======
->>>>>>> 6330fea (Add member management features with authentication and database integration)
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
-<<<<<<< HEAD
     
     # Serialize the data to ensure all objects are JSON serializable
     to_encode = serialize_data(to_encode)
     
-=======
->>>>>>> 6330fea (Add member management features with authentication and database integration)
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def verify_token(token: str):
@@ -61,7 +52,6 @@ def verify_token(token: str):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError:
-<<<<<<< HEAD
         return None
       
 
@@ -80,6 +70,3 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
         return user_info
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
-=======
-        return None
->>>>>>> 6330fea (Add member management features with authentication and database integration)

@@ -2,11 +2,7 @@ import logging
 import json
 from sqlalchemy.orm import Session
 from models.member import Member as MemberModel
-<<<<<<< HEAD
 from schemas.member import MemberCreate, Member, MemberUpdate
-=======
-from schemas.member import MemberCreate
->>>>>>> 6330fea (Add member management features with authentication and database integration)
 from auth import get_password_hash
 
 def create_member(db: Session, member: MemberCreate):
@@ -26,18 +22,13 @@ def create_member(db: Session, member: MemberCreate):
         db.add(db_member)
         db.commit()
         db.refresh(db_member)
-<<<<<<< HEAD
         return Member.model_validate(db_member)
-=======
-        return db_member
->>>>>>> 6330fea (Add member management features with authentication and database integration)
     except Exception as e:
         logging.error(f"Error in create_member: {str(e)}")
         db.rollback()
         raise
 
 def get_member(db: Session, member_id: int):
-<<<<<<< HEAD
   member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
   if not member:
     return None
@@ -173,13 +164,3 @@ def update_member_by_id(db: Session, member_id: int, member_update: MemberUpdate
   db.commit()
   db.refresh(member)
   return member
-  
-=======
-    return db.query(MemberModel).filter(MemberModel.id == member_id).first()
-
-def get_member_by_email(db: Session, email: str):
-    return db.query(MemberModel).filter(MemberModel.email == email).first()
-
-def get_members(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(MemberModel).offset(skip).limit(limit).all()
->>>>>>> 6330fea (Add member management features with authentication and database integration)
