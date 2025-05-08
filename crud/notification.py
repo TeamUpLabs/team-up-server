@@ -136,3 +136,35 @@ def reject_scout_member(db: Session, member_id: int, notification_id: int):
   db.commit()
   db.refresh(sender_member)
   return {"message": "스카우트 요청 거절 완료"}
+
+def delete_notification(db: Session, member_id: int, notification_id: int):
+  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+  if not member:
+    return None
+  
+  member.notification = [notification for notification in member.notification if notification['id'] != notification_id]
+  
+  db.query(MemberModel).filter(MemberModel.id == member_id).update(
+    {"notification": member.notification},
+    synchronize_session="fetch"
+  )
+  
+  db.commit()
+  db.refresh(member)
+  return {"message": "알림 삭제 완료"}
+
+def delete_all_notifications(db: Session, member_id: int):
+  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+  if not member:
+    return None
+  
+  member.notification = []
+  
+  db.query(MemberModel).filter(MemberModel.id == member_id).update(
+    {"notification": member.notification},
+    synchronize_session="fetch"
+  )
+  
+  db.commit()
+  db.refresh(member)
+  return {"message": "모든 알림 삭제 완료"}
