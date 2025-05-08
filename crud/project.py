@@ -226,7 +226,10 @@ def scout_member(db: Session, project_id: str, member_id: int, member_data: Proj
     message=f'"{sender_member.name}" 님이 "{project.title}" 프로젝트에 참여 요청을 보냈습니다.',
     type="scout",
     timestamp=datetime.now().isoformat().split('T')[0],
-    isRead=False
+    isRead=False,
+    sender_id=sender_member.id,
+    receiver_id=receiver_member.id,
+    project_id=project_id
   )
   
   # Initialize notification list if it doesn't exist
@@ -465,7 +468,10 @@ def allow_project_participation_request(db: Session, project_id: str, member_id:
     message=f'"{project.title}" 프로젝트 참여가 승인되었습니다.',
     type="info",
     timestamp=datetime.now().isoformat().split('T')[0],
-    isRead=False
+    isRead=False,
+    sender_id=project.leader_id,
+    receiver_id=member_id,
+    project_id=project_id
   )
   
   # Convert the Pydantic model to a dictionary
@@ -573,5 +579,5 @@ def kick_out_member_from_project(db: Session, project_id: str, member_id: int):
   db.commit()
   db.refresh(member)
   db.refresh(project)
-  return member, project
+  return member, project  
   
