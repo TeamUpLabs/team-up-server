@@ -22,6 +22,8 @@ class NotificationInfo(BaseModel):
     timestamp: str
     isRead: bool
     type: Literal["info", "message", "task", "milestone", "chat", "scout", "project"]
+    sender_id: int
+    receiver_id: int
 
 # Base class for shared attributes
 class MemberBase(BaseModel):
