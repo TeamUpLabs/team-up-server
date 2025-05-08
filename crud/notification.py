@@ -47,7 +47,7 @@ def accept_scout_member(db: Session, member_id: int, notification_id: int):
   if not sender_member:
     return None
   
-  receiver_member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+  receiver_member = db.query(MemberModel).filter(MemberModel.id == target_notification["receiver_id"]).first()
   if not receiver_member:
     return None
   
@@ -57,12 +57,13 @@ def accept_scout_member(db: Session, member_id: int, notification_id: int):
     id=int(datetime.now().timestamp()),
     title="스카우트 요청 수락",
     message=f'"{receiver_member.name}" 님이 "{target_project.title}" 프로젝트에 참여 요청을 수락했습니다.',
-    type="scout",
+    type="info",
     timestamp=datetime.now().isoformat().split('T')[0],
     isRead=False,
     sender_id=receiver_member.id,
     receiver_id=sender_member.id,
-    project_id=target_notification['project_id']
+    project_id=target_notification['project_id'],
+    result="accept"
   )
   
   if not hasattr(sender_member, 'notification') or sender_member.notification is None:
@@ -75,9 +76,11 @@ def accept_scout_member(db: Session, member_id: int, notification_id: int):
     synchronize_session="fetch"
   )
   
+  update_notification(db, receiver_member.id, notification_id, NotificationUpdate(result="accept"))
+  
   db.commit()
   db.refresh(sender_member)
-  return sender_member
+  return {"message": "스카우트 요청 수락 완료"}
   
 def reject_scout_member(db: Session, member_id: int, notification_id: int):
   member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
@@ -109,12 +112,13 @@ def reject_scout_member(db: Session, member_id: int, notification_id: int):
     id=int(datetime.now().timestamp()),
     title="스카우트 요청 거절",
     message=f'"{receiver_member.name}" 님이 "{target_project.title}" 프로젝트에 참여 요청을 거절했습니다.',
-    type="scout",
+    type="info",
     timestamp=datetime.now().isoformat().split('T')[0],
     isRead=False,
     sender_id=receiver_member.id,
     receiver_id=sender_member.id,
-    project_id=target_notification['project_id']
+    project_id=target_notification['project_id'],
+    result="reject"
   )
   
   if not hasattr(sender_member, 'notification') or sender_member.notification is None:
@@ -127,6 +131,8 @@ def reject_scout_member(db: Session, member_id: int, notification_id: int):
     synchronize_session="fetch"
   )
   
+  update_notification(db, sender_member.id, notification_id, NotificationUpdate(result="reject"))
+  
   db.commit()
   db.refresh(sender_member)
-  return sender_member
+  return {"message": "스카우트 요청 거절 완료"}

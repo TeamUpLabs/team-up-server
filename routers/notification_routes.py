@@ -31,7 +31,7 @@ def accept_scout_member_endpoint(member_id: int, notification_id: int, db: Sessi
         raise HTTPException(status_code=500, detail=str(e))
     
     
-@router.put("/member/{member_id}/notification/{notification_id}/scout/reject")
+@router.post("/member/{member_id}/notification/{notification_id}/scout/reject")
 def reject_scout_member_endpoint(member_id: int, notification_id: int, db: SessionLocal = Depends(get_db)):
     try:
         return reject_scout_member(db, member_id, notification_id)

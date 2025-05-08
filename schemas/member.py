@@ -25,6 +25,7 @@ class NotificationInfo(BaseModel):
     sender_id: int
     receiver_id: int
     project_id: Optional[str] = None
+    result: Optional[Literal["accept", "reject"]] = None
 
 # Base class for shared attributes
 class MemberBase(BaseModel):
@@ -86,6 +87,7 @@ class NotificationUpdate(BaseModel):
     timestamp: Optional[str] = None
     isRead: Optional[bool] = None
     type: Optional[Literal["info", "message", "task", "milestone", "chat", "scout", "project"]] = None
+    result: Optional[Literal["accept", "reject"]] = None
     
     class Config:
         from_attributes = True
