@@ -4,6 +4,7 @@
 
 ## 목차
 - [설치](#설치)
+- [환경 변수 설정](#환경-변수-설정)
 - [개발 환경](#개발-환경)
 - [프로덕션 환경](#프로덕션-환경)
 - [API 문서](#api-문서)
@@ -20,6 +21,25 @@
 ```bash
 pip install -r requirements.txt
 ```
+
+## 환경 변수 설정
+
+프로젝트 루트에 `.env` 파일을 생성하고 다음과 같이 설정합니다:
+
+```
+SECRET_KEY=your_secure_random_string_here
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+
+### SECRET_KEY 생성 방법
+
+보안을 위해 안전한 랜덤 문자열을 SECRET_KEY로 사용해야 합니다. Python을 사용하여 안전한 키를 생성할 수 있습니다:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+생성된 키를 복사하여 `.env` 파일의 SECRET_KEY 값으로 사용하세요.
 
 ## 개발 환경
 
