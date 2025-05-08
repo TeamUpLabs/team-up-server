@@ -24,6 +24,7 @@ class NotificationInfo(BaseModel):
     type: Literal["info", "message", "task", "milestone", "chat", "scout", "project"]
     sender_id: int
     receiver_id: int
+    project_id: Optional[str] = None
 
 # Base class for shared attributes
 class MemberBase(BaseModel):

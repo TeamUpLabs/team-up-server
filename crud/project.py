@@ -228,7 +228,8 @@ def scout_member(db: Session, project_id: str, member_id: int, member_data: Proj
     timestamp=datetime.now().isoformat().split('T')[0],
     isRead=False,
     sender_id=sender_member.id,
-    receiver_id=receiver_member.id
+    receiver_id=receiver_member.id,
+    project_id=project_id
   )
   
   # Initialize notification list if it doesn't exist
@@ -469,7 +470,8 @@ def allow_project_participation_request(db: Session, project_id: str, member_id:
     timestamp=datetime.now().isoformat().split('T')[0],
     isRead=False,
     sender_id=project.leader_id,
-    receiver_id=member_id
+    receiver_id=member_id,
+    project_id=project_id
   )
   
   # Convert the Pydantic model to a dictionary
