@@ -2,10 +2,6 @@ from pydantic import BaseModel, ConfigDict
 from typing import Optional, List, Any, Literal
 from datetime import datetime
 
-class LanguageInfo(BaseModel):
-    name: str
-    level: str
-
 class WorkingHoursInfo(BaseModel):
     start: str
     end: str
@@ -43,10 +39,25 @@ class MemberBase(BaseModel):
     birthDate: Optional[str] = None
     introduction: Optional[str] = None
     workingHours: WorkingHoursInfo
-    languages: Optional[List[Any]] = []  # Can be either string or LanguageInfo
+    languages: Optional[List[str]] = []
     socialLinks: Optional[List[SocialLinksInfo]] = []
 # Schema for creating a new member
-class MemberCreate(MemberBase):
+class MemberCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: str
+    status: str
+    contactNumber: str
+    birthDate: str
+    introduction: str
+    workingHours: WorkingHoursInfo
+    languages: List[str]
+    skills: List[str]
+    lastLogin: str
+    createdAt: str
+    profileImage: Optional[str] = None
+    
     model_config = ConfigDict(from_attributes=True)
 
 # Schema for returning member data

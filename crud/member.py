@@ -164,3 +164,12 @@ def update_member_by_id(db: Session, member_id: int, member_update: MemberUpdate
   db.commit()
   db.refresh(member)
   return member
+
+def update_member_profile_image_by_id(db: Session, member_id: int, public_url: str):
+  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+  if member:
+    member.profileImage = public_url
+    db.commit()
+    db.refresh(member)
+    return member
+  return None
