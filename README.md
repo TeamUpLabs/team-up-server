@@ -5,6 +5,7 @@
 ## 목차
 - [설치](#설치)
 - [환경 변수 설정](#환경-변수-설정)
+- [Supabase 설정](#supabase-설정)
 - [개발 환경](#개발-환경)
 - [프로덕션 환경](#프로덕션-환경)
 - [API 문서](#api-문서)
@@ -29,6 +30,11 @@ pip install -r requirements.txt
 ```
 SECRET_KEY=your_secure_random_string_here
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# Supabase 설정
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_KEY=your_supabase_service_role_key
 ```
 
 ### SECRET_KEY 생성 방법
@@ -40,6 +46,59 @@ python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
 생성된 키를 복사하여 `.env` 파일의 SECRET_KEY 값으로 사용하세요.
+
+## Supabase 설정
+
+### Supabase란?
+
+Supabase는 Firebase의 오픈 소스 대안으로, PostgreSQL 데이터베이스를 기반으로 하는 백엔드 서비스입니다. 인증, 실시간 구독, 스토리지 등 다양한 기능을 제공합니다.
+
+### Supabase 프로젝트 생성 방법
+
+1. [Supabase 웹사이트](https://supabase.com/)에서 계정을 생성합니다.
+2. 새 프로젝트를 생성합니다.
+3. 프로젝트가 준비되면 설정에서 프로젝트 URL과 API 키를 확인할 수 있습니다.
+
+### 필요한 환경 변수
+
+`.env` 파일에 다음 Supabase 관련 변수를 추가하세요:
+
+- `SUPABASE_URL`: Supabase 프로젝트 URL (예: `https://xxxxxxxxxxxx.supabase.co`)
+- `SUPABASE_KEY`: Anon 키 (공개 키)
+- `SUPABASE_SERVICE_KEY`: Service Role 키 (비공개 키, 서버 측 작업용)
+- `POSTGRES_URL`: Supabase의 PostgreSQL 데이터베이스 URL (예: `postgresql://<username>:<password>@<host>:<port>/<database>`)
+
+### 데이터베이스 마이그레이션
+
+기존 데이터를 Supabase로 마이그레이션하려면:
+
+```bash
+# SQL 덤프 파일 생성 (기존 DB에서)
+pg_dump -U username -d database_name > dump.sql
+
+# SQL 파일 편집 (필요한 경우)
+# Supabase SQL 편집기에서 실행하거나 아래 명령어로 복원
+psql -h database.supabase.co -U postgres -d postgres -f dump.sql
+```
+
+### Supabase 클라이언트 사용 예시
+
+```python
+from supabase import create_client, Client
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+supabase: Client = create_client(
+    os.environ.get("SUPABASE_URL"),
+    os.environ.get("SUPABASE_KEY")
+)
+
+# 데이터 조회 예시
+response = supabase.table('projects').select('*').execute()
+projects = response.data
+```
 
 ## 개발 환경
 
