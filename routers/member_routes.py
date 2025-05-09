@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
 from database import SessionLocal
 from typing import List, Optional
 import logging
-from schemas.member import MemberCreate, Member, MemberCheck, MemberUpdate, WorkingHoursInfo
+from schemas.member import MemberCreate, Member, MemberCheck, MemberUpdate
 from schemas.project import Project
 from crud.member import create_member, get_member_by_email, get_members, get_member, get_member_projects, update_member_by_id, update_member_profile_image_by_id
 import os
 from supabase_client import supabase
+import random
 
 router = APIRouter(
     prefix="/member",
@@ -42,7 +43,7 @@ async def handle_create_member(
       
       
     if profileImage:
-      profile_image_path = f"{profileImage.filename}"
+      profile_image_path = f"{random.randint(1000000000000, 9999999999999)}"
       contents = await profileImage.read()
       try:
         res = supabase.storage.from_("profile-images").upload(file=contents, path=profile_image_path, file_options={"content-type": profileImage.content_type})
@@ -51,7 +52,7 @@ async def handle_create_member(
             raise HTTPException(status_code=400, detail=f"Failed to upload profile image: {res.error}")
           
         # Create public URL
-        public_url = f"{os.getenv('SUPABASE_URL')}/storage/v1/object/public/profile-images/{profileImage.filename}"
+        public_url = f"{os.getenv('SUPABASE_URL')}/storage/v1/object/public/profile-images/{profile_image_path}"
         member_data.profileImage = public_url
       except Exception as e:
         logging.error(f"Supabase storage upload error: {str(e)}")
@@ -127,7 +128,7 @@ async def update_member_profile_image(member_id: int, profileImage: UploadFile =
     try:
       public_url = None
       if profileImage:
-        profile_image_path = f"{profileImage.filename}"
+        profile_image_path = f"{random.randint(1000000000000, 9999999999999)}"
         contents = await profileImage.read()
         try:
           res = supabase.storage.from_("profile-images").upload(file=contents, path=profile_image_path, file_options={"content-type": profileImage.content_type})
@@ -136,7 +137,7 @@ async def update_member_profile_image(member_id: int, profileImage: UploadFile =
               raise HTTPException(status_code=400, detail=f"Failed to upload profile image: {res.error}")
             
           # Create public URL
-          public_url = f"{os.getenv('SUPABASE_URL')}/storage/v1/object/public/profile-images/{profileImage.filename}"
+          public_url = f"{os.getenv('SUPABASE_URL')}/storage/v1/object/public/profile-images/{profile_image_path}"
         except Exception as e:
           logging.error(f"Supabase storage upload error: {str(e)}")
           
