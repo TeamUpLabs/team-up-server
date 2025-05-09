@@ -1,7 +1,11 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+import os
+from dotenv import load_dotenv
 
-DATABASE_URL = "postgresql://postgres@localhost:5432/teamup"
+load_dotenv()
+
+DATABASE_URL = os.getenv("POSTGRES_URL")
 
 engine = create_engine(DATABASE_URL)
 try:
