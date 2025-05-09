@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Form, File, UploadFile
 from database import SessionLocal
-from typing import List
+from typing import List, Optional
 import logging
-from schemas.member import MemberCreate, Member, MemberCheck, MemberUpdate
+from schemas.member import MemberCreate, Member, MemberCheck, MemberUpdate, WorkingHoursInfo
 from schemas.project import Project
-from crud.member import create_member, get_member_by_email, get_members, get_member, get_member_projects, update_member_by_id
+from crud.member import create_member, get_member_by_email, get_members, get_member, get_member_projects, update_member_by_id, update_member_profile_image_by_id
+import os
+from supabase_client import supabase
 
 router = APIRouter(
     prefix="/member",
@@ -19,28 +21,58 @@ def get_db():
         db.close()
 
 @router.post("", response_model=Member)
-def handle_create_member(member: MemberCreate, db: SessionLocal = Depends(get_db)):
-    try:
-        logging.info(f"Creating new member with email: {member.email}")
-        existing_member = get_member_by_email(db, member.email)
-        if existing_member:
-            logging.warning(f"Email already exists: {member.email}")
-            raise HTTPException(status_code=400, detail="Email already registered")
+async def handle_create_member(
+    profileImage: Optional[UploadFile] = File(None),
+    payload: Optional[str] = Form(None),
+    db: SessionLocal = Depends(get_db)
+):
+  try:
+    if payload:
+      import json
+      member_data = MemberCreate(**json.loads(payload))
+      
+    if not member_data:
+      raise HTTPException(status_code=400, detail="Missing required member data")
+      
+    logging.info(f"Creating new member with email: {member_data.email}")
+    existing_member = get_member_by_email(db, member_data.email)
+    if existing_member:
+        logging.warning(f"Email already exists: {member_data.email}")
+        raise HTTPException(status_code=400, detail="Email already registered")
+      
+      
+    if profileImage:
+      profile_image_path = f"{profileImage.filename}"
+      contents = await profileImage.read()
+      try:
+        res = supabase.storage.from_("profile-images").upload(file=contents, path=profile_image_path, file_options={"content-type": profileImage.content_type})
+        if hasattr(res, 'error') and res.error:
+            logging.error(f"Supabase storage error: {res.error}")
+            raise HTTPException(status_code=400, detail=f"Failed to upload profile image: {res.error}")
+          
+        # Create public URL
+        public_url = f"{os.getenv('SUPABASE_URL')}/storage/v1/object/public/profile-images/{profileImage.filename}"
+        member_data.profileImage = public_url
+      except Exception as e:
+        logging.error(f"Supabase storage upload error: {str(e)}")
+        # Continue without profile image if upload fails
+        member_data.profileImage = None
         
-        db_member = create_member(db, member)
-        logging.info(f"Successfully created member with id: {db_member.id}")
-        return db_member
-    except HTTPException as he:
-        logging.error(f"HTTP Exception during member creation: {str(he)}")
-        raise
-    except Exception as e:
-        logging.error(f"Unexpected error during member creation: {str(e)}")
-        db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error occurred while creating member"
-        )
-        
+    db_member = create_member(db, member_data)
+    logging.info(f"Successfully created member with id: {db_member.id}")
+    return db_member
+      
+  except HTTPException as he:
+    logging.error(f"HTTP Exception during member creation: {str(he)}")
+    raise
+  except Exception as e:
+      logging.error(f"Unexpected error during member creation: {str(e)}")
+      db.rollback()
+      raise HTTPException(
+          status_code=500,
+          detail="Internal server error occurred while creating member"
+      )
+
 @router.post("/check")
 def check_member(member_check: MemberCheck, db: SessionLocal = Depends(get_db)):
     try:
@@ -89,3 +121,26 @@ def update_member(member_id: int, member_update: MemberUpdate, db: SessionLocal 
         return updated_member
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 
+      
+@router.put("/{member_id}/profile-image")
+async def update_member_profile_image(member_id: int, profileImage: UploadFile = File(None), db: SessionLocal = Depends(get_db)):
+    try:
+      public_url = None
+      if profileImage:
+        profile_image_path = f"{profileImage.filename}"
+        contents = await profileImage.read()
+        try:
+          res = supabase.storage.from_("profile-images").upload(file=contents, path=profile_image_path, file_options={"content-type": profileImage.content_type})
+          if hasattr(res, 'error') and res.error:
+              logging.error(f"Supabase storage error: {res.error}")
+              raise HTTPException(status_code=400, detail=f"Failed to upload profile image: {res.error}")
+            
+          # Create public URL
+          public_url = f"{os.getenv('SUPABASE_URL')}/storage/v1/object/public/profile-images/{profileImage.filename}"
+        except Exception as e:
+          logging.error(f"Supabase storage upload error: {str(e)}")
+          
+      updated_member = update_member_profile_image_by_id(db, member_id, public_url)
+      return updated_member
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
