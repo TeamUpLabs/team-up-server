@@ -168,3 +168,10 @@ def delete_all_notifications(db: Session, member_id: int):
   db.commit()
   db.refresh(member)
   return {"message": "모든 알림 삭제 완료"}
+
+def get_notifications(db: Session, member_id: int):
+  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+  if not member:
+    return None
+  
+  return member.notification
