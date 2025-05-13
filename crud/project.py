@@ -1,4 +1,4 @@
-from schemas.project import ProjectCreate, Project
+from schemas.project import ProjectCreate
 from sqlalchemy.orm import Session
 import logging
 from datetime import datetime
@@ -8,10 +8,12 @@ from crud.task import get_tasks_by_project_id, delete_task_by_id
 from crud.member import get_member_by_project_id, get_member_by_id
 from crud.milestone import get_milestones_by_project_id, delete_milestone_by_id
 from models.member import Member as MemberModel
-from schemas.member import Member as MemberSchema, NotificationInfo
+from schemas.member import NotificationInfo
 from schemas.task import Task as TaskSchema
 from schemas.milestone import MileStone as MileStoneSchema
 from schemas.project import ProjectInfoUpdate, ProjectMemberPermission, ProjectMemberScout
+from models.task import Task as TaskModel
+from models.milestone import Milestone as MilestoneModel
 
 
 def create_project(db: Session, project: ProjectCreate):
@@ -400,68 +402,48 @@ def update_project_member_permission(db: Session, project_id: str, member_id: in
 
 
 def send_project_participation_request(db: Session, project_id: str, member_id: int):
-  project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
-  if not project:
-    return None
-  
-  if project.participationRequest is None:
-    project.participationRequest = []
-  
-  if member_id not in project.participationRequest:
-    project.participationRequest.append(member_id)
-  
-  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-  if not member:
-    return None
-  if member.participationRequest is None:
-    member.participationRequest = []
+  try:
+    project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    if not project:
+      return None
     
-  if project_id not in member.participationRequest:
-    member.participationRequest.append(project_id)
-  db.query(MemberModel).filter(MemberModel.id == member_id).update(
-    {"participationRequest": member.participationRequest},
-    synchronize_session="fetch"
-  )
-  
-  db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
-    {"participationRequest": project.participationRequest},
-    synchronize_session="fetch"
-  )
-  
-  # Add notification to project leader
-  leader = get_member_by_id(db, project.leader_id)
-  if leader:
-    if not hasattr(leader, 'notification') or leader.notification is None:
-      leader.notification = []
+    if project.participationRequest is None:
+      project.participationRequest = []
+    
+    if member_id not in project.participationRequest:
+      project.participationRequest.append(member_id)
+    
+    member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+    if not member:
+      return None
       
-    notification = NotificationInfo(
-      id=int(datetime.now().timestamp()),
-      title="참여 요청",
-      message=f'"{member.name}" 님이 "{project.title}" 프로젝트에 참여 요청을 보냈습니다.',
-      type="project",
-      timestamp=datetime.now().isoformat().split('T')[0],
-      isRead=False,
-      sender_id=member_id,
-      receiver_id=project.leader_id,
-      project_id=project_id
-    )
-    
-    leader.notification.append(notification.model_dump())
-    db.query(MemberModel).filter(MemberModel.id == project.leader_id).update(
-      {"notification": leader.notification},
+    if member.participationRequest is None:
+      member.participationRequest = []
+      
+    if project_id not in member.participationRequest:
+      member.participationRequest.append(project_id)
+      
+    db.query(MemberModel).filter(MemberModel.id == member_id).update(
+      {"participationRequest": member.participationRequest},
       synchronize_session="fetch"
     )
-  
-  # Add notification to managers
-  if project.manager_id:
-    for manager_id in project.manager_id:
-      manager = get_member_by_id(db, manager_id)
-      if not manager:
-        continue
+    
+    db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+      {"participationRequest": project.participationRequest},
+      synchronize_session="fetch"
+    )
+    
+    # Add notification to project leader
+    leader = get_member_by_id(db, project.leader_id)
+    if leader:
+      if not hasattr(leader, 'notification') or leader.notification is None:
+        leader.notification = []
       
-      if not hasattr(manager, 'notification') or manager.notification is None:
-        manager.notification = []
-        
+      # Ensure all existing notifications are dictionaries
+      for i, note in enumerate(leader.notification):
+        if hasattr(note, 'model_dump'):  # Check if it's a Pydantic model
+          leader.notification[i] = note.model_dump()
+          
       notification = NotificationInfo(
         id=int(datetime.now().timestamp()),
         title="참여 요청",
@@ -470,20 +452,63 @@ def send_project_participation_request(db: Session, project_id: str, member_id: 
         timestamp=datetime.now().isoformat().split('T')[0],
         isRead=False,
         sender_id=member_id,
-        receiver_id=manager_id,
+        receiver_id=project.leader_id,
         project_id=project_id
       )
       
-      manager.notification.append(notification.model_dump())
-      db.query(MemberModel).filter(MemberModel.id == manager_id).update(
-        {"notification": manager.notification},
+      # Convert the Pydantic model to a dictionary explicitly
+      notification_dict = notification.model_dump()
+      leader.notification.append(notification_dict)
+      
+      db.query(MemberModel).filter(MemberModel.id == project.leader_id).update(
+        {"notification": leader.notification},
         synchronize_session="fetch"
       )
-  
-  db.commit()
-  db.refresh(project)
-  db.refresh(member)
-  return project, member
+    
+    # Add notification to managers
+    if project.manager_id:
+      for manager_id in project.manager_id:
+        manager = get_member_by_id(db, manager_id)
+        if not manager:
+          continue
+        
+        if not hasattr(manager, 'notification') or manager.notification is None:
+          manager.notification = []
+          
+        # Ensure all existing notifications are dictionaries
+        for i, note in enumerate(manager.notification):
+          if hasattr(note, 'model_dump'):  # Check if it's a Pydantic model
+            manager.notification[i] = note.model_dump()
+          
+        notification = NotificationInfo(
+          id=int(datetime.now().timestamp()),
+          title="참여 요청",
+          message=f'"{member.name}" 님이 "{project.title}" 프로젝트에 참여 요청을 보냈습니다.',
+          type="project",
+          timestamp=datetime.now().isoformat().split('T')[0],
+          isRead=False,
+          sender_id=member_id,
+          receiver_id=manager_id,
+          project_id=project_id
+        )
+        
+        # Convert the Pydantic model to a dictionary explicitly
+        notification_dict = notification.model_dump()
+        manager.notification.append(notification_dict)
+        
+        db.query(MemberModel).filter(MemberModel.id == manager_id).update(
+          {"notification": manager.notification},
+          synchronize_session="fetch"
+        )
+    
+    db.commit()
+    db.refresh(project)
+    db.refresh(member)
+    return project, member
+  except Exception as e:
+    logging.error(f"Error in send_project_participation_request: {str(e)}", exc_info=True)
+    db.rollback()
+    raise
   
 def allow_project_participation_request(db: Session, project_id: str, member_id: int):
   project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
@@ -518,10 +543,10 @@ def allow_project_participation_request(db: Session, project_id: str, member_id:
     id=int(datetime.now().timestamp()),
     title="참여 승인",
     message=f'"{project.title}" 프로젝트 참여가 승인되었습니다.',
-    type="info",
+    type="project",
     timestamp=datetime.now().isoformat().split('T')[0],
     isRead=False,
-    sender_id=project.leader_id,
+    sender_id=project.leader_id if project.leader_id is not None else 0,  # Use 0 as default if no leader
     receiver_id=member_id,
     project_id=project_id
   )
@@ -563,73 +588,163 @@ def reject_project_participation_request(db: Session, project_id: str, member_id
     synchronize_session="fetch"
   )
   
+  # Add notification to member
+  if not hasattr(member, 'notification') or member.notification is None:
+    member.notification = []
+    
+  notification = NotificationInfo(
+    id=int(datetime.now().timestamp()),
+    title="참여 거절",
+    message=f'"{project.title}" 프로젝트 참여가 거절되었습니다.',
+    type="project",
+    timestamp=datetime.now().isoformat().split('T')[0],
+    isRead=False,
+    sender_id=project.leader_id if project.leader_id is not None else 0,  # Use 0 as default if no leader
+    receiver_id=member_id,
+    project_id=project_id
+  )
+  
+  member.notification.append(notification.model_dump())
+  db.query(MemberModel).filter(MemberModel.id == member_id).update(
+    {"notification": member.notification},
+    synchronize_session="fetch"
+  )
+  
   db.commit()
   db.refresh(project)
   db.refresh(member)
   return project, member
 
 def kick_out_member_from_project(db: Session, project_id: str, member_id: int):
-  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-  if not member:
-    return None
-  
-  # Remove project from member's projects list
-  member.projects = [p_id for p_id in member.projects if p_id != project_id]
-  db.query(MemberModel).filter(MemberModel.id == member_id).update(
-    {"projects": member.projects},
-    synchronize_session="fetch" 
-  )
-  
-  project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
-  if not project:
-    return None
-  
-  # Remove member from manager_id list
-  if project.manager_id:
-    project.manager_id = [m_id for m_id in project.manager_id if m_id != member_id]
-    db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
-      {"manager_id": project.manager_id},
-      synchronize_session="fetch"
-    )
-  
-  # Remove member from participation requests if present
-  if project.participationRequest and member_id in project.participationRequest:
-    project.participationRequest = [m_id for m_id in project.participationRequest if m_id != member_id]
-    db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
-      {"participationRequest": project.participationRequest},
-      synchronize_session="fetch"
-    )
-  
-  # Remove member from leader position if they are the leader
-  if project.leader_id == member_id:
-    project.leader_id = None
-    db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
-      {"leader_id": None},
-      synchronize_session="fetch"
-    )
-  
-  # Get all tasks for this project and remove member from assignee lists
-  tasks = get_tasks_by_project_id(db, project_id)
-  for task in tasks:
-    if task.assignee_id and member_id in task.assignee_id:
-      task.assignee_id = [a_id for a_id in task.assignee_id if a_id != member_id]
-      db.query(task.__class__).filter(task.__class__.id == task.id).update(
-        {"assignee_id": task.assignee_id},
+  try:
+    member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+    if not member:
+      return None
+    
+    # Remove project from member's projects list
+    if member.projects is not None:
+      member.projects = [p_id for p_id in member.projects if p_id != project_id]
+      db.query(MemberModel).filter(MemberModel.id == member_id).update(
+        {"projects": member.projects},
+        synchronize_session="fetch" 
+      )
+    
+    project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    if not project:
+      return None
+    
+    # Remove member from manager_id list
+    if project.manager_id is not None:
+      project.manager_id = [m_id for m_id in project.manager_id if m_id != member_id]
+      db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+        {"manager_id": project.manager_id},
         synchronize_session="fetch"
       )
-  
-  # Get all milestones for this project and remove member from assignee lists
-  milestones = get_milestones_by_project_id(db, project_id)
-  for milestone in milestones:
-    if milestone.assignee_id and member_id in milestone.assignee_id:
-      milestone.assignee_id = [a_id for a_id in milestone.assignee_id if a_id != member_id]
-      db.query(milestone.__class__).filter(milestone.__class__.id == milestone.id).update(
-        {"assignee_id": milestone.assignee_id},
+    
+    # Remove member from participation requests if present
+    if project.participationRequest is not None and member_id in project.participationRequest:
+      project.participationRequest = [m_id for m_id in project.participationRequest if m_id != member_id]
+      db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+        {"participationRequest": project.participationRequest},
         synchronize_session="fetch"
       )
-  
-  db.commit()
-  db.refresh(member)
-  db.refresh(project)
-  return member, project  
+    
+    # Remove member from leader position if they are the leader
+    if project.leader_id == member_id:
+      project.leader_id = None
+      db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+        {"leader_id": None},
+        synchronize_session="fetch"
+      )
+    
+    # Get all tasks for this project and remove member from assignee lists
+    tasks = get_tasks_by_project_id(db, project_id) or []
+    for task in tasks:
+      if task.assignee_id is not None and member_id in task.assignee_id:
+        task.assignee_id = [a_id for a_id in task.assignee_id if a_id != member_id]
+        db.query(TaskModel).filter(TaskModel.id == task.id).update(
+          {"assignee_id": task.assignee_id},
+          synchronize_session="fetch"
+        )
+    
+    # Get all milestones for this project and remove member from assignee lists
+    milestones = get_milestones_by_project_id(db, project_id) or []
+    for milestone in milestones:
+      modified = False
+      
+      # Remove member from assignee list
+      if milestone.assignee_id is not None and member_id in milestone.assignee_id:
+        milestone.assignee_id = [a_id for a_id in milestone.assignee_id if a_id != member_id]
+        modified = True
+      
+      # Fix serialization issue with subtasks that might contain Task objects
+      if milestone.subtasks is not None:
+        serializable_subtasks = []
+        for subtask in milestone.subtasks:
+          # Check if subtask is a Task object and convert to dict
+          if hasattr(subtask, '__dict__'):
+            try:
+              # Try to use model_dump if it's a pydantic model
+              subtask_dict = subtask.model_dump() if hasattr(subtask, 'model_dump') else subtask.__dict__
+              # Remove SQLAlchemy internal attributes
+              if '_sa_instance_state' in subtask_dict:
+                del subtask_dict['_sa_instance_state']
+              serializable_subtasks.append(subtask_dict)
+            except:
+              # If conversion fails, skip this subtask
+              logging.warning(f"Could not serialize subtask in milestone {milestone.id}")
+          else:
+            # If it's already a dict or basic type, add it as is
+            serializable_subtasks.append(subtask)
+        
+        milestone.subtasks = serializable_subtasks
+        modified = True
+      
+      # Only update the milestone if changes were made
+      if modified:
+        db.query(MilestoneModel).filter(MilestoneModel.id == milestone.id).update(
+          {
+            "assignee_id": milestone.assignee_id,
+            "subtasks": milestone.subtasks
+          },
+          synchronize_session="fetch"
+        )
+      
+    # Add notification to member
+    if not hasattr(member, 'notification') or member.notification is None:
+      member.notification = []
+      
+    notification = NotificationInfo(
+      id=int(datetime.now().timestamp()),
+      title="프로젝트 탈퇴",
+      message=f'"{project.title}" 프로젝트에서 탈퇴되었습니다.',
+      type="project",
+      timestamp=datetime.now().isoformat().split('T')[0],
+      isRead=False,
+      sender_id=project.leader_id if project.leader_id is not None else 0,  # Use 0 as default if no leader
+      receiver_id=member_id,
+      project_id=project_id
+    )
+    
+    try:
+      notification_dict = notification.model_dump()
+      member.notification.append(notification_dict)
+    except AttributeError:
+      # Fallback if model_dump doesn't exist (older pydantic versions)
+      notification_dict = dict(notification)
+      member.notification.append(notification_dict)
+    
+    db.query(MemberModel).filter(MemberModel.id == member_id).update(
+      {"notification": member.notification},
+      synchronize_session="fetch"
+    )
+    
+    db.commit()
+    db.refresh(member)
+    db.refresh(project)
+    return member, project
+  except Exception as e:
+    logging.error(f"Error in kick_out_member_from_project: {str(e)}", exc_info=True)
+    db.rollback()
+    raise
   

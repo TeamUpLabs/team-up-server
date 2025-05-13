@@ -103,9 +103,13 @@ def update_project_member_permission_endpoint(project_id: str, member_id: int, p
 @router.put("/{project_id}/member/{member_id}/kick")
 def kick_out_member_from_project_endpoint(project_id: str, member_id: int, db: SessionLocal = Depends(get_db)):
     try:
-        return kick_out_member_from_project(db, project_id, member_id)
+        result = kick_out_member_from_project(db, project_id, member_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail=f"Member {member_id} or Project {project_id} not found")
+        return {"status": "success", "message": f"Member {member_id} kicked from project {project_id}"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error(f"Error kicking member: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error kicking member: {str(e)}")
 
 @router.put("/{project_id}/participationRequest/{member_id}/send")
 def send_project_participation_request_endpoint(project_id: str, member_id: int, db: SessionLocal = Depends(get_db)):
