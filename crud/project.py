@@ -428,6 +428,58 @@ def send_project_participation_request(db: Session, project_id: str, member_id: 
     synchronize_session="fetch"
   )
   
+  # Add notification to project leader
+  leader = get_member_by_id(db, project.leader_id)
+  if leader:
+    if not hasattr(leader, 'notification') or leader.notification is None:
+      leader.notification = []
+      
+    notification = NotificationInfo(
+      id=int(datetime.now().timestamp()),
+      title="참여 요청",
+      message=f'"{member.name}" 님이 "{project.title}" 프로젝트에 참여 요청을 보냈습니다.',
+      type="project",
+      timestamp=datetime.now().isoformat().split('T')[0],
+      isRead=False,
+      sender_id=member_id,
+      receiver_id=project.leader_id,
+      project_id=project_id
+    )
+    
+    leader.notification.append(notification.model_dump())
+    db.query(MemberModel).filter(MemberModel.id == project.leader_id).update(
+      {"notification": leader.notification},
+      synchronize_session="fetch"
+    )
+  
+  # Add notification to managers
+  if project.manager_id:
+    for manager_id in project.manager_id:
+      manager = get_member_by_id(db, manager_id)
+      if not manager:
+        continue
+      
+      if not hasattr(manager, 'notification') or manager.notification is None:
+        manager.notification = []
+        
+      notification = NotificationInfo(
+        id=int(datetime.now().timestamp()),
+        title="참여 요청",
+        message=f'"{member.name}" 님이 "{project.title}" 프로젝트에 참여 요청을 보냈습니다.',
+        type="project",
+        timestamp=datetime.now().isoformat().split('T')[0],
+        isRead=False,
+        sender_id=member_id,
+        receiver_id=manager_id,
+        project_id=project_id
+      )
+      
+      manager.notification.append(notification.model_dump())
+      db.query(MemberModel).filter(MemberModel.id == manager_id).update(
+        {"notification": manager.notification},
+        synchronize_session="fetch"
+      )
+  
   db.commit()
   db.refresh(project)
   db.refresh(member)
