@@ -10,6 +10,11 @@ from crud.project import (
     add_member_to_project, scout_member, send_project_participation_request,
     allow_project_participation_request, reject_project_participation_request, get_all_project_ids
 )
+import asyncio
+from typing import AsyncGenerator
+from fastapi.responses import StreamingResponse
+from fastapi import Request
+import json
 
 router = APIRouter(
     prefix="/project",
@@ -150,3 +155,53 @@ def scout_member_endpoint(project_id: str, member_id: int, member_data: ProjectM
         return scout_member(db, project_id, member_id, member_data)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 
+      
+      
+@router.get("/{project_id}/sse")
+async def project_sse(project_id: str, request: Request):
+    def convert_to_dict(obj):
+        if hasattr(obj, '__dict__'):
+            # Handle SQLAlchemy models
+            return {
+                key: convert_to_dict(value)
+                for key, value in obj.__dict__.items()
+                if not key.startswith('_')
+            }
+        elif isinstance(obj, (list, tuple)):
+            # Handle lists and tuples
+            return [convert_to_dict(item) for item in obj]
+        elif isinstance(obj, dict):
+            # Handle dictionaries
+            return {key: convert_to_dict(value) for key, value in obj.items()}
+        else:
+            # Return primitive types as is
+            return obj
+
+    async def event_generator() -> AsyncGenerator[str, None]:
+      last_project = None
+      while True:
+        if await request.is_disconnected():
+          break
+        db = SessionLocal()
+        try:
+            current_project = get_project(db, project_id)
+            if current_project is None:
+                break
+            # Convert the entire project object to a dict, handling nested models
+            project_dict = convert_to_dict(current_project)
+            if last_project != project_dict:
+                yield f"data: {json.dumps(project_dict)}\n\n"
+                last_project = project_dict
+        finally:
+            db.close()
+        await asyncio.sleep(3)
+            
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
