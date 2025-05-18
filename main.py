@@ -12,6 +12,7 @@ from routers import (
     auth_routes, 
     chat_routes, 
     video_call_routes,
+    voice_call_routes,
     notification_routes
 )
 
@@ -33,4 +34,5 @@ app.include_router(task_routes.router)
 app.include_router(milestone_routes.router)
 app.include_router(chat_routes.router)
 app.include_router(video_call_routes.router)
+app.include_router(voice_call_routes.router)
 app.include_router(notification_routes.router)

@@ -4,14 +4,14 @@ import json
 from typing import Dict, Any
 
 router = APIRouter(
-    tags=["video-call"]
+    tags=["voice-call"]
 )
 
 # Store for active WebRTC connections
 active_connections: Dict[str, Dict[str, Dict[str, WebSocket]]] = {}
 
-@router.websocket("/project/{project_id}/ws/video-call/{channelId}/{userId}")
-async def video_call_signaling(websocket: WebSocket, project_id: str, channelId: str, userId: str):
+@router.websocket("/project/{project_id}/ws/voice-call/{channelId}/{userId}")
+async def voice_call_signaling(websocket: WebSocket, project_id: str, channelId: str, userId: str):
     await websocket.accept()
     
     # Store connection with project_id separation
