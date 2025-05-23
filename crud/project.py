@@ -7,6 +7,7 @@ from models.project import Project as ProjectModel
 from crud.task import get_tasks_by_project_id, delete_task_by_id
 from crud.member import get_member_by_project_id, get_member_by_id
 from crud.milestone import get_milestones_by_project_id, delete_milestone_by_id
+from crud.schedule import get_schedules
 from models.member import Member as MemberModel
 from schemas.member import NotificationInfo
 from schemas.task import Task as TaskSchema
@@ -133,6 +134,10 @@ def get_project(db: Session, project_id: str):
       if member:
         participationRequestMembers.append(member)
     project.participationRequestMembers = participationRequestMembers
+    
+    # Process schedules
+    schedules = get_schedules(db, project_id)
+    project.schedules = schedules
     
     return project
   
