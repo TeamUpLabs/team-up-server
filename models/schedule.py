@@ -7,10 +7,11 @@ class Schedule(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(String, nullable=False)
-    type = Column(Enum("meeting", "task", "event", name="type"), nullable=False)
+    type = Column(Enum("meeting", "event", name="type"), nullable=False)
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     where = Column(String, nullable=False)
+    link = Column(String, nullable=True)
     assignee_id = Column(JSONB, nullable=False)
     start_time = Column(String, nullable=False)
     end_time = Column(String, nullable=False)
@@ -19,5 +20,6 @@ class Schedule(Base):
     updated_at = Column(String, nullable=False)
     created_by = Column(Integer, nullable=False)
     updated_by = Column(Integer, nullable=False)
+    memo = Column(Text, nullable=True)
     
     

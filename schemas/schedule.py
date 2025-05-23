@@ -8,6 +8,7 @@ class ScheduleBase(BaseModel):
     title: str
     description: str
     where: str
+    link: Optional[str] = None
     start_time: str
     end_time: str
     status: str
@@ -15,6 +16,7 @@ class ScheduleBase(BaseModel):
     updated_at: str
     created_by: int
     updated_by: int
+    memo: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -71,10 +73,12 @@ class ScheduleUpdate(BaseModel):
     description: Optional[str] = None
     where: Optional[str] = None
     assignee_id: Optional[List[int]] = None
+    link: Optional[str] = None
     status: Optional[str] = None
     start_time: Optional[str] = None
     end_time: Optional[str] = None
     updated_at: Optional[str] = None
     updated_by: Optional[int] = None
+    memo: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
