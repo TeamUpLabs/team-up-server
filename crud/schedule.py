@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from models.schedule import Schedule
 from models.member import Member as MemberModel
 from schemas.member import Member as MemberSchema
+import logging
 
 def get_basic_member_info(db: Session, member_id: int):
     """Get basic member info without loading related data to avoid circular references"""

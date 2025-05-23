@@ -11,7 +11,7 @@ class Schedule(Base):
     title = Column(String, nullable=False)
     description = Column(Text, nullable=False)
     where = Column(String, nullable=False)
-    link = Column(String, nullable=True)
+    link = Column(Text, nullable=True)
     assignee_id = Column(JSONB, nullable=False)
     start_time = Column(String, nullable=False)
     end_time = Column(String, nullable=False)

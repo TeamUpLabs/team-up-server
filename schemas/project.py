@@ -3,6 +3,7 @@ from typing import Optional, List
 from schemas.member import Member
 from schemas.task import Task
 from schemas.milestone import MileStone
+from schemas.schedule import Schedule
 
 class ProjectBase(BaseModel):
     id: str
@@ -31,6 +32,7 @@ class Project(ProjectBase):
     leader: Optional[Member] = None
     manager: Optional[List[Member]] = []
     participationRequestMembers: Optional[List[Member]] = []
+    schedules: Optional[List[Schedule]] = []
     class Config:
         from_attributes = True
         
