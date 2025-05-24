@@ -6,6 +6,10 @@ from datetime import datetime
 
 import redis.asyncio as redis
 from fastapi import WebSocket, WebSocketDisconnect, HTTPException, status
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # 로깅 설정
 logging.basicConfig(
@@ -16,7 +20,14 @@ logger = logging.getLogger("websocket")
 
 # Redis 클라이언트 설정
 try:
-    redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
+    redis_client = redis.Redis(
+      host=os.getenv("REDIS_HOST"), 
+      port=os.getenv("REDIS_PORT"), 
+      decode_responses=True,
+      password=os.getenv("REDIS_PASSWORD")
+    )
+    redis_client.ping()
+    print("✅ Redis 연결 성공!")
 except Exception as e:
     logger.error(f"Redis 연결 실패: {e}")
     raise
