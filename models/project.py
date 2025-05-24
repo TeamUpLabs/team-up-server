@@ -19,3 +19,5 @@ class Project(Base):
     location = Column(String, nullable=False)
     projectType = Column(String, nullable=False)
     participationRequest = Column(JSONB, nullable=True)
+    createdAt = Column(String, nullable=False)
+    

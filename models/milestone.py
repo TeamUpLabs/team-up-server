@@ -16,3 +16,7 @@ class Milestone(Base):
   priority = Column(Enum("low", "medium", "high", name="priority"), nullable=False)
   tags = Column(JSONB, nullable=False)
   subtasks = Column(JSON, nullable=True)
+  createdAt = Column(String, nullable=False)
+  updatedAt = Column(String, nullable=False)
+  createdBy = Column(Integer, nullable=False)
+  updatedBy = Column(Integer, nullable=False)

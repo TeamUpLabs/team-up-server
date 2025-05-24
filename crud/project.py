@@ -318,6 +318,7 @@ def get_project_basic_info(db: Session, project_id: str):
         "teamSize": project.teamSize,
         "location": project.location,
         "projectType": project.projectType,
+        "createdAt": project.createdAt,
         # Include properly formatted members
         "members": member_list,
         "tasks": [],

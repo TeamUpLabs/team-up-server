@@ -13,7 +13,10 @@ class MileStoneBase(BaseModel):
   status: Literal["not-started", "in-progress", "done"]
   priority: Literal["low", "medium", "high"]
   tags: Optional[List[str]] = []
-  
+  createdAt: str
+  updatedAt: str
+  createdBy: int
+  updatedBy: int
 class MileStoneCreate(MileStoneBase):
   pass
   class Config:
@@ -36,5 +39,7 @@ class MileStoneUpdate(BaseModel):
   status: Optional[Literal["not-started", "in-progress", "done"]] = None
   priority: Optional[Literal["low", "medium", "high"]] = None
   tags: Optional[List[str]] = None
+  updatedAt: Optional[str] = None
+  updatedBy: Optional[int] = None
   class Config:
     from_attributes = True

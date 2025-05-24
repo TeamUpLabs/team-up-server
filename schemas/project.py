@@ -17,6 +17,8 @@ class ProjectBase(BaseModel):
     teamSize: int
     location: str
     projectType: str
+    createdAt: str
+    
     
 class ProjectCreate(ProjectBase):
     leader_id: int

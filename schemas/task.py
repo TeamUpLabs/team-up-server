@@ -18,12 +18,15 @@ class TaskBase(BaseModel):
   description: str
   status: str
   priority: str
-  dueDate: str
+  startDate: str
+  endDate: str
   tags: Optional[List[str]] = []
   subtasks: Optional[List[SubTask]] = []
   comments: Optional[List[Comment]] = []
   createdAt: str
   updatedAt: str
+  createdBy: int
+  updatedBy: int
   
 class TaskCreate(TaskBase):
   assignee_id: List[int] = []
@@ -48,11 +51,14 @@ class TaskUpdate(BaseModel):
   description: Optional[str] = None
   status: Optional[str] = None
   priority: Optional[str] = None
-  dueDate: Optional[str] = None
+  startDate: Optional[str] = None
+  endDate: Optional[str] = None
   assignee_id: Optional[List[int]] = None
   tags: Optional[List[str]] = None
   subtasks: Optional[List[SubTask]] = None
   comments: Optional[List[Comment]] = None
+  updatedAt: Optional[str] = None
+  updatedBy: Optional[int] = None
   
   model_config = ConfigDict(from_attributes=True)
 
