@@ -22,7 +22,7 @@ logger = logging.getLogger("websocket")
 try:
     redis_client = redis.Redis(
       host=os.getenv("REDIS_HOST"), 
-      port=os.getenv("REDIS_PORT"), 
+      port=int(os.getenv("REDIS_PORT")), 
       decode_responses=True,
       password=os.getenv("REDIS_PASSWORD")
     )
