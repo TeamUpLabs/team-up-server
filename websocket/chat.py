@@ -4,7 +4,6 @@ import logging
 from typing import Dict, Set, Optional, Any
 from datetime import datetime
 
-import redis.asyncio as redis
 from fastapi import WebSocket, WebSocketDisconnect, HTTPException, status
 import os
 from dotenv import load_dotenv
@@ -18,35 +17,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("websocket")
 
-# Redis 클라이언트 설정
-try:
-    redis_client = redis.Redis(
-      host=os.getenv("REDIS_HOST"), 
-      port=int(os.getenv("REDIS_PORT")), 
-      decode_responses=True,
-      password=os.getenv("REDIS_PASSWORD")
-    )
-    redis_client.ping()
-    print("✅ Redis 연결 성공!")
-except Exception as e:
-    logger.error(f"Redis 연결 실패: {e}")
-    raise
-
 # 프로젝트 및 채널별 연결 관리: {project_id: {channel_id: {user_id: WebSocket}}}
 active_connections: Dict[str, Dict[str, Dict[str, WebSocket]]] = {}
 
 # 사용자별 채널 관리: {user_id: Set[(project_id, channel_id)]}
 user_channels: Dict[str, Set[tuple]] = {}
 
-# Redis 연결 상태 체크
-async def check_redis_connection() -> bool:
-    """Redis 서버 연결 상태를 확인합니다."""
-    try:
-        await redis_client.ping()
-        return True
-    except Exception as e:
-        logger.error(f"Redis 서버 연결 실패: {e}")
-        return False
+
 
 async def get_channel_connections(project_id: str, channel_id: str) -> Dict[str, WebSocket]:
     """프로젝트와 채널의 활성 연결을 반환합니다."""
@@ -144,7 +121,7 @@ async def broadcast_message(project_id: str, channel_id: str, message: str) -> N
         await unregister_connection(project_id, channel_id, user_id)
 
 async def publish_system_message(project_id: str, channel_id: str, message: str) -> None:
-    """시스템 메시지를 Redis에 발행합니다."""
+    """시스템 메시지를 채널에 직접 브로드캐스트합니다."""
     try:
         system_msg = {
             "id": f"system_{datetime.now().timestamp()}",
@@ -157,7 +134,7 @@ async def publish_system_message(project_id: str, channel_id: str, message: str)
             "type": "system",
             "senderName": "System"
         }
-        await redis_client.publish(f"{project_id}:{channel_id}", json.dumps(system_msg))
+        await broadcast_message(project_id, channel_id, json.dumps(system_msg))
     except Exception as e:
         logger.error(f"시스템 메시지 발행 오류: {e}")
 
@@ -165,8 +142,6 @@ async def websocket_handler(websocket: WebSocket, channelId: str, projectId: str
     """웹소켓 연결을 처리합니다."""
     # 사용자 ID 확인
     user_id = None
-    pubsub = None
-    redis_listener_task = None
     
     try:
         user_id = websocket.query_params.get("user_id")
@@ -180,49 +155,12 @@ async def websocket_handler(websocket: WebSocket, channelId: str, projectId: str
         await websocket.accept()
         logger.info(f"사용자 {user_id}가 프로젝트 {projectId}, 채널 {channelId}에 연결 시도 중")
         
-        # Redis 연결 확인
-        if not await check_redis_connection():
-            logger.error("Redis 서버에 연결할 수 없습니다")
-            await websocket.close(code=status.WS_1011_INTERNAL_ERROR, reason="서버 내부 오류")
-            return
-        
-        # Redis 채널 이름을 프로젝트 ID와 채널 ID의 조합으로 설정
-        redis_channel = f"{projectId}:{channelId}"
-        
-        # Redis 구독 설정 - 연결 등록 전에 이동
-        pubsub = redis_client.pubsub()
-        await pubsub.subscribe(redis_channel)
-        logger.info(f"Redis 채널 {redis_channel} 구독 시작")
-        
         # 연결 등록
         registration_success = await register_connection(projectId, channelId, user_id, websocket)
         if not registration_success:
             logger.error(f"사용자 {user_id} 등록 실패")
             await websocket.close(code=status.WS_1011_INTERNAL_ERROR, reason="연결 등록 실패")
-            if pubsub:
-                await pubsub.unsubscribe(redis_channel)
             return
-        
-        # # 입장 메시지
-        # await publish_system_message(projectId, channelId, f"{user_id} 님이 채팅방에 입장했습니다.")
-        
-        # Redis 메시지 수신 리스너 태스크
-        async def redis_listener():
-            try:
-                logger.info(f"Redis 리스너 시작: 프로젝트={projectId}, 채널={channelId}, 사용자={user_id}")
-                async for message in pubsub.listen():
-                    if message["type"] == "message":
-                        logger.debug(f"Redis 메시지 수신: {message['data'][:50]}...")
-                        await broadcast_message(projectId, channelId, message["data"])
-            except asyncio.CancelledError:
-                logger.info(f"Redis 리스너 태스크 취소됨 (프로젝트: {projectId}, 채널: {channelId}, 사용자: {user_id})")
-                raise
-            except Exception as e:
-                logger.error(f"Redis 리스너 오류: {e}")
-        
-        # 리스너 태스크 시작
-        redis_listener_task = asyncio.create_task(redis_listener())
-        logger.info(f"메시지 수신 대기 시작: 프로젝트={projectId}, 채널={channelId}, 사용자={user_id}")
         
         # 클라이언트로부터 메시지 수신 대기
         try:
@@ -281,8 +219,8 @@ async def websocket_handler(websocket: WebSocket, channelId: str, projectId: str
                             f"메시지 ID={message_data.get('id')}, 내용={msg_preview}"
                         )
                         
-                        # Redis에 메시지 발행
-                        await redis_client.publish(redis_channel, data)
+                        # 메시지 직접 브로드캐스트
+                        await broadcast_message(projectId, channelId, data)
                         
                     except json.JSONDecodeError:
                         logger.error(f"잘못된 JSON 형식: {data[:100]}...")
@@ -319,21 +257,6 @@ async def websocket_handler(websocket: WebSocket, channelId: str, projectId: str
             # except Exception as e:
             #     logger.error(f"퇴장 메시지 발행 오류: {e}")
         
-        # Redis 구독 해제
-        if pubsub:
-            try:
-                redis_channel = f"{projectId}:{channelId}"
-                await pubsub.unsubscribe(redis_channel)
-                logger.info(f"Redis 채널 {redis_channel} 구독 해제됨")
-            except Exception as e:
-                logger.error(f"Redis 구독 해제 오류: {e}")
-        
-        # 리스너 태스크 취소
-        if redis_listener_task:
-            redis_listener_task.cancel()
-            try:
-                await redis_listener_task
-            except asyncio.CancelledError:
-                pass
+        # 연결 정리가 이미 unregister_connection에서 처리됨
         
         logger.info(f"웹소켓 핸들러 종료: 프로젝트={projectId}, 채널={channelId}, 사용자={user_id}")
