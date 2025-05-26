@@ -88,3 +88,9 @@ def update_schedule(db: Session, schedule_id: int, schedule: ScheduleUpdate):
       db.refresh(db_schedule)
       return db_schedule
     return None
+
+def delete_schedule_by_id(db: Session, schedule_id: int):
+    db.query(Schedule).filter(Schedule.id == schedule_id).delete()
+    db.commit()
+    db.refresh(db)
+    return True

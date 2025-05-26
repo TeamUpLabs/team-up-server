@@ -20,4 +20,14 @@ def get_chat_history(db: Session, projectId: str, channelId: str, limit: int = 5
   except Exception as e:
     print(e)
     return []
-    
+
+def get_chat_by_project_id(db: Session, projectId: str):
+  return db.query(ChatMessage).filter(
+    ChatMessage.projectId == projectId
+  ).all()
+
+def delete_chat_by_id(db: Session, chatId: str):
+  db.query(ChatMessage).filter(ChatMessage.id == chatId).delete()
+  db.commit()
+  db.refresh(db)
+  return True

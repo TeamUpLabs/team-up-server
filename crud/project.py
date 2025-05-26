@@ -7,7 +7,8 @@ from models.project import Project as ProjectModel
 from crud.task import get_tasks_by_project_id, delete_task_by_id
 from crud.member import get_member_by_project_id, get_member_by_id
 from crud.milestone import get_milestones_by_project_id, delete_milestone_by_id
-from crud.schedule import get_schedules
+from crud.schedule import get_schedules, delete_schedule_by_id
+from crud.chat import get_chat_by_project_id, delete_chat_by_id
 from models.member import Member as MemberModel
 from schemas.member import NotificationInfo
 from schemas.task import Task as TaskSchema
@@ -343,6 +344,9 @@ def delete_project_by_id(db: Session, project_id: str):
   tasks = get_tasks_by_project_id(db, project_id)
   milestones = get_milestones_by_project_id(db, project_id)
   members = get_member_by_project_id(db, project_id)
+  schedules = get_schedules(db, project_id)
+  chat = get_chat_by_project_id(db, project_id)
+  
   if project:
     for task in tasks:
       delete_task_by_id(db, task.id)
@@ -354,6 +358,10 @@ def delete_project_by_id(db: Session, project_id: str):
         {"projects": member.projects},
         synchronize_session="fetch"
       )
+    for schedule in schedules:
+      delete_schedule_by_id(db, schedule.id)
+    for message in chat:
+      delete_chat_by_id(db, message.id)
     db.delete(project)
     db.commit()
     return True
