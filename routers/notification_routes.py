@@ -6,6 +6,7 @@ from schemas.member import NotificationUpdate
 import asyncio
 import json
 from typing import AsyncGenerator
+import logging
 
 router = APIRouter(
     tags=["notification"]
@@ -57,47 +58,65 @@ def delete_notification_endpoint(member_id: int, notification_id: int, db: Sessi
         return delete_notification(db, member_id, notification_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-      
+    
 @router.delete("/member/{member_id}/notifications")
 def delete_all_notifications_endpoint(member_id: int, db: SessionLocal = Depends(get_db)):
     try:
         return delete_all_notifications(db, member_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-      
+    
 @router.get("/member/{member_id}/notifications/sse")
 async def notification_sse(member_id: int, request: Request):
     """
     Server-Sent Events endpoint for real-time notification updates.
     """
+    def convert_to_dict(obj):
+        if hasattr(obj, '__dict__'):
+            return {
+                key: convert_to_dict(value)
+                for key, value in obj.__dict__.items()
+                if not key.startswith('_')
+            }
+        elif isinstance(obj, (list, tuple)):
+            return [convert_to_dict(item) for item in obj]
+        elif isinstance(obj, dict):
+            return {key: convert_to_dict(value) for key, value in obj.items()}
+        else:
+            return obj
+
     async def event_generator() -> AsyncGenerator[str, None]:
+        db = SessionLocal()
         last_notifications = None
-        
-        while True:
-            if await request.is_disconnected():
-                break
-                
-            # Check for notifications
-            db = SessionLocal()
-            try:
-                current_notifications = get_notifications(db, member_id)
-                
-                # Send data only if it's the first time or there's a change
-                if last_notifications != current_notifications:
-                    yield f"data: {json.dumps(current_notifications or [])}\n\n"
-                    last_notifications = current_notifications
-            finally:
-                db.close()
-                
-            await asyncio.sleep(3)
-    
+        try:
+            while True:
+                if await request.is_disconnected():
+                    logging.info(f"Client disconnected from member {member_id} notifications SSE")
+                    break
+
+                try:
+                    current_notifications = get_notifications(db, member_id)
+                    notifications_dict = convert_to_dict(current_notifications or [])
+                    
+                    if last_notifications != notifications_dict:
+                        yield f"data: {json.dumps(notifications_dict)}\n\n"
+                        last_notifications = notifications_dict
+                except Exception as e:
+                    logging.error(f"Error in SSE for member {member_id} notifications: {str(e)}")
+                    yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                    break
+
+                await asyncio.sleep(3)
+        finally:
+            db.close()
+            logging.info(f"SSE connection closed for member {member_id} notifications")
+
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
+            "X-Accel-Buffering": "no"
         }
     )
-      

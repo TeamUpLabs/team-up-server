@@ -161,41 +161,47 @@ def scout_member_endpoint(project_id: str, member_id: int, member_data: ProjectM
 async def project_sse(project_id: str, request: Request):
     def convert_to_dict(obj):
         if hasattr(obj, '__dict__'):
-            # Handle SQLAlchemy models
             return {
                 key: convert_to_dict(value)
                 for key, value in obj.__dict__.items()
                 if not key.startswith('_')
             }
         elif isinstance(obj, (list, tuple)):
-            # Handle lists and tuples
             return [convert_to_dict(item) for item in obj]
         elif isinstance(obj, dict):
-            # Handle dictionaries
             return {key: convert_to_dict(value) for key, value in obj.items()}
         else:
-            # Return primitive types as is
             return obj
 
     async def event_generator() -> AsyncGenerator[str, None]:
-      last_project = None
-      while True:
-        if await request.is_disconnected():
-          break
         db = SessionLocal()
+        last_project = None
         try:
-            current_project = get_project(db, project_id)
-            if current_project is None:
-                break
-            # Convert the entire project object to a dict, handling nested models
-            project_dict = convert_to_dict(current_project)
-            if last_project != project_dict:
-                yield f"data: {json.dumps(project_dict)}\n\n"
-                last_project = project_dict
+            while True:
+                if await request.is_disconnected():
+                    logging.info(f"Client disconnected from project {project_id} SSE")
+                    break
+
+                try:
+                    current_project = get_project(db, project_id)
+                    if current_project is None:
+                        logging.error(f"Project {project_id} not found")
+                        break
+
+                    project_dict = convert_to_dict(current_project)
+                    if last_project != project_dict:
+                        yield f"data: {json.dumps(project_dict)}\n\n"
+                        last_project = project_dict
+                except Exception as e:
+                    logging.error(f"Error in SSE for project {project_id}: {str(e)}")
+                    yield f"data: {json.dumps({'error': str(e)})}\n\n"
+                    break
+
+                await asyncio.sleep(3)
         finally:
             db.close()
-        await asyncio.sleep(3)
-            
+            logging.info(f"SSE connection closed for project {project_id}")
+
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
