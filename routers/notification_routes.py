@@ -86,9 +86,14 @@ async def notification_sse(member_id: int, request: Request):
             return obj
 
     async def event_generator() -> AsyncGenerator[str, None]:
-        db = SessionLocal()
-        last_notifications = None
+        db = None
         try:
+            db = SessionLocal()
+            last_notifications = None
+            
+            # Send initial connection success message
+            yield f"data: {json.dumps({'status': 'connected'})}\n\n"
+            
             while True:
                 if await request.is_disconnected():
                     logging.info(f"Client disconnected from member {member_id} notifications SSE")
@@ -103,12 +108,22 @@ async def notification_sse(member_id: int, request: Request):
                         last_notifications = notifications_dict
                 except Exception as e:
                     logging.error(f"Error in SSE for member {member_id} notifications: {str(e)}")
-                    yield f"data: {json.dumps({'error': str(e)})}\n\n"
-                    break
+                    error_message = {
+                        'error': str(e),
+                        'status': 'error'
+                    }
+                    yield f"data: {json.dumps(error_message)}\n\n"
+                    # Don't break the connection on error, just log it and continue
+                    await asyncio.sleep(3)
+                    continue
 
                 await asyncio.sleep(3)
+        except Exception as e:
+            logging.error(f"Critical error in SSE for member {member_id}: {str(e)}")
+            yield f"data: {json.dumps({'error': str(e), 'status': 'error'})}\n\n"
         finally:
-            db.close()
+            if db:
+                db.close()
             logging.info(f"SSE connection closed for member {member_id} notifications")
 
     return StreamingResponse(
@@ -117,6 +132,7 @@ async def notification_sse(member_id: int, request: Request):
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "X-Accel-Buffering": "no"
+            "X-Accel-Buffering": "no",
+            "Access-Control-Allow-Origin": "*"  # Add CORS header
         }
     )

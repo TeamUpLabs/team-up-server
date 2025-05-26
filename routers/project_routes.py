@@ -174,9 +174,14 @@ async def project_sse(project_id: str, request: Request):
             return obj
 
     async def event_generator() -> AsyncGenerator[str, None]:
-        db = SessionLocal()
-        last_project = None
+        db = None
         try:
+            db = SessionLocal()
+            last_project = None
+            
+            # Send initial connection success message
+            yield f"data: {json.dumps({'status': 'connected'})}\n\n"
+            
             while True:
                 if await request.is_disconnected():
                     logging.info(f"Client disconnected from project {project_id} SSE")
@@ -185,8 +190,13 @@ async def project_sse(project_id: str, request: Request):
                 try:
                     current_project = get_project(db, project_id)
                     if current_project is None:
-                        logging.error(f"Project {project_id} not found")
-                        break
+                        error_message = {
+                            'error': f"Project {project_id} not found",
+                            'status': 'error'
+                        }
+                        yield f"data: {json.dumps(error_message)}\n\n"
+                        await asyncio.sleep(3)
+                        continue
 
                     project_dict = convert_to_dict(current_project)
                     if last_project != project_dict:
@@ -194,12 +204,22 @@ async def project_sse(project_id: str, request: Request):
                         last_project = project_dict
                 except Exception as e:
                     logging.error(f"Error in SSE for project {project_id}: {str(e)}")
-                    yield f"data: {json.dumps({'error': str(e)})}\n\n"
-                    break
+                    error_message = {
+                        'error': str(e),
+                        'status': 'error'
+                    }
+                    yield f"data: {json.dumps(error_message)}\n\n"
+                    # Don't break the connection on error, just log it and continue
+                    await asyncio.sleep(3)
+                    continue
 
                 await asyncio.sleep(3)
+        except Exception as e:
+            logging.error(f"Critical error in SSE for project {project_id}: {str(e)}")
+            yield f"data: {json.dumps({'error': str(e), 'status': 'error'})}\n\n"
         finally:
-            db.close()
+            if db:
+                db.close()
             logging.info(f"SSE connection closed for project {project_id}")
 
     return StreamingResponse(
@@ -208,6 +228,7 @@ async def project_sse(project_id: str, request: Request):
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "X-Accel-Buffering": "no"
+            "X-Accel-Buffering": "no",
+            "Access-Control-Allow-Origin": "*"  # Add CORS header
         }
     )
