@@ -46,7 +46,7 @@ def get_all_projects(db: Session, skip: int = 0, limit: int = 100):
         members = get_member_by_project_id(db, project.id)
         managers = []
         for member in members:
-          if member.id in project.manager_id:
+          if project.manager_id and member.id in project.manager_id:
             managers.append(member)
         project.manager = managers
         project.members = members
@@ -90,7 +90,7 @@ def get_project(db: Session, project_id: str):
     members = get_member_by_project_id(db, project_id) or []
     managers = []
     for member in members:
-      if member.id in project.manager_id:
+      if project.manager_id and member.id in project.manager_id:
         managers.append(member)
     project.manager = managers
     project.members = members
