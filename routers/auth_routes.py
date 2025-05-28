@@ -18,7 +18,7 @@ def get_db():
         db.close()
 
 @router.post('/login', response_model=schemas.login.Token)
-def login(login: LoginForm, db: SessionLocal = Depends(get_db)):
+def login(login: LoginForm, db: SessionLocal = Depends(get_db)):  # type: ignore
     member = get_member_by_email(db, login.userEmail)
     if not member:
         raise HTTPException(
@@ -69,7 +69,7 @@ def login(login: LoginForm, db: SessionLocal = Depends(get_db)):
     }
     
 @router.get("/me", response_model=Member)
-def get_me(current_user: dict = Depends(get_current_user), db: SessionLocal = Depends(get_db)):
+def get_me(current_user: dict = Depends(get_current_user), db: SessionLocal = Depends(get_db)):  # type: ignore
     # Fetch fresh user data from the database using the email from token
     member = get_member_by_email(db, current_user['email'])
     if not member:

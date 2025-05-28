@@ -5,9 +5,12 @@ import logging
 from schemas.member import MemberCreate, Member, MemberCheck, MemberUpdate
 from schemas.project import Project
 from crud.member import create_member, get_member_by_email, get_members, get_member, get_member_projects, update_member_by_id, update_member_profile_image_by_id
+from crud.project import get_project
 import os
 from supabase_client import supabase
 import random
+from utils.sse_manager import project_sse_manager
+import json
 
 router = APIRouter(
     prefix="/member",
@@ -25,7 +28,7 @@ def get_db():
 async def handle_create_member(
     profileImage: Optional[UploadFile] = File(None),
     payload: Optional[str] = Form(None),
-    db: SessionLocal = Depends(get_db)
+    db: SessionLocal = Depends(get_db)  # type: ignore
 ):
   try:
     if payload:
@@ -75,7 +78,7 @@ async def handle_create_member(
       )
 
 @router.post("/check")
-def check_member(member_check: MemberCheck, db: SessionLocal = Depends(get_db)):
+def check_member(member_check: MemberCheck, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         member = get_member_by_email(db, member_check.email)
         if member:
@@ -87,7 +90,7 @@ def check_member(member_check: MemberCheck, db: SessionLocal = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("", response_model=List[Member])
-def read_members(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(get_db)):
+def read_members(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         members = get_members(db, skip=skip, limit=limit)
         return members
@@ -95,7 +98,7 @@ def read_members(skip: int = 0, limit: int = 100, db: SessionLocal = Depends(get
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/{member_id}", response_model=Member)
-def read_member(member_id: int, db: SessionLocal = Depends(get_db)):
+def read_member(member_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         member = get_member(db, member_id)
         if member is None:
@@ -107,7 +110,7 @@ def read_member(member_id: int, db: SessionLocal = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
       
 @router.get("/{member_id}/project", response_model=List[Project])
-def read_member_projects(member_id: int, db: SessionLocal = Depends(get_db)):
+def read_member_projects(member_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         return get_member_projects(db, member_id)
     except HTTPException:
@@ -116,15 +119,24 @@ def read_member_projects(member_id: int, db: SessionLocal = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
       
 @router.put("/{member_id}")
-def update_member(member_id: int, member_update: MemberUpdate, db: SessionLocal = Depends(get_db)):
+async def update_member(member_id: int, member_update: MemberUpdate, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         updated_member = update_member_by_id(db, member_id, member_update)
+        if updated_member:
+            project_data = get_project(db, updated_member.projects[0])
+            await project_sse_manager.send_event(
+                updated_member.projects[0],
+                json.dumps(project_sse_manager.convert_to_dict(project_data))
+            )
+            logging.info(f"[SSE] Member {member_id} updated from Member update.")
+        else:
+            raise HTTPException(status_code=404, detail="Member not found")
         return updated_member
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 
       
 @router.put("/{member_id}/profile-image")
-async def update_member_profile_image(member_id: int, profileImage: UploadFile = File(None), db: SessionLocal = Depends(get_db)):
+async def update_member_profile_image(member_id: int, profileImage: UploadFile = File(None), db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
       public_url = None
       if profileImage:
@@ -142,6 +154,15 @@ async def update_member_profile_image(member_id: int, profileImage: UploadFile =
           logging.error(f"Supabase storage upload error: {str(e)}")
           
       updated_member = update_member_profile_image_by_id(db, member_id, public_url)
+      if updated_member:
+        project_data = get_project(db, updated_member.projects[0])
+        await project_sse_manager.send_event(
+            updated_member.projects[0],
+            json.dumps(project_sse_manager.convert_to_dict(project_data))
+        )
+        logging.info(f"[SSE] Member {member_id} updated from Member profile image update.")
+      else:
+        raise HTTPException(status_code=404, detail="Member not found")
       return updated_member
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

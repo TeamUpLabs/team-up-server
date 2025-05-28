@@ -31,9 +31,9 @@ async def chat_endpoint(websocket: WebSocket, projectId: str, channelId: str):
             pass
 
 @router.post("/chat")
-def post_message(chat: ChatCreate, db: SessionLocal = Depends(get_db)):
+def post_message(chat: ChatCreate, db: SessionLocal = Depends(get_db)):  # type: ignore
     return save_chat_message(db, chat)
 
 @router.get("/chat/{projectId}/{channelId}")
-def get_messages(projectId: str, channelId: str, db: SessionLocal = Depends(get_db)):
+def get_messages(projectId: str, channelId: str, db: SessionLocal = Depends(get_db)):  # type: ignore
     return get_chat_history(db, projectId, channelId) 

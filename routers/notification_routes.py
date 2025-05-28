@@ -21,14 +21,14 @@ def get_db():
       
         
 @router.get("/member/{member_id}/notifications")
-def get_notifications_endpoint(member_id: int, db: SessionLocal = Depends(get_db)):
+def get_notifications_endpoint(member_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         return get_notifications(db, member_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/member/{member_id}/notification/{notification_id}")
-def update_notification_endpoint(member_id: int, notification_id: int, notification_update: NotificationUpdate, db: SessionLocal = Depends(get_db)):
+def update_notification_endpoint(member_id: int, notification_id: int, notification_update: NotificationUpdate, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         updated_notification = update_notification(db, member_id, notification_id, notification_update)
         return updated_notification
@@ -37,7 +37,7 @@ def update_notification_endpoint(member_id: int, notification_id: int, notificat
       
       
 @router.post("/member/{member_id}/notification/{notification_id}/scout/accept")
-def accept_scout_member_endpoint(member_id: int, notification_id: int, db: SessionLocal = Depends(get_db)):
+def accept_scout_member_endpoint(member_id: int, notification_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         return accept_scout_member(db, member_id, notification_id)
     except Exception as e:
@@ -45,7 +45,7 @@ def accept_scout_member_endpoint(member_id: int, notification_id: int, db: Sessi
     
     
 @router.post("/member/{member_id}/notification/{notification_id}/scout/reject")
-def reject_scout_member_endpoint(member_id: int, notification_id: int, db: SessionLocal = Depends(get_db)):
+def reject_scout_member_endpoint(member_id: int, notification_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         return reject_scout_member(db, member_id, notification_id)
     except Exception as e:
@@ -53,21 +53,21 @@ def reject_scout_member_endpoint(member_id: int, notification_id: int, db: Sessi
       
   
 @router.delete("/member/{member_id}/notification/{notification_id}")
-def delete_notification_endpoint(member_id: int, notification_id: int, db: SessionLocal = Depends(get_db)):
+def delete_notification_endpoint(member_id: int, notification_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         return delete_notification(db, member_id, notification_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
 @router.delete("/member/{member_id}/notifications")
-def delete_all_notifications_endpoint(member_id: int, db: SessionLocal = Depends(get_db)):
+def delete_all_notifications_endpoint(member_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         return delete_all_notifications(db, member_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
 @router.get("/member/{member_id}/notifications/sse")
-async def notification_sse(member_id: int, request: Request):
+async def notification_sse(member_id: int, request: Request):  # type: ignore   
     """
     Server-Sent Events endpoint for real-time notification updates.
     """
@@ -90,10 +90,6 @@ async def notification_sse(member_id: int, request: Request):
         try:
             db = SessionLocal()
             last_notifications = None
-            
-            # Send initial connection success message
-            yield f"data: {json.dumps({'status': 'connected'})}\n\n"
-            
             while True:
                 if await request.is_disconnected():
                     logging.info(f"Client disconnected from member {member_id} notifications SSE")
