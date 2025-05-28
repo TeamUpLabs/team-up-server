@@ -122,15 +122,7 @@ def read_member_projects(member_id: int, db: SessionLocal = Depends(get_db)):  #
 async def update_member(member_id: int, member_update: MemberUpdate, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         updated_member = update_member_by_id(db, member_id, member_update)
-        if updated_member:
-            project_data = get_project(db, updated_member.projects[0])
-            await project_sse_manager.send_event(
-                updated_member.projects[0],
-                json.dumps(project_sse_manager.convert_to_dict(project_data))
-            )
-            logging.info(f"[SSE] Member {member_id} updated from Member update.")
-        else:
-            raise HTTPException(status_code=404, detail="Member not found")
+        logging.info(f"[SSE] Member {member_id} updated from Member update.")
         return updated_member
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 

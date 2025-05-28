@@ -146,16 +146,8 @@ async def update_project_member_permission_endpoint(project_id: str, member_id: 
 @router.put("/{project_id}/member/{member_id}/kick")
 async def kick_out_member_from_project_endpoint(project_id: str, member_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
-        result = kick_out_member_from_project(db, project_id, member_id)
-        if result:
-            project_data = get_project(db, project_id)
-            await project_sse_manager.send_event(
-                project_id,
-                json.dumps(project_sse_manager.convert_to_dict(project_data))
-            )
-            logging.info(f"[SSE] Project {project_id} updated from Member {member_id} kick.")
-        else:
-            raise HTTPException(status_code=404, detail="Project not found")
+        result = await kick_out_member_from_project(db, project_id, member_id)
+        logging.info(f"[SSE] Project {project_id} updated from Member {member_id} kick.")
         if result is None:
             raise HTTPException(status_code=404, detail=f"Member {member_id} or Project {project_id} not found")
         return {"status": "success", "message": f"Member {member_id} kicked from project {project_id}"}
@@ -166,16 +158,8 @@ async def kick_out_member_from_project_endpoint(project_id: str, member_id: int,
 @router.put("/{project_id}/participationRequest/{member_id}/send")
 async def send_project_participation_request_endpoint(project_id: str, member_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
-        result = send_project_participation_request(db, project_id, member_id)
-        if result:
-            project_data = get_project(db, project_id)
-            await project_sse_manager.send_event(
-                project_id,
-                json.dumps(project_sse_manager.convert_to_dict(project_data))
-            )
-            logging.info(f"[SSE] Project {project_id} updated from Member {member_id} send.")
-        else:
-            raise HTTPException(status_code=404, detail="Project not found")
+        result = await send_project_participation_request(db, project_id, member_id)
+        logging.info(f"[SSE] Project {project_id} updated from Member {member_id} send.")
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -183,16 +167,8 @@ async def send_project_participation_request_endpoint(project_id: str, member_id
 @router.put("/{project_id}/participationRequest/{member_id}/allow")
 async def allow_project_participation_request_endpoint(project_id: str, member_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
-        result = allow_project_participation_request(db, project_id, member_id)
-        if result:
-            project_data = get_project(db, project_id)
-            await project_sse_manager.send_event(
-                project_id,
-                json.dumps(project_sse_manager.convert_to_dict(project_data))
-            )
-            logging.info(f"[SSE] Project {project_id} updated from Member {member_id} allow.")
-        else:
-            raise HTTPException(status_code=404, detail="Project not found")
+        result = await allow_project_participation_request(db, project_id, member_id)
+        logging.info(f"[SSE] Project {project_id} updated from Member {member_id} allow.")
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -200,16 +176,8 @@ async def allow_project_participation_request_endpoint(project_id: str, member_i
 @router.put("/{project_id}/participationRequest/{member_id}/reject")
 async def reject_project_participation_request_endpoint(project_id: str, member_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
-        result = reject_project_participation_request(db, project_id, member_id)
-        if result:
-            project_data = get_project(db, project_id)
-            await project_sse_manager.send_event(
-                project_id,
-                json.dumps(project_sse_manager.convert_to_dict(project_data))
-            )
-            logging.info(f"[SSE] Project {project_id} updated from Member {member_id} reject.")
-        else:
-            raise HTTPException(status_code=404, detail="Project not found")
+        result = await reject_project_participation_request(db, project_id, member_id)
+        logging.info(f"[SSE] Project {project_id} updated from Member {member_id} reject.")
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -239,15 +207,7 @@ async def add_member_to_project_route(project_id: str, member_data: ProjectMembe
 async def scout_member_endpoint(project_id: str, member_id: int, member_data: ProjectMemberScout, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         result = scout_member(db, project_id, member_id, member_data)
-        if result:
-            project_data = get_project(db, project_id)
-            await project_sse_manager.send_event(
-                project_id,
-                json.dumps(project_sse_manager.convert_to_dict(project_data))
-            )
-            logging.info(f"[SSE] Project {project_id} updated from Member {member_id} scout.")
-        else:
-            raise HTTPException(status_code=404, detail="Project not found")
+        logging.info(f"[SSE] Project {project_id} updated from Member {member_id} scout.")
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 

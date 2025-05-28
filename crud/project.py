@@ -16,6 +16,8 @@ from schemas.milestone import MileStone as MileStoneSchema
 from schemas.project import ProjectInfoUpdate, ProjectMemberPermission, ProjectMemberScout
 from models.task import Task as TaskModel
 from models.milestone import Milestone as MilestoneModel
+from utils.sse_manager import notification_sse_manager, project_sse_manager
+import json
 
 
 def create_project(db: Session, project: ProjectCreate):
@@ -212,7 +214,7 @@ def add_member_to_project(db: Session, project_id: str, member_id: int):
     db.rollback()
     raise
 
-def scout_member(db: Session, project_id: str, member_id: int, member_data: ProjectMemberScout):
+async def scout_member(db: Session, project_id: str, member_id: int, member_data: ProjectMemberScout):
   project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
   if not project:
     return None
@@ -245,6 +247,12 @@ def scout_member(db: Session, project_id: str, member_id: int, member_data: Proj
     receiver_member.notification = []
     
   receiver_member.notification.append(notification.model_dump())
+  
+  await notification_sse_manager.send_event(
+    receiver_member.id,
+    json.dumps(notification_sse_manager.convert_to_dict(receiver_member.notification))
+  )
+  
   db.query(MemberModel).filter(MemberModel.id == member_id).update(
     {"notification": receiver_member.notification},
     synchronize_session="fetch"
@@ -415,7 +423,7 @@ def update_project_member_permission(db: Session, project_id: str, member_id: in
   return project
 
 
-def send_project_participation_request(db: Session, project_id: str, member_id: int):
+async def send_project_participation_request(db: Session, project_id: str, member_id: int):
   try:
     project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
     if not project:
@@ -474,6 +482,11 @@ def send_project_participation_request(db: Session, project_id: str, member_id: 
       notification_dict = notification.model_dump()
       leader.notification.append(notification_dict)
       
+      await notification_sse_manager.send_event(
+        project.leader_id,
+        json.dumps(notification_sse_manager.convert_to_dict(leader.notification))
+      )
+      
       db.query(MemberModel).filter(MemberModel.id == project.leader_id).update(
         {"notification": leader.notification},
         synchronize_session="fetch"
@@ -510,6 +523,11 @@ def send_project_participation_request(db: Session, project_id: str, member_id: 
         notification_dict = notification.model_dump()
         manager.notification.append(notification_dict)
         
+        await notification_sse_manager.send_event(
+          manager_id,
+          json.dumps(notification_sse_manager.convert_to_dict(manager.notification))
+        )
+        
         db.query(MemberModel).filter(MemberModel.id == manager_id).update(
           {"notification": manager.notification},
           synchronize_session="fetch"
@@ -524,7 +542,7 @@ def send_project_participation_request(db: Session, project_id: str, member_id: 
     db.rollback()
     raise
   
-def allow_project_participation_request(db: Session, project_id: str, member_id: int):
+async def allow_project_participation_request(db: Session, project_id: str, member_id: int):
   project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
   if not project:
     return None
@@ -568,6 +586,11 @@ def allow_project_participation_request(db: Session, project_id: str, member_id:
   # Convert the Pydantic model to a dictionary
   member.notification.append(notification.model_dump())
   
+  await notification_sse_manager.send_event(
+    member_id,
+    json.dumps(notification_sse_manager.convert_to_dict(member.notification))
+  )
+  
   # Update the member's notification in the database
   db.query(MemberModel).filter(MemberModel.id == member.id).update(
     {"notification": member.notification},
@@ -579,7 +602,7 @@ def allow_project_participation_request(db: Session, project_id: str, member_id:
   db.refresh(member)
   return project, member
 
-def reject_project_participation_request(db: Session, project_id: str, member_id: int):
+async def reject_project_participation_request(db: Session, project_id: str, member_id: int):
   project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
   if not project:
     return None
@@ -602,6 +625,11 @@ def reject_project_participation_request(db: Session, project_id: str, member_id
     synchronize_session="fetch"
   )
   
+  await project_sse_manager.send_event(
+    project_id,
+    json.dumps(project_sse_manager.convert_to_dict(project))
+  )
+  
   # Add notification to member
   if not hasattr(member, 'notification') or member.notification is None:
     member.notification = []
@@ -619,6 +647,12 @@ def reject_project_participation_request(db: Session, project_id: str, member_id
   )
   
   member.notification.append(notification.model_dump())
+  
+  await notification_sse_manager.send_event(
+    member_id,
+    json.dumps(notification_sse_manager.convert_to_dict(member.notification))
+  )
+  
   db.query(MemberModel).filter(MemberModel.id == member_id).update(
     {"notification": member.notification},
     synchronize_session="fetch"
@@ -629,7 +663,7 @@ def reject_project_participation_request(db: Session, project_id: str, member_id
   db.refresh(member)
   return project, member
 
-def kick_out_member_from_project(db: Session, project_id: str, member_id: int):
+async def kick_out_member_from_project(db: Session, project_id: str, member_id: int):
   try:
     member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
     if not member:
@@ -738,6 +772,11 @@ def kick_out_member_from_project(db: Session, project_id: str, member_id: int):
       sender_id=project.leader_id if project.leader_id is not None else 0,  # Use 0 as default if no leader
       receiver_id=member_id,
       project_id=project_id
+    )
+    
+    await notification_sse_manager.send_event(
+      member_id,
+      json.dumps(notification_sse_manager.convert_to_dict(member.notification))
     )
     
     try:

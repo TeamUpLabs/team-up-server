@@ -5,7 +5,7 @@ from schemas.member import NotificationUpdate, NotificationInfo
 from crud.project import add_member_to_project
 from datetime import datetime
 
-def update_notification(db: Session, member_id: int, notification_id: int, notification_update: NotificationUpdate):
+async def update_notification(db: Session, member_id: int, notification_id: int, notification_update: NotificationUpdate):
   member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
   if not member:
     return None

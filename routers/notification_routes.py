@@ -7,6 +7,7 @@ import asyncio
 import json
 from typing import AsyncGenerator
 import logging
+from utils.sse_manager import notification_sse_manager
 
 router = APIRouter(
     tags=["notification"]
@@ -28,99 +29,111 @@ def get_notifications_endpoint(member_id: int, db: SessionLocal = Depends(get_db
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/member/{member_id}/notification/{notification_id}")
-def update_notification_endpoint(member_id: int, notification_id: int, notification_update: NotificationUpdate, db: SessionLocal = Depends(get_db)):  # type: ignore
+async def update_notification_endpoint(member_id: int, notification_id: int, notification_update: NotificationUpdate, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
-        updated_notification = update_notification(db, member_id, notification_id, notification_update)
+        updated_notification = await update_notification(db, member_id, notification_id, notification_update)
+        if updated_notification:
+            await notification_sse_manager.send_event(
+                member_id,
+                json.dumps(notification_sse_manager.convert_to_dict(update_notification))
+            )
+            logging.info(f"[SSE] Member {member_id} updated from Notification update.")
+        else:
+            raise HTTPException(status_code=404, detail="Notification not found")
         return updated_notification
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) 
       
       
 @router.post("/member/{member_id}/notification/{notification_id}/scout/accept")
-def accept_scout_member_endpoint(member_id: int, notification_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
+async def accept_scout_member_endpoint(member_id: int, notification_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
-        return accept_scout_member(db, member_id, notification_id)
+        result = accept_scout_member(db, member_id, notification_id)
+        if result:
+            notification_data = get_notifications(db, member_id)
+            await notification_sse_manager.send_event(
+                member_id,
+                json.dumps(notification_sse_manager.convert_to_dict(notification_data))
+            )
+            logging.info(f"[SSE] Member {member_id} updated from Notification accept.")
+        else:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
     
 @router.post("/member/{member_id}/notification/{notification_id}/scout/reject")
-def reject_scout_member_endpoint(member_id: int, notification_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
+async def reject_scout_member_endpoint(member_id: int, notification_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
-        return reject_scout_member(db, member_id, notification_id)
+        result = reject_scout_member(db, member_id, notification_id)
+        if result:
+            notification_data = get_notifications(db, member_id)
+            await notification_sse_manager.send_event(
+                member_id,
+                json.dumps(notification_sse_manager.convert_to_dict(notification_data))
+            )
+            logging.info(f"[SSE] Member {member_id} updated from Notification reject.")
+        else:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
       
   
 @router.delete("/member/{member_id}/notification/{notification_id}")
-def delete_notification_endpoint(member_id: int, notification_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
+async def delete_notification_endpoint(member_id: int, notification_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
-        return delete_notification(db, member_id, notification_id)
+        result = delete_notification(db, member_id, notification_id)
+        if result:
+            notification_data = get_notifications(db, member_id)
+            await notification_sse_manager.send_event(
+                member_id,
+                json.dumps(notification_sse_manager.convert_to_dict(notification_data))
+            )
+            logging.info(f"[SSE] Member {member_id} updated from Notification delete.")
+        else:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
 @router.delete("/member/{member_id}/notifications")
-def delete_all_notifications_endpoint(member_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
+async def delete_all_notifications_endpoint(member_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
-        return delete_all_notifications(db, member_id)
+        result = delete_all_notifications(db, member_id)
+        if result:
+            notification_data = get_notifications(db, member_id)
+            await notification_sse_manager.send_event(
+                member_id,
+                json.dumps(notification_sse_manager.convert_to_dict(notification_data))
+            )
+            logging.info(f"[SSE] Member {member_id} updated from Notification delete all.")
+        else:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
 @router.get("/member/{member_id}/notifications/sse")
 async def notification_sse(member_id: int, request: Request):  # type: ignore   
-    """
-    Server-Sent Events endpoint for real-time notification updates.
-    """
-    def convert_to_dict(obj):
-        if hasattr(obj, '__dict__'):
-            return {
-                key: convert_to_dict(value)
-                for key, value in obj.__dict__.items()
-                if not key.startswith('_')
-            }
-        elif isinstance(obj, (list, tuple)):
-            return [convert_to_dict(item) for item in obj]
-        elif isinstance(obj, dict):
-            return {key: convert_to_dict(value) for key, value in obj.items()}
-        else:
-            return obj
-
-    async def event_generator() -> AsyncGenerator[str, None]:
-        db = None
+    queue = await notification_sse_manager.connect(member_id)
+    
+    async def event_generator():
+        db = SessionLocal()
         try:
-            db = SessionLocal()
-            last_notifications = None
-            while True:
-                if await request.is_disconnected():
-                    logging.info(f"Client disconnected from member {member_id} notifications SSE")
-                    break
-
-                try:
-                    current_notifications = get_notifications(db, member_id)
-                    notifications_dict = convert_to_dict(current_notifications or [])
-                    
-                    if last_notifications != notifications_dict:
-                        yield f"data: {json.dumps(notifications_dict)}\n\n"
-                        last_notifications = notifications_dict
-                except Exception as e:
-                    logging.error(f"Error in SSE for member {member_id} notifications: {str(e)}")
-                    error_message = {
-                        'error': str(e),
-                        'status': 'error'
-                    }
-                    yield f"data: {json.dumps(error_message)}\n\n"
-                    # Don't break the connection on error, just log it and continue
-                    await asyncio.sleep(3)
-                    continue
-
-                await asyncio.sleep(3)
-        except Exception as e:
-            logging.error(f"Critical error in SSE for member {member_id}: {str(e)}")
-            yield f"data: {json.dumps({'error': str(e), 'status': 'error'})}\n\n"
+            notifications = get_notifications(db, member_id)
+            notifications_dict = notification_sse_manager.convert_to_dict(notifications)
+            yield f"data: {json.dumps(notifications_dict)}\n\n"
         finally:
-            if db:
-                db.close()
-            logging.info(f"SSE connection closed for member {member_id} notifications")
+            db.close()
+            
+        async for event in notification_sse_manager.event_generator(member_id, queue):
+            if await request.is_disconnected():
+                await notification_sse_manager.disconnect(member_id, queue)
+                break
+            yield event
+        
 
     return StreamingResponse(
         event_generator(),
