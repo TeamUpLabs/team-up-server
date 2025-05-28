@@ -88,6 +88,7 @@ class MemberUpdate(BaseModel):
     workingHours: Optional[WorkingHoursInfo] = None
     socialLinks: Optional[List[SocialLinksInfo]] = []
     notification: Optional[List[NotificationInfo]] = []
+    lastLogin: Optional[str] = None
     
     class Config:
         from_attributes = True
