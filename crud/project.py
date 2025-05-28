@@ -567,6 +567,11 @@ async def allow_project_participation_request(db: Session, project_id: str, memb
     synchronize_session="fetch"
   )
   
+  await project_sse_manager.send_event(
+    project_id,
+    json.dumps(project_sse_manager.convert_to_dict(project))
+  )
+  
   # Add notification to member
   if not hasattr(member, 'notification') or member.notification is None:
     member.notification = []
