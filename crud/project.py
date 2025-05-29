@@ -1,5 +1,5 @@
 from schemas.project import ProjectCreate
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, attributes
 import logging
 from datetime import datetime
 import json
@@ -18,6 +18,7 @@ from models.task import Task as TaskModel
 from models.milestone import Milestone as MilestoneModel
 from utils.sse_manager import notification_sse_manager, project_sse_manager
 import json
+from utils.send_notification import send_notification
 
 
 def create_project(db: Session, project: ProjectCreate):
@@ -230,7 +231,8 @@ async def scout_member(db: Session, project_id: str, member_id: int, member_data
   if project.participationRequest is not None and member_id in project.participationRequest:
     return None
   
-  notification = NotificationInfo(
+  await send_notification(
+    db=db,
     id=int(datetime.now().timestamp()),
     title="스카우트 요청",
     message=f'"{sender_member.name}" 님이 "{project.title}" 프로젝트에 참여 요청을 보냈습니다.',
@@ -242,24 +244,6 @@ async def scout_member(db: Session, project_id: str, member_id: int, member_data
     project_id=project_id
   )
   
-  # Initialize notification list if it doesn't exist
-  if not hasattr(receiver_member, 'notification') or receiver_member.notification is None:
-    receiver_member.notification = []
-    
-  receiver_member.notification.append(notification.model_dump())
-  
-  await notification_sse_manager.send_event(
-    receiver_member.id,
-    json.dumps(notification_sse_manager.convert_to_dict(receiver_member.notification))
-  )
-  
-  db.query(MemberModel).filter(MemberModel.id == member_id).update(
-    {"notification": receiver_member.notification},
-    synchronize_session="fetch"
-  )
-  
-  db.commit()
-  db.refresh(receiver_member)
   return receiver_member
   
 def get_project_basic_info(db: Session, project_id: str):
@@ -427,6 +411,7 @@ async def send_project_participation_request(db: Session, project_id: str, membe
   try:
     project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
     if not project:
+      logging.error(f"Project not found: {project_id} in send_project_participation_request")
       return None
     
     if project.participationRequest is None:
@@ -437,6 +422,7 @@ async def send_project_participation_request(db: Session, project_id: str, membe
     
     member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
     if not member:
+      logging.error(f"Member not found: {member_id} in send_project_participation_request")
       return None
       
     if member.participationRequest is None:
@@ -466,7 +452,8 @@ async def send_project_participation_request(db: Session, project_id: str, membe
         if hasattr(note, 'model_dump'):  # Check if it's a Pydantic model
           leader.notification[i] = note.model_dump()
           
-      notification = NotificationInfo(
+      await send_notification(
+        db=db,
         id=int(datetime.now().timestamp()),
         title="참여 요청",
         message=f'"{member.name}" 님이 "{project.title}" 프로젝트에 참여 요청을 보냈습니다.',
@@ -477,26 +464,16 @@ async def send_project_participation_request(db: Session, project_id: str, membe
         receiver_id=project.leader_id,
         project_id=project_id
       )
-      
-      # Convert the Pydantic model to a dictionary explicitly
-      notification_dict = notification.model_dump()
-      leader.notification.append(notification_dict)
-      
-      await notification_sse_manager.send_event(
-        project.leader_id,
-        json.dumps(notification_sse_manager.convert_to_dict(leader.notification))
-      )
-      
-      db.query(MemberModel).filter(MemberModel.id == project.leader_id).update(
-        {"notification": leader.notification},
-        synchronize_session="fetch"
-      )
+    else:
+      logging.error(f"Leader not found for project: {project_id} in send_project_participation_request")
+    
     
     # Add notification to managers
     if project.manager_id:
       for manager_id in project.manager_id:
         manager = get_member_by_id(db, manager_id)
         if not manager:
+          logging.warning(f"Manager with ID {manager_id} not found in send_project_participation_request")
           continue
         
         if not hasattr(manager, 'notification') or manager.notification is None:
@@ -507,7 +484,8 @@ async def send_project_participation_request(db: Session, project_id: str, membe
           if hasattr(note, 'model_dump'):  # Check if it's a Pydantic model
             manager.notification[i] = note.model_dump()
           
-        notification = NotificationInfo(
+        await send_notification(
+          db=db,
           id=int(datetime.now().timestamp()),
           title="참여 요청",
           message=f'"{member.name}" 님이 "{project.title}" 프로젝트에 참여 요청을 보냈습니다.',
@@ -519,154 +497,207 @@ async def send_project_participation_request(db: Session, project_id: str, membe
           project_id=project_id
         )
         
-        # Convert the Pydantic model to a dictionary explicitly
-        notification_dict = notification.model_dump()
-        manager.notification.append(notification_dict)
-        
-        await notification_sse_manager.send_event(
-          manager_id,
-          json.dumps(notification_sse_manager.convert_to_dict(manager.notification))
-        )
-        
-        db.query(MemberModel).filter(MemberModel.id == manager_id).update(
-          {"notification": manager.notification},
-          synchronize_session="fetch"
+    project_data = get_project(db, project_id)
+    if not project_data:
+        logging.error(f"Failed to get project data for project {project_id} after updates in send_project_participation_request")
+    else:
+        await project_sse_manager.send_event(
+          project_id,
+          json.dumps(project_sse_manager.convert_to_dict(project_data))
         )
     
+    # Serialize subtasks for any dirty MilestoneModel instances before committing
+    for instance in db.dirty:
+        if isinstance(instance, MilestoneModel):
+            history = attributes.get_history(instance, 'subtasks')
+            if history.has_changes() and instance.subtasks is not None:
+                serializable_subtasks = []
+                for subtask_item in instance.subtasks:
+                    try:
+                        if isinstance(subtask_item, TaskModel):
+                            task_schema_instance = TaskSchema.model_validate(subtask_item)
+                            serializable_subtasks.append(task_schema_instance.model_dump())
+                        elif hasattr(subtask_item, 'model_dump'): # Pydantic model
+                            serializable_subtasks.append(subtask_item.model_dump())
+                        elif isinstance(subtask_item, dict):
+                            serializable_subtasks.append(subtask_item)
+                        else:
+                            logging.warning(f"Subtask in milestone {instance.id} during pre-commit (send_request) is of unhandled type: {type(subtask_item)}. Attempting str conversion.")
+                            serializable_subtasks.append(str(subtask_item))
+                    except Exception as e_serialize:
+                        logging.error(f"Could not serialize subtask in milestone {instance.id} (send_request). Subtask: {subtask_item}. Error: {e_serialize}", exc_info=True)
+                        serializable_subtasks.append(f"Error serializing subtask: {str(subtask_item)[:100]}") # Truncate subtask_item string representation
+                instance.subtasks = serializable_subtasks
+
     db.commit()
     db.refresh(project)
     db.refresh(member)
     return project, member
   except Exception as e:
-    logging.error(f"Error in send_project_participation_request: {str(e)}", exc_info=True)
+    logging.error(f"Error in send_project_participation_request for project_id {project_id} and member_id {member_id}: {str(e)}", exc_info=True)
     db.rollback()
     raise
   
 async def allow_project_participation_request(db: Session, project_id: str, member_id: int):
-  project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
-  if not project:
-    return None
-  
-  if member_id in project.participationRequest:
-    project.participationRequest = [m_id for m_id in project.participationRequest if m_id != member_id]
+  try:
+    project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    if not project:
+      logging.error(f"Project not found: {project_id} in allow_project_participation_request")
+      return None
     
-    add_member_to_project(db, project_id, member_id)
-    db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
-      {"participationRequest": project.participationRequest},
+    if member_id in project.participationRequest:
+      project.participationRequest = [m_id for m_id in project.participationRequest if m_id != member_id]
+      
+      add_member_to_project(db, project_id, member_id)
+      db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+        {"participationRequest": project.participationRequest},
+        synchronize_session="fetch"
+      )
+    
+    member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+    if not member:
+      return None
+    
+    if project_id in member.participationRequest:
+      member.participationRequest = [m_id for m_id in member.participationRequest if m_id != project_id]
+    db.query(MemberModel).filter(MemberModel.id == member_id).update(
+      {"participationRequest": member.participationRequest},
       synchronize_session="fetch"
     )
-  
-  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-  if not member:
-    return None
-  
-  if project_id in member.participationRequest:
-    member.participationRequest = [m_id for m_id in member.participationRequest if m_id != project_id]
-  db.query(MemberModel).filter(MemberModel.id == member_id).update(
-    {"participationRequest": member.participationRequest},
-    synchronize_session="fetch"
-  )
-  
-  await project_sse_manager.send_event(
-    project_id,
-    json.dumps(project_sse_manager.convert_to_dict(project))
-  )
-  
-  # Add notification to member
-  if not hasattr(member, 'notification') or member.notification is None:
-    member.notification = []
     
-  notification = NotificationInfo(
-    id=int(datetime.now().timestamp()),
-    title="참여 승인",
-    message=f'"{project.title}" 프로젝트 참여가 승인되었습니다.',
-    type="project",
-    timestamp=datetime.now().isoformat().split('T')[0],
-    isRead=False,
-    sender_id=project.leader_id if project.leader_id is not None else 0,  # Use 0 as default if no leader
-    receiver_id=member_id,
-    project_id=project_id
-  )
-  
-  # Convert the Pydantic model to a dictionary
-  member.notification.append(notification.model_dump())
-  
-  await notification_sse_manager.send_event(
-    member_id,
-    json.dumps(notification_sse_manager.convert_to_dict(member.notification))
-  )
-  
-  # Update the member's notification in the database
-  db.query(MemberModel).filter(MemberModel.id == member.id).update(
-    {"notification": member.notification},
-    synchronize_session="fetch"
-  )
-  
-  db.commit()
-  db.refresh(project)
-  db.refresh(member)
-  return project, member
+    await send_notification(
+      db=db,
+      id=int(datetime.now().timestamp()),
+      title="참여 승인",
+      message=f'"{project.title}" 프로젝트 참여가 승인되었습니다.',
+      type="project",
+      timestamp=datetime.now().isoformat().split('T')[0],
+      isRead=False,
+      sender_id=project.leader_id,
+      receiver_id=member_id,
+      project_id=project_id
+    )
+    
+    project_data = get_project(db, project_id)
+    await project_sse_manager.send_event(
+      project_id,
+      json.dumps(project_sse_manager.convert_to_dict(project_data))
+    )
+
+    # Serialize subtasks for any dirty MilestoneModel instances before committing
+    for instance in db.dirty:
+        if isinstance(instance, MilestoneModel):
+            history = attributes.get_history(instance, 'subtasks')
+            if history.has_changes() and instance.subtasks is not None:
+                serializable_subtasks = []
+                for subtask_item in instance.subtasks:
+                    try:
+                        if isinstance(subtask_item, TaskModel):
+                            task_schema_instance = TaskSchema.model_validate(subtask_item)
+                            serializable_subtasks.append(task_schema_instance.model_dump())
+                        elif hasattr(subtask_item, 'model_dump'): # Pydantic model
+                            serializable_subtasks.append(subtask_item.model_dump())
+                        elif isinstance(subtask_item, dict):
+                            serializable_subtasks.append(subtask_item)
+                        else:
+                            logging.warning(f"Subtask in milestone {instance.id} during pre-commit (allow_request) is of unhandled type: {type(subtask_item)}. Attempting str conversion.")
+                            serializable_subtasks.append(str(subtask_item))
+                    except Exception as e_serialize:
+                        logging.error(f"Could not serialize subtask in milestone {instance.id} (allow_request). Subtask: {subtask_item}. Error: {e_serialize}", exc_info=True)
+                        serializable_subtasks.append(f"Error serializing subtask: {str(subtask_item)[:100]}") # Truncate subtask_item string representation
+                instance.subtasks = serializable_subtasks
+
+    db.commit()
+    db.refresh(project)
+    return project
+  except Exception as e:
+    logging.error(f"Error in allow_project_participation_request for project_id {project_id} and member_id {member_id}: {str(e)}", exc_info=True)
+    db.rollback()
+    raise
 
 async def reject_project_participation_request(db: Session, project_id: str, member_id: int):
-  project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
-  if not project:
-    return None
-  
-  if member_id in project.participationRequest:
-    project.participationRequest = [m_id for m_id in project.participationRequest if m_id != member_id]
-    db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
-      {"participationRequest": project.participationRequest},
-      synchronize_session="fetch"
-    )
-  
-  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-  if not member:
-    return None
-  
-  if project_id in member.participationRequest:
-    member.participationRequest = [m_id for m_id in member.participationRequest if m_id != project_id]
-  db.query(MemberModel).filter(MemberModel.id == member_id).update(
-    {"participationRequest": member.participationRequest},
-    synchronize_session="fetch"
-  )
-  
-  await project_sse_manager.send_event(
-    project_id,
-    json.dumps(project_sse_manager.convert_to_dict(project))
-  )
-  
-  # Add notification to member
-  if not hasattr(member, 'notification') or member.notification is None:
-    member.notification = []
+  try:
+    project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+    if not project:
+      logging.error(f"Project not found: {project_id} in reject_project_participation_request")
+      return None
     
-  notification = NotificationInfo(
-    id=int(datetime.now().timestamp()),
-    title="참여 거절",
-    message=f'"{project.title}" 프로젝트 참여가 거절되었습니다.',
-    type="project",
-    timestamp=datetime.now().isoformat().split('T')[0],
-    isRead=False,
-    sender_id=project.leader_id if project.leader_id is not None else 0,  # Use 0 as default if no leader
-    receiver_id=member_id,
-    project_id=project_id
-  )
-  
-  member.notification.append(notification.model_dump())
-  
-  await notification_sse_manager.send_event(
-    member_id,
-    json.dumps(notification_sse_manager.convert_to_dict(member.notification))
-  )
-  
-  db.query(MemberModel).filter(MemberModel.id == member_id).update(
-    {"notification": member.notification},
-    synchronize_session="fetch"
-  )
-  
-  db.commit()
-  db.refresh(project)
-  db.refresh(member)
-  return project, member
+    if member_id in project.participationRequest:
+      project.participationRequest = [m_id for m_id in project.participationRequest if m_id != member_id]
+      db.query(ProjectModel).filter(ProjectModel.id == project_id).update(
+        {"participationRequest": project.participationRequest},
+        synchronize_session="fetch"
+      )
+    else:
+      logging.warning(f"Member {member_id} not in participation request for project {project_id} in reject_project_participation_request")
+
+    member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
+    if not member:
+      logging.error(f"Member not found: {member_id} in reject_project_participation_request")
+      return None
+    
+    if project_id in member.participationRequest:
+      member.participationRequest = [m_id for m_id in member.participationRequest if m_id != project_id]
+      db.query(MemberModel).filter(MemberModel.id == member_id).update(
+        {"participationRequest": member.participationRequest},
+        synchronize_session="fetch"
+      )
+    else:
+      logging.warning(f"Project {project_id} not in participation request for member {member_id} in reject_project_participation_request")
+
+    await send_notification(
+      db=db,
+      id=int(datetime.now().timestamp()),
+      title="참여 거절",
+      message=f'"{project.title}" 프로젝트 참여가 거절되었습니다.',
+      type="project",
+      timestamp=datetime.now().isoformat().split('T')[0],
+      isRead=False,
+      sender_id=project.leader_id, # Assuming leader_id is not None, add check if necessary
+      receiver_id=member_id,
+      project_id=project_id
+    )
+    
+    project_data = get_project(db, project_id)
+    if not project_data:
+      logging.error(f"Failed to get project data for project {project_id} after updates in reject_project_participation_request")
+    else:
+      await project_sse_manager.send_event(
+        project_id,
+        json.dumps(project_sse_manager.convert_to_dict(project_data))
+      )
+
+    # Serialize subtasks for any dirty MilestoneModel instances before committing
+    for instance in db.dirty:
+        if isinstance(instance, MilestoneModel):
+            history = attributes.get_history(instance, 'subtasks')
+            if history.has_changes() and instance.subtasks is not None:
+                serializable_subtasks = []
+                for subtask_item in instance.subtasks:
+                    try:
+                        if isinstance(subtask_item, TaskModel):
+                            task_schema_instance = TaskSchema.model_validate(subtask_item)
+                            serializable_subtasks.append(task_schema_instance.model_dump())
+                        elif hasattr(subtask_item, 'model_dump'): # Pydantic model
+                            serializable_subtasks.append(subtask_item.model_dump())
+                        elif isinstance(subtask_item, dict):
+                            serializable_subtasks.append(subtask_item)
+                        else:
+                            # Ensuring the logging context is clear for kick_out_member
+                            logging.warning(f"Subtask in milestone {instance.id} during pre-commit (kick_out_member) is of unhandled type: {type(subtask_item)}. Attempting str conversion.")
+                            serializable_subtasks.append(str(subtask_item))
+                    except Exception as e_serialize:
+                        logging.error(f"Could not serialize subtask in milestone {instance.id} (kick_out_member). Subtask: {subtask_item}. Error: {e_serialize}", exc_info=True)
+                        serializable_subtasks.append(f"Error serializing subtask: {str(subtask_item)[:100]}")
+                instance.subtasks = serializable_subtasks
+    
+    db.commit()
+    db.refresh(project)
+    return project
+  except Exception as e:
+    logging.error(f"Error in reject_project_participation_request for project_id {project_id} and member_id {member_id}: {str(e)}", exc_info=True)
+    db.rollback()
+    raise
 
 async def kick_out_member_from_project(db: Session, project_id: str, member_id: int):
   try:
@@ -733,23 +764,25 @@ async def kick_out_member_from_project(db: Session, project_id: str, member_id: 
       # Fix serialization issue with subtasks that might contain Task objects
       if milestone.subtasks is not None:
         serializable_subtasks = []
-        for subtask in milestone.subtasks:
-          # Check if subtask is a Task object and convert to dict
-          if hasattr(subtask, '__dict__'):
-            try:
-              # Try to use model_dump if it's a pydantic model
-              subtask_dict = subtask.model_dump() if hasattr(subtask, 'model_dump') else subtask.__dict__
-              # Remove SQLAlchemy internal attributes
-              if '_sa_instance_state' in subtask_dict:
-                del subtask_dict['_sa_instance_state']
-              serializable_subtasks.append(subtask_dict)
-            except:
-              # If conversion fails, skip this subtask
-              logging.warning(f"Could not serialize subtask in milestone {milestone.id}")
-          else:
-            # If it's already a dict or basic type, add it as is
-            serializable_subtasks.append(subtask)
-        
+        for subtask_item in milestone.subtasks:
+          try:
+            if isinstance(subtask_item, TaskModel):
+              # Convert ORM TaskModel to TaskSchema Pydantic model, then to dict
+              task_schema_instance = TaskSchema.model_validate(subtask_item)
+              serializable_subtasks.append(task_schema_instance.model_dump())
+            elif hasattr(subtask_item, 'model_dump'): # Already a Pydantic model
+              serializable_subtasks.append(subtask_item.model_dump())
+            elif isinstance(subtask_item, dict): # Already a dict
+              serializable_subtasks.append(subtask_item) # Assume it's serializable
+            else:
+              logging.warning(f"Subtask in milestone {milestone.id} is of unhandled type: {type(subtask_item)}. Attempting str conversion.")
+              serializable_subtasks.append(str(subtask_item))
+          except Exception as e_serialize:
+            logging.error(f"Could not serialize subtask in milestone {milestone.id}. Subtask: {subtask_item}. Error: {e_serialize}", exc_info=True)
+            # Optionally, append a placeholder or skip
+            # For now, let's try to append a string representation as a fallback to avoid breaking the whole list.
+            serializable_subtasks.append(f"Error serializing subtask: {subtask_item}")
+
         milestone.subtasks = serializable_subtasks
         modified = True
       
@@ -763,44 +796,51 @@ async def kick_out_member_from_project(db: Session, project_id: str, member_id: 
           synchronize_session="fetch"
         )
       
-    # Add notification to member
-    if not hasattr(member, 'notification') or member.notification is None:
-      member.notification = []
-      
-    notification = NotificationInfo(
+    await send_notification(
+      db=db,
       id=int(datetime.now().timestamp()),
       title="프로젝트 탈퇴",
       message=f'"{project.title}" 프로젝트에서 탈퇴되었습니다.',
       type="project",
       timestamp=datetime.now().isoformat().split('T')[0],
       isRead=False,
-      sender_id=project.leader_id if project.leader_id is not None else 0,  # Use 0 as default if no leader
+      sender_id=project.leader_id,
       receiver_id=member_id,
       project_id=project_id
     )
-    
-    await notification_sse_manager.send_event(
-      member_id,
-      json.dumps(notification_sse_manager.convert_to_dict(member.notification))
+      
+    project_data = get_project(db, project_id)
+    await project_sse_manager.send_event(
+      project_id,
+      json.dumps(project_sse_manager.convert_to_dict(project_data))
     )
     
-    try:
-      notification_dict = notification.model_dump()
-      member.notification.append(notification_dict)
-    except AttributeError:
-      # Fallback if model_dump doesn't exist (older pydantic versions)
-      notification_dict = dict(notification)
-      member.notification.append(notification_dict)
-    
-    db.query(MemberModel).filter(MemberModel.id == member_id).update(
-      {"notification": member.notification},
-      synchronize_session="fetch"
-    )
+    # Serialize subtasks for any dirty MilestoneModel instances before committing
+    for instance in db.dirty:
+        if isinstance(instance, MilestoneModel):
+            history = attributes.get_history(instance, 'subtasks')
+            if history.has_changes() and instance.subtasks is not None:
+                serializable_subtasks = []
+                for subtask_item in instance.subtasks:
+                    try:
+                        if isinstance(subtask_item, TaskModel):
+                            task_schema_instance = TaskSchema.model_validate(subtask_item)
+                            serializable_subtasks.append(task_schema_instance.model_dump())
+                        elif hasattr(subtask_item, 'model_dump'): # Pydantic model
+                            serializable_subtasks.append(subtask_item.model_dump())
+                        elif isinstance(subtask_item, dict):
+                            serializable_subtasks.append(subtask_item)
+                        else:
+                            logging.warning(f"Subtask in milestone {instance.id} during pre-commit (kick_out_member) is of unhandled type: {type(subtask_item)}. Attempting str conversion.")
+                            serializable_subtasks.append(str(subtask_item))
+                    except Exception as e_serialize:
+                        logging.error(f"Could not serialize subtask in milestone {instance.id} (kick_out_member). Subtask: {subtask_item}. Error: {e_serialize}", exc_info=True)
+                        serializable_subtasks.append(f"Error serializing subtask: {str(subtask_item)[:100]}")
+                instance.subtasks = serializable_subtasks
     
     db.commit()
-    db.refresh(member)
     db.refresh(project)
-    return member, project
+    return project
   except Exception as e:
     logging.error(f"Error in kick_out_member_from_project: {str(e)}", exc_info=True)
     db.rollback()
