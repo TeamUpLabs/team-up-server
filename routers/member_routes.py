@@ -122,24 +122,24 @@ def read_member_projects(member_id: int, db: SessionLocal = Depends(get_db)):  #
 async def update_member(member_id: int, member_update: MemberUpdate, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         updated_member = update_member_by_id(db, member_id, member_update)
-        if updated_member:
-            logging.info(f"Updated member: {updated_member}")
-            if updated_member.projects:
-                logging.info(f"Updated member projects: {updated_member.projects}")
-                for project_id in updated_member.projects:
-                    project_data = get_project(db, project_id)
-                    logging.info(f"Project data: {project_data}")
-                    await project_sse_manager.send_event(
-                        project_id,
-                        json.dumps(project_sse_manager.convert_to_dict(project_data))
-                    )
-                    logging.info(f"[SSE] Project {project_id} updated from Member {member_id} update.")
-            else:
-                raise HTTPException(status_code=404, detail="Member not found")
+        if not updated_member:
+            raise HTTPException(status_code=404, detail="Member not found")
+            
+        if updated_member.projects:
+            logging.info(f"Updated member projects: {updated_member.projects}")
+            for project_id in updated_member.projects:
+                project_data = get_project(db, project_id)
+                logging.info(f"Project data: {project_data}")
+                await project_sse_manager.send_event(
+                    project_id,
+                    json.dumps(project_sse_manager.convert_to_dict(project_data))
+                )
+                logging.info(f"[SSE] Project {project_id} updated from Member {member_id} update.")
+        
         logging.info(f"[SSE] Member {member_id} updated from Member update.")
         return updated_member
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) 
+        raise HTTPException(status_code=500, detail=str(e))
       
 @router.put("/{member_id}/profile-image")
 async def update_member_profile_image(member_id: int, profileImage: UploadFile = File(None), db: SessionLocal = Depends(get_db)):  # type: ignore
