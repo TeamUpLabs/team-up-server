@@ -75,12 +75,6 @@ def update_schedule(db: Session, schedule_id: int, schedule: ScheduleUpdate):
     db_schedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
     
     if db_schedule:
-      assignee = []
-      if schedule.assignee_id:
-        for assignee_id in schedule.assignee_id:
-          assignee.append(get_basic_member_info(db, assignee_id))
-      schedule.assignee = assignee
-      
       schedule_data = schedule.model_dump()
       for field, value in schedule_data.items():
         setattr(db_schedule, field, value)
@@ -90,7 +84,9 @@ def update_schedule(db: Session, schedule_id: int, schedule: ScheduleUpdate):
     return None
 
 def delete_schedule_by_id(db: Session, schedule_id: int):
-    db.query(Schedule).filter(Schedule.id == schedule_id).delete()
+    schedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
+    if not schedule:
+        return None
+    db.delete(schedule)
     db.commit()
-    db.refresh(db)
-    return True
+    return schedule

@@ -161,10 +161,11 @@ async def update_member_profile_image(member_id: int, profileImage: UploadFile =
           
       updated_member = update_member_profile_image_by_id(db, member_id, public_url)
       if updated_member:
-        project_data = get_project(db, updated_member.projects[0])
-        await project_sse_manager.send_event(
-            updated_member.projects[0],
-            json.dumps(project_sse_manager.convert_to_dict(project_data))
+        project_datas = get_project(db, updated_member.projects)
+        for project_data in project_datas:
+          await project_sse_manager.send_event(
+              project_data.id,
+              json.dumps(project_sse_manager.convert_to_dict(project_data))
         )
         logging.info(f"[SSE] Member {member_id} updated from Member profile image update.")
       else:

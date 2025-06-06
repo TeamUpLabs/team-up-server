@@ -171,5 +171,5 @@ def update_member_profile_image_by_id(db: Session, member_id: int, public_url: s
     member.profileImage = public_url
     db.commit()
     db.refresh(member)
-    return member.profileImage
+    return member
   return None
