@@ -89,12 +89,17 @@ def get_all_projects(db: Session, skip: int = 0, limit: int = 100):
 def get_project(db: Session, project_id: str):
     project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
     
+    if project is None:
+        return None
+    
     # Process members
     members = get_member_by_project_id(db, project_id) or []
     managers = []
-    for member in members:
-      if project.manager_id and member.id in project.manager_id:
-        managers.append(member)
+    if hasattr(project, 'manager_id') and project.manager_id:
+      for manager_id in project.manager_id:
+        manager = get_member_by_id(db, manager_id)
+        if manager:
+          managers.append(manager)
     project.manager = managers
     project.members = members
     
@@ -329,34 +334,68 @@ def get_all_project_ids(db: Session):
     
   return project_ids
   
-  
+import traceback
 def delete_project_by_id(db: Session, project_id: str):
-  project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
-  tasks = get_tasks_by_project_id(db, project_id)
-  milestones = get_milestones_by_project_id(db, project_id)
-  members = get_member_by_project_id(db, project_id)
-  schedules = get_schedules(db, project_id)
-  chat = get_chat_by_project_id(db, project_id)
-  
-  if project:
-    for task in tasks:
-      delete_task_by_id(db, task.id)
-    for milestone in milestones:
-      delete_milestone_by_id(db, milestone.id)
-    for member in members:
-      member.projects = [p_id for p_id in member.projects if p_id != project_id]
-      db.query(MemberModel).filter(MemberModel.id == member.id).update(
-        {"projects": member.projects},
-        synchronize_session="fetch"
-      )
-    for schedule in schedules:
-      delete_schedule_by_id(db, schedule.id)
-    for message in chat:
-      delete_chat_by_id(db, message.id)
-    db.delete(project)
-    db.commit()
-    return True
-  return False
+    logger = logging.getLogger(__name__)
+    logger.info(f"[delete_project_by_id] 함수 진입: project_id={project_id}")
+    try:
+        project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+        logger.debug(f"프로젝트 조회 결과: {project}")
+        tasks = get_tasks_by_project_id(db, project_id)
+        logger.debug(f"프로젝트의 tasks: {tasks}")
+        milestones = get_milestones_by_project_id(db, project_id)
+        logger.debug(f"프로젝트의 milestones: {milestones}")
+        members = get_member_by_project_id(db, project_id)
+        logger.debug(f"프로젝트의 members: {members}")
+        schedules = get_schedules(db, project_id)
+        logger.debug(f"프로젝트의 schedules: {schedules}")
+        chat = get_chat_by_project_id(db, project_id)
+        logger.debug(f"프로젝트의 chat: {chat}")
+
+        if project:
+            if tasks:
+                logger.info(f"tasks 삭제 시작 (개수: {len(tasks)})")
+                for task in tasks:
+                    logger.debug(f"delete_task_by_id 호출: task_id={task.id}")
+                    delete_task_by_id(db, task.id)
+            if milestones:
+                logger.info(f"milestones 삭제 시작 (개수: {len(milestones)})")
+                for milestone in milestones:
+                    logger.debug(f"delete_milestone_by_id 호출: milestone_id={milestone.id}")
+                    delete_milestone_by_id(db, milestone.id)
+            if members:
+                logger.info(f"members 업데이트 시작 (개수: {len(members)})")
+                for member in members:
+                    logger.debug(f"member {member.id}의 projects에서 {project_id} 제거 전: {member.projects}")
+                    member.projects = [p_id for p_id in member.projects if p_id != project_id]
+                    db.query(MemberModel).filter(MemberModel.id == member.id).update(
+                        {"projects": member.projects},
+                        synchronize_session="fetch"
+                    )
+                    logger.debug(f"member {member.id}의 projects 업데이트 후: {member.projects}")
+            if schedules:
+                logger.info(f"schedules 삭제 시작 (개수: {len(schedules)})")
+                for schedule in schedules:
+                    logger.debug(f"delete_schedule_by_id 호출: schedule_id={schedule.id}")
+                    delete_schedule_by_id(db, schedule.id)
+            if chat:
+                logger.info(f"chat 메시지 삭제 시작 (개수: {len(chat)})")
+                for message in chat:
+                    logger.debug(f"delete_chat_by_id 호출: message_id={message.id}")
+                    delete_chat_by_id(db, message.id)
+            logger.info(f"프로젝트 삭제: {project}")
+            db.delete(project)
+            db.commit()
+            logger.info("프로젝트 및 관련 데이터 삭제 완료")
+            return True
+        logger.warning(f"project_id={project_id}에 해당하는 프로젝트가 없음")
+        return False
+    except Exception as e:
+        logger.error(f"delete_project_by_id에서 예외 발생: {e}", exc_info=True)
+        print(traceback.format_exc())
+        db.rollback()
+        raise
+
 
 
 def update_project_by_id(db: Session, project_id: str, project_update: ProjectInfoUpdate):

@@ -22,7 +22,7 @@ class ProjectBase(BaseModel):
     
 class ProjectCreate(ProjectBase):
     leader_id: int
-    manager_id: Optional[List[int]] = []
+    manager_id: List[int] = []
   
     class Config:
       from_attributes = True

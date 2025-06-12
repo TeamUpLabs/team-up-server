@@ -93,20 +93,25 @@ def get_projects_excluding_my_project(member_id: int, db: SessionLocal = Depends
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/{project_id}")
-async def delete_project(project_id: str, db: SessionLocal = Depends(get_db)):  # type: ignore
+async def delete_project_endpoint(project_id: str, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         result = delete_project_by_id(db, project_id)
         if result:
             project_data = get_project(db, project_id)
-            await project_sse_manager.send_event(
-                project_id,
-                json.dumps(project_sse_manager.convert_to_dict(project_data))
-            )
-            logging.info(f"[SSE] Project {project_id} deleted.")
+            if project_data is not None:
+                await project_sse_manager.send_event(
+                    project_id,
+                    json.dumps(project_sse_manager.convert_to_dict(project_data))
+                )
+                logging.info(f"[SSE] Project {project_id} deleted.")
+            else:
+                logging.warning(f"Project {project_id} deleted but no project data found for SSE.")
         else:
             raise HTTPException(status_code=404, detail="Project not found")
         return {"status": "success", "message": "Project deleted successfully"}
     except Exception as e:
+        import traceback
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/{project_id}")
