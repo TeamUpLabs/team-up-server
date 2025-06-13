@@ -32,12 +32,12 @@ def get_channel_by_channel_id(db: Session, projectId: str, channelId: str):
     logging.error(e)
     return None
   
-def update_channel(db: Session, channel_update: ChannelUpdate):
-  channel = db.query(Channel).filter(Channel.projectId == channel_update.projectId, Channel.channelId == channel_update.channelId).first()
+def update_channel(db: Session, projectId: str, channelId: str, channel_update: ChannelUpdate):
+  channel = db.query(Channel).filter(Channel.projectId == projectId, Channel.channelId == channelId).first()
   if not channel:
     return None
   
-  channel_data = channel_update.dict(exclude_unset=True, exclude_none=True)
+  channel_data = channel_update.model_dump(exclude_unset=True, exclude_none=True)
   for field, value in channel_data.items():
     setattr(channel, field, value) 
   

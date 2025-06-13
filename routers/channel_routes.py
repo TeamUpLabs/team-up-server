@@ -72,7 +72,7 @@ async def handle_get_channel_by_channel_id(projectId: str, channelId: str, db: S
 @router.put("/{projectId}/channel/{channelId}", response_model=Channel)
 async def handle_update_channel(projectId: str, channelId: str, payload: ChannelUpdate, db: SessionLocal = Depends(get_db)):  # type: ignore
   try:
-    db_channel = update_channel(db, payload)
+    db_channel = update_channel(db, projectId, channelId, payload)
     if db_channel:
       project_data = get_project(db, projectId)
       await project_sse_manager.send_event(
