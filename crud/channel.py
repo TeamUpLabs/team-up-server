@@ -1,4 +1,4 @@
-from schemas.channel import ChannelCreate
+from schemas.channel import ChannelCreate, ChannelUpdate
 from models.channel import Channel
 from sqlalchemy.orm import Session
 from crud.member import get_member_by_id
@@ -31,3 +31,16 @@ def get_channel_by_channel_id(db: Session, projectId: str, channelId: str):
   except Exception as e:
     logging.error(e)
     return None
+  
+def update_channel(db: Session, channel_update: ChannelUpdate):
+  channel = db.query(Channel).filter(Channel.projectId == channel_update.projectId, Channel.channelId == channel_update.channelId).first()
+  if not channel:
+    return None
+  
+  channel_data = channel_update.dict(exclude_unset=True, exclude_none=True)
+  for field, value in channel_data.items():
+    setattr(channel, field, value) 
+  
+  db.commit()
+  db.refresh(channel)
+  return channel
