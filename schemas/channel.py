@@ -21,7 +21,7 @@ class Channel(ChannelBase):
   created_at: str
   created_by: int
   
-class ChannelUpdate(ChannelBase):
+class ChannelUpdate(BaseModel):
   channelName: Optional[str]
   channelDescription: Optional[str]
   isPublic: Optional[bool]

@@ -34,16 +34,14 @@ def get_channel_by_channel_id(db: Session, projectId: str, channelId: str):
   
 def update_channel(db: Session, projectId: str, channelId: str, channel_update: ChannelUpdate):
   channel = db.query(Channel).filter(Channel.projectId == projectId, Channel.channelId == channelId).first()
-  if not channel:
-    return None
-  
-  channel_data = channel_update.model_dump(exclude_unset=True, exclude_none=True)
-  for field, value in channel_data.items():
-    setattr(channel, field, value) 
-  
-  db.commit()
-  db.refresh(channel)
-  return channel
+  if channel:
+    channel_data = channel_update.model_dump(exclude_unset=True, exclude_none=True)
+    for field, value in channel_data.items():
+      setattr(channel, field, value)
+    db.commit()
+    db.refresh(channel)
+    return channel
+  return None
 
 def delete_channel_by_id(db: Session, projectId: str, channelId: str):
   channel = db.query(Channel).filter(Channel.projectId == projectId, Channel.channelId == channelId).first()
