@@ -9,6 +9,7 @@ from crud.member import get_member_by_project_id, get_member_by_id
 from crud.milestone import get_milestones_by_project_id, delete_milestone_by_id
 from crud.schedule import get_schedules, delete_schedule_by_id
 from crud.chat import get_chat_by_project_id, delete_chat_by_id
+from crud.channel import get_channel_by_project_id
 from models.member import Member as MemberModel
 from schemas.member import NotificationInfo
 from schemas.task import Task as TaskSchema
@@ -17,8 +18,8 @@ from schemas.project import ProjectInfoUpdate, ProjectMemberPermission, ProjectM
 from models.task import Task as TaskModel
 from models.milestone import Milestone as MilestoneModel
 from utils.sse_manager import notification_sse_manager, project_sse_manager
-import json
 from utils.send_notification import send_notification
+import json
 
 
 def create_project(db: Session, project: ProjectCreate):
@@ -147,6 +148,10 @@ def get_project(db: Session, project_id: str):
     # Process schedules
     schedules = get_schedules(db, project_id)
     project.schedules = schedules
+    
+    # Process channels
+    channels = get_channel_by_project_id(db, project_id)
+    project.channels = channels
     
     return project
   
