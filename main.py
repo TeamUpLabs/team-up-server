@@ -14,7 +14,8 @@ from routers import (
     video_call_routes,
     voice_call_routes,
     notification_routes,
-    schedule_routes
+    schedule_routes,
+    channel_routes
 )
 
 Base.metadata.create_all(bind=engine)
@@ -38,3 +39,4 @@ app.include_router(video_call_routes.router)
 app.include_router(voice_call_routes.router)
 app.include_router(notification_routes.router)
 app.include_router(schedule_routes.router)
+app.include_router(channel_routes.router)
