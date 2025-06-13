@@ -4,6 +4,7 @@ from schemas.member import Member
 from schemas.task import Task
 from schemas.milestone import MileStone
 from schemas.schedule import Schedule
+from schemas.channel import Channel
 
 class ProjectBase(BaseModel):
     id: str
@@ -35,6 +36,7 @@ class Project(ProjectBase):
     manager: Optional[List[Member]] = []
     participationRequestMembers: Optional[List[Member]] = []
     schedules: Optional[List[Schedule]] = []
+    channels: Optional[List[Channel]] = []
     class Config:
         from_attributes = True
         
