@@ -4,7 +4,7 @@ from schemas.chat import ChatCreate
 
 
 def save_chat_message(db: Session, chat: ChatCreate):
-  db_chat = ChatMessage(**chat.dict())
+  db_chat = ChatMessage(**chat.model_dump())
   db.add(db_chat)
   db.commit()
   db.refresh(db_chat)
@@ -30,4 +30,9 @@ def delete_chat_by_id(db: Session, chatId: str):
   db.query(ChatMessage).filter(ChatMessage.id == chatId).delete()
   db.commit()
   db.refresh(db)
+  return True
+
+def delete_chat_by_channel_id(db: Session, projectId: str, channelId: str):
+  db.query(ChatMessage).filter(ChatMessage.projectId == projectId, ChatMessage.channelId == channelId).delete()
+  db.commit()
   return True

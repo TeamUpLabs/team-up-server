@@ -2,6 +2,7 @@ from schemas.channel import ChannelCreate, ChannelUpdate
 from models.channel import Channel
 from sqlalchemy.orm import Session
 from crud.member import get_member_by_id
+from crud.chat import delete_chat_by_channel_id
 
 def create_channel(db: Session, channel: ChannelCreate):
   db_channel = Channel(**channel.model_dump())
@@ -46,7 +47,10 @@ def update_channel(db: Session, projectId: str, channelId: str, channel_update: 
 def delete_channel_by_id(db: Session, projectId: str, channelId: str):
   channel = db.query(Channel).filter(Channel.projectId == projectId, Channel.channelId == channelId).first()
   if channel:
-    db.delete(channel)
-    db.commit()
-    return True
+    result = delete_chat_by_channel_id(db, projectId, channelId)
+    if result:
+      db.delete(channel)
+      db.commit()
+      return True
+    return False
   return False
