@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
+from sqlalchemy.orm import Session
 from database import SessionLocal
 import logging
 from websocket.chat import websocket_handler
@@ -17,10 +18,10 @@ def get_db():
         db.close()
 
 @router.websocket("/ws/chat/{projectId}/{channelId}")
-async def chat_endpoint(websocket: WebSocket, projectId: str, channelId: str):
+async def chat_endpoint(websocket: WebSocket, projectId: str, channelId: str, db: Session = Depends(get_db)):
     try:
         logging.info(f"WebSocket connection established for project: {projectId}, channel: {channelId}")
-        await websocket_handler(websocket, channelId, projectId)
+        await websocket_handler(websocket, channelId, projectId, db)
     except WebSocketDisconnect:
         logging.info(f"WebSocket disconnected for project: {projectId}, channel: {channelId}")
     except Exception as e:
