@@ -7,6 +7,7 @@ class SubTask(BaseModel):
   completed: bool
   
 class Comment(BaseModel):
+  id: int
   author_id: int
   content: str
   createdAt: str

@@ -238,6 +238,7 @@ async def upload_task_comment(db: Session, project_id: str, task_id: int, commen
         current_comments = json.loads(task.comments)
     
     comment_dict = {
+      "id": int(datetime.now().timestamp() * 1000),
       "author_id": comment.author_id,
       "content": comment.content,
       "createdAt": comment.createdAt
@@ -280,3 +281,13 @@ async def upload_task_comment(db: Session, project_id: str, task_id: int, commen
     import traceback
     print(traceback.format_exc())
     raise
+  
+def delete_task_comment(db: Session, project_id: str, task_id: int, comment_id: int):
+  task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
+  if task:
+    if task.comments:
+      task.comments = [comment for comment in task.comments if comment.get('id') != comment_id]
+      db.commit()
+      db.refresh(task)
+    return Task.model_validate(task)
+  return None

@@ -6,7 +6,7 @@ from schemas.task import TaskCreate, Task, TaskStatusUpdate, TaskUpdate, Comment
 from crud.task import (
     create_task, get_tasks, get_tasks_by_member_id, get_tasks_by_project_id,
     delete_task_by_id, update_task_status, update_task_by_id,
-    upload_task_comment, update_subtask_state_by_id
+    upload_task_comment, update_subtask_state_by_id, delete_task_comment
 )
 from utils.sse_manager import project_sse_manager
 from crud.project import get_project
@@ -131,6 +131,23 @@ async def upload_task_comment_endpoint(project_id: str, task_id: int, comment: C
             logging.info(f"[SSE] Project {project_id} updated from Task {task_id} comment upload.")
         else:
             raise HTTPException(status_code=404, detail="Task not found")
+        return updated_task
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+      
+@router.delete('/project/{project_id}/task/{task_id}/comment/{comment_id}')
+async def delete_task_comment_endpoint(project_id: str, task_id: int, comment_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
+    try:
+        updated_task = delete_task_comment(db, project_id, task_id, comment_id)
+        if updated_task:
+            project_data = get_project(db, project_id)
+            await project_sse_manager.send_event(
+                project_id,
+                json.dumps(project_sse_manager.convert_to_dict(project_data))
+            )
+            logging.info(f"[SSE] Project {project_id} updated from Task {task_id} comment deletion.")
+        else:
+            raise HTTPException(status_code=404, detail="Task or Comment not found")
         return updated_task
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
