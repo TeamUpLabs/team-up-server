@@ -17,7 +17,7 @@ class NotificationInfo(BaseModel):
     message: str
     timestamp: str
     isRead: bool
-    type: Literal["info", "message", "task", "milestone", "chat", "scout", "project"]
+    type: Literal["info", "message", "task", "milestone", "chat", "scout", "project", "schedule"]
     sender_id: int
     receiver_id: int
     project_id: Optional[str] = None

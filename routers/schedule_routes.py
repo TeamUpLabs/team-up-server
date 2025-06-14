@@ -36,7 +36,7 @@ def read_schedules(project_id: str, db: SessionLocal = Depends(get_db)):  # type
 @router.post("/{project_id}/schedule", response_model=ScheduleCreate)
 async def create_schedule_route(project_id: str, schedule: ScheduleCreate, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
-        db_schedule = create_schedule(db, schedule)
+        db_schedule = await create_schedule(db, schedule)
         if db_schedule:
             project_data = get_project(db, project_id)
             await project_sse_manager.send_event(
