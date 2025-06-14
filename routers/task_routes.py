@@ -26,7 +26,7 @@ def get_db():
 @router.post("/project/{project_id}/task", response_model=Task)
 async def handle_create_task(project_id: str, task: TaskCreate, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
-        db_task = create_task(db, project_id, task)
+        db_task = await create_task(db, project_id, task)
         if db_task:
             project_data = get_project(db, project_id)
             await project_sse_manager.send_event(

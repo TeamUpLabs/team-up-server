@@ -33,10 +33,10 @@ def get_basic_member_info(db: Session, member_id: int):
     
     return MemberSchema.model_validate(basic_info)
 
-def create_task(db: Session, project_id: str, task: TaskCreate):
+async def create_task(db: Session, project_id: str, task: TaskCreate):
     try:
         json_fields = ['assignee_id', 'tags', 'subtasks', 'comments']
-        task_data = task.dict()
+        task_data = task.model_dump()
         task_data['project_id'] = project_id
 
         for field in json_fields:
@@ -48,6 +48,22 @@ def create_task(db: Session, project_id: str, task: TaskCreate):
         db.add(db_task)
         db.commit()
         db.refresh(db_task)
+        
+        for assignee_id in db_task.assignee_id:
+          if assignee_id != db_task.createdBy:
+            member = get_basic_member_info(db, assignee_id)
+            if member:
+              await send_notification(
+                db=db,
+                id=int(datetime.now().timestamp()),
+                title="태스크 생성",
+                message=f'"{db_task.title}" 작업에 참여되었습니다.',
+                type="task",
+                isRead=False,
+                sender_id=db_task.createdBy,
+                receiver_id=member.id,
+                project_id=project_id
+              )
         return Task.model_validate(db_task)
     except Exception as e:
         print(f"Error in create_task: {str(e)}")
