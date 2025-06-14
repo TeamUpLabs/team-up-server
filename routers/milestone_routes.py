@@ -25,7 +25,7 @@ def get_db():
 @router.post('/project/{project_id}/milestone', response_model=MileStone)
 async def handle_create_milestone(project_id: str, milestone: MileStoneCreate, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
-        db_milestone = create_milestone(db, project_id, milestone)
+        db_milestone = await create_milestone(db, project_id, milestone)
         if db_milestone:
             project_data = get_project(db, project_id)
             await project_sse_manager.send_event(
