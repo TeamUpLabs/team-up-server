@@ -121,7 +121,7 @@ async def update_task_endpoint(project_id: str, task_id: int, task: TaskUpdate, 
 @router.post('/project/{project_id}/task/{task_id}/comment')
 async def upload_task_comment_endpoint(project_id: str, task_id: int, comment: Comment, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
-        updated_task = upload_task_comment(db, project_id, task_id, comment)
+        updated_task = await upload_task_comment(db, project_id, task_id, comment)
         if updated_task:
             project_data = get_project(db, project_id)
             await project_sse_manager.send_event(

@@ -5,6 +5,8 @@ import json
 from typing import List
 from models.member import Member as MemberModel
 from schemas.member import Member as MemberSchema
+from utils.send_notification import send_notification
+from datetime import datetime
 
 def get_basic_member_info(db: Session, member_id: int):
     """Get basic member info without loading related data to avoid circular references"""
@@ -220,7 +222,7 @@ def update_subtask_state_by_id(db: Session, project_id: str, task_id: int, subta
       return Task.model_validate(task)
   return None
 
-def upload_task_comment(db: Session, project_id: str, task_id: int, comment: Comment):
+async def upload_task_comment(db: Session, project_id: str, task_id: int, comment: Comment):
   try:
     # Get task
     task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
@@ -250,6 +252,22 @@ def upload_task_comment(db: Session, project_id: str, task_id: int, comment: Com
     ).values(
       comments=current_comments
     )
+    
+    for assignee_id in task.assignee_id:
+      if assignee_id != comment.author_id:
+        member = get_basic_member_info(db, assignee_id)
+        if member:
+          await send_notification(
+            db=db,
+            id=int(datetime.now().timestamp()),
+            title=f"{task.title}에 대한 {member.name}님의 새 댓글",
+            message=comment.content,
+            type="task",
+            isRead=False,
+            sender_id=comment.author_id,
+            receiver_id=assignee_id,
+            project_id=project_id,
+          )
     
     db.execute(stmt)
     db.commit()
