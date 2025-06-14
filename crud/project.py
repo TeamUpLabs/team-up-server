@@ -9,7 +9,7 @@ from crud.member import get_member_by_project_id, get_member_by_id
 from crud.milestone import get_milestones_by_project_id, delete_milestone_by_id
 from crud.schedule import get_schedules, delete_schedule_by_id
 from crud.chat import get_chat_by_project_id, delete_chat_by_id
-from crud.channel import get_channel_by_project_id
+from crud.channel import get_channel_by_project_id, delete_channel_by_id
 from models.member import Member as MemberModel
 from schemas.member import NotificationInfo
 from schemas.task import Task as TaskSchema
@@ -356,6 +356,8 @@ def delete_project_by_id(db: Session, project_id: str):
         logger.debug(f"프로젝트의 schedules: {schedules}")
         chat = get_chat_by_project_id(db, project_id)
         logger.debug(f"프로젝트의 chat: {chat}")
+        channels = get_channel_by_project_id(db, project_id)
+        logger.debug(f"프로젝트의 channel: {channels}")
 
         if project:
             if tasks:
@@ -383,11 +385,11 @@ def delete_project_by_id(db: Session, project_id: str):
                 for schedule in schedules:
                     logger.debug(f"delete_schedule_by_id 호출: schedule_id={schedule.id}")
                     delete_schedule_by_id(db, schedule.id)
-            if chat:
-                logger.info(f"chat 메시지 삭제 시작 (개수: {len(chat)})")
-                for message in chat:
-                    logger.debug(f"delete_chat_by_id 호출: message_id={message.id}")
-                    delete_chat_by_id(db, message.id)
+            if channels:
+                logger.info(f"channels 삭제 시작 (개수: {len(channels)})")
+                for channel in channels:
+                    logger.debug(f"delete_channel_by_id 호출: channel_id={channel.id}")
+                    delete_channel_by_id(db, channel.projectId, channel.channelId)
             logger.info(f"프로젝트 삭제: {project}")
             db.delete(project)
             db.commit()
