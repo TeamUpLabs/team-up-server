@@ -45,8 +45,8 @@ def update_channel(db: Session, projectId: str, channelId: str, channel_update: 
 
 def delete_channel_by_id(db: Session, projectId: str, channelId: str):
   channel = db.query(Channel).filter(Channel.projectId == projectId, Channel.channelId == channelId).first()
-  if not channel:
-    return None
-  db.delete(channel)
-  db.commit()
-  return True
+  if channel:
+    db.delete(channel)
+    db.commit()
+    return True
+  return False

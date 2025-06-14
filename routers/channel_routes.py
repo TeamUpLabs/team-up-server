@@ -86,20 +86,22 @@ async def handle_update_channel(projectId: str, channelId: str, payload: Channel
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
   
-@router.delete("/{projectId}/channel/{channelId}", response_model=Channel)
+@router.delete("/{projectId}/channel/{channelId}", response_model=dict)
 async def handle_delete_channel(projectId: str, channelId: str, db: SessionLocal = Depends(get_db)):  # type: ignore
   try:
-    db_channel = delete_channel_by_id(db, projectId, channelId)
-    if db_channel:
+    success = delete_channel_by_id(db, projectId, channelId)
+    if success:
       project_data = get_project(db, projectId)
       await project_sse_manager.send_event(
         projectId,
         json.dumps(project_sse_manager.convert_to_dict(project_data))
       )
       logging.info(f"[SSE] Project {projectId} updated from Channel delete.")
+      return {"status": "success", "message": "Channel deleted successfully"}
     else:
       raise HTTPException(status_code=404, detail="Channel not found")
-    return db_channel
+  except HTTPException:
+    raise
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
 
