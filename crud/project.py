@@ -88,6 +88,7 @@ def get_all_projects(db: Session, skip: int = 0, limit: int = 100):
     return projects
 
 def get_project(db: Session, project_id: str):
+  try:
     project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
     
     if project is None:
@@ -154,34 +155,47 @@ def get_project(db: Session, project_id: str):
     project.channels = channels
     
     return project
-  
+  except Exception as e:
+    logging.error(e)
+    import traceback
+    print(traceback.format_exc())
+    return None
   
 def get_all_projects_excluding_my(db: Session, member_id: int):
-  member = get_member_by_id(db, member_id)
-  
-  # Handle the case where member.projects is None
-  projects_to_exclude = member.projects if member.projects is not None else []
-  
-  other_projects = db.query(ProjectModel).filter(ProjectModel.id.not_in(projects_to_exclude)).all()
-  
-  for other_project in other_projects:
-    # Process members
-    members = get_member_by_project_id(db, other_project.id)
-    managers = []
-    for project_member in members:
-      if project_member.id in other_project.manager_id:
-        managers.append(project_member)
-    other_project.manager = managers
-    other_project.members = members
+  try:
+    member = get_member_by_id(db, member_id)
+
+    if not member:
+      return []
     
-    participationRequestMembers = []
-    for req_member_id in other_project.participationRequest if other_project.participationRequest else []:
-      req_member = get_member_by_id(db, req_member_id)
-      if req_member:
-        participationRequestMembers.append(req_member)
-    other_project.participationRequestMembers = participationRequestMembers
+    # Handle the case where member.projects is None
+    projects_to_exclude = member.projects if member.projects is not None else []
     
-  return other_projects
+    other_projects = db.query(ProjectModel).filter(ProjectModel.id.not_in([p.id for p in projects_to_exclude])).all()
+    
+    for other_project in other_projects:
+      # Process members
+      members = get_member_by_project_id(db, other_project.id)
+      managers = []
+      for project_member in members:
+        if other_project.manager_id and project_member.id in other_project.manager_id:
+          managers.append(project_member)
+      other_project.manager = managers
+      other_project.members = members
+      
+      participationRequestMembers = []
+      for req_member_id in other_project.participationRequest if other_project.participationRequest else []:
+        req_member = get_member_by_id(db, req_member_id)
+        if req_member:
+          participationRequestMembers.append(req_member)
+      other_project.participationRequestMembers = participationRequestMembers
+      
+    return other_projects
+  except Exception as e:
+    logging.error(e)
+    import traceback
+    print(traceback.format_exc())
+    return []
   
 def add_member_to_project(db: Session, project_id: str, member_id: int):
   try:
@@ -287,7 +301,7 @@ def get_project_basic_info(db: Session, project_id: str):
                     "role": member.role,
                     "status": member.status,
                     "contactNumber": member.contactNumber,
-                    "workingHours": member.workingHours,
+                    "workingHours": member.workingHours or {},
                     # Include other required fields with defaults if needed
                     "password": None,  # Optional field
                     "skills": member.skills or [],

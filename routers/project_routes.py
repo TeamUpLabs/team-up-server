@@ -84,8 +84,6 @@ def read_member_by_project_id(project_id: str, db: SessionLocal = Depends(get_db
 def get_projects_excluding_my_project(member_id: int, db: SessionLocal = Depends(get_db)):  # type: ignore
     try:
         other_projects = get_all_projects_excluding_my(db, member_id)
-        if other_projects is None:
-            raise HTTPException(status_code=404, detail=f"Projects not found")
         return other_projects
     except HTTPException:
         raise

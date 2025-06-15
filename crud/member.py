@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 import json
 from sqlalchemy.orm import Session
@@ -22,7 +23,7 @@ def create_member(db: Session, member: MemberCreate):
         db.add(db_member)
         db.commit()
         db.refresh(db_member)
-        return Member.model_validate(db_member)
+        return db_member
     except Exception as e:
         logging.error(f"Error in create_member: {str(e)}")
         db.rollback()
@@ -45,11 +46,12 @@ def get_member(db: Session, member_id: int):
       if project:
         project_list.append(project)
   member.projectDetails = project_list
+  if not member.workingHours:
+    member.workingHours = None
   
-  notification = member.notification
-  if not notification:
+  if not member.notification:
     member.notification = []
-  return Member.model_validate(member.__dict__)
+  return Member.model_validate(member.__dict__, from_attributes=True)
 
 def get_member_by_email(db: Session, email: str):
     member = db.query(MemberModel).filter(MemberModel.email == email).first()
@@ -68,8 +70,13 @@ def get_member_by_email(db: Session, email: str):
                 if project:
                     project_list.append(project)
         member.projectDetails = project_list
+
+        if not member.workingHours:
+            member.workingHours = None
         
-        return Member.model_validate(member.__dict__)
+        if not member.notification:
+          member.notification = []
+        return Member.model_validate(member.__dict__, from_attributes=True)
     return None
 
 def get_members(db: Session, skip: int = 0, limit: int = 100):
@@ -92,7 +99,12 @@ def get_members(db: Session, skip: int = 0, limit: int = 100):
                     project_list.append(project)
         member.projectDetails = project_list
         
-        result.append(Member.model_validate(member.__dict__))
+        if not member.workingHours:
+            member.workingHours = None
+            
+        if not member.notification:
+          member.notification = []
+        result.append(Member.model_validate(member.__dict__, from_attributes=True))
     
     return result
   
@@ -138,7 +150,12 @@ def get_member_by_project_id(db: Session, project_id: str):
                     project_list.append(project)
         member.projectDetails = project_list
         
-        result.append(Member.model_validate(member.__dict__))
+        if not member.workingHours:
+            member.workingHours = None
+        
+        if not member.notification:
+          member.notification = []
+        result.append(Member.model_validate(member.__dict__, from_attributes=True))
     
     return result
   except Exception as e:
@@ -148,7 +165,7 @@ def get_member_by_project_id(db: Session, project_id: str):
 def get_member_by_id(db: Session, member_id: int):
     member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
     if member:
-        return Member.model_validate(member.__dict__)
+        return Member.model_validate(member.__dict__, from_attributes=True)
     return None
   
   
@@ -163,7 +180,7 @@ def update_member_by_id(db: Session, member_id: int, member_update: MemberUpdate
   
   db.commit()
   db.refresh(member)
-  return member
+  return Member.model_validate(member.__dict__, from_attributes=True)
 
 def update_member_profile_image_by_id(db: Session, member_id: int, public_url: str):
   member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
@@ -171,5 +188,5 @@ def update_member_profile_image_by_id(db: Session, member_id: int, public_url: s
     member.profileImage = public_url
     db.commit()
     db.refresh(member)
-    return member
+    return Member.model_validate(member.__dict__, from_attributes=True)
   return None

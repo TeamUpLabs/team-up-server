@@ -38,7 +38,7 @@ class MemberBase(BaseModel):
     contactNumber: str
     birthDate: Optional[str] = None
     introduction: Optional[str] = None
-    workingHours: WorkingHoursInfo
+    workingHours: Optional[WorkingHoursInfo] = None
     languages: Optional[List[str]] = []
     socialLinks: Optional[List[SocialLinksInfo]] = []
 # Schema for creating a new member
