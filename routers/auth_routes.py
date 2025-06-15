@@ -184,7 +184,6 @@ async def github_callback(code: str, db: SessionLocal = Depends(get_db)):
             "user_info": member_data
         }
     )
-    print("GitHub 유저 정보:", user)
 
     # 4. 프론트로 리디렉션
     response = RedirectResponse(url=f"http://localhost:3000/auth/callback?token={access_token}")
