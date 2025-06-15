@@ -3,11 +3,13 @@ from models.milestone import Milestone as MileStoneModel
 from sqlalchemy.orm import Session
 import json
 from crud.task import get_basic_member_info, get_task_by_project_id_and_milestone_id, delete_task_by_id
+from utils.send_notification import send_notification
+from datetime import datetime
 
-def create_milestone(db: Session, project_id: str, milestone: MileStoneCreate):
+async def create_milestone(db: Session, project_id: str, milestone: MileStoneCreate):
   try:
     json_fields = ['assignee_id', 'tags']
-    milestone_data = milestone.dict()
+    milestone_data = milestone.model_dump()
     milestone_data['project_id'] = project_id
     
     for field in json_fields:
@@ -19,6 +21,22 @@ def create_milestone(db: Session, project_id: str, milestone: MileStoneCreate):
     db.add(db_milestone)
     db.commit()
     db.refresh(db_milestone)
+    
+    for assignee_id in db_milestone.assignee_id:
+      if assignee_id != db_milestone.createdBy:
+        member = get_basic_member_info(db, assignee_id)
+        if member:
+          await send_notification(
+            db=db,
+            id=int(datetime.now().timestamp()),
+            title="마일스톤 생성",
+            message=f'"{db_milestone.title}" 마일스톤에 참여되었습니다.',
+            type="milestone",
+            isRead=False,
+            sender_id=db_milestone.createdBy,
+            receiver_id=member.id,
+            project_id=project_id
+          )
     return db_milestone
   
   except Exception as e:

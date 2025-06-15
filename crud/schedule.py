@@ -4,6 +4,8 @@ from models.schedule import Schedule
 from models.member import Member as MemberModel
 from schemas.member import Member as MemberSchema
 import logging
+from utils.send_notification import send_notification
+from datetime import datetime
 
 def get_basic_member_info(db: Session, member_id: int):
     """Get basic member info without loading related data to avoid circular references"""
@@ -30,13 +32,29 @@ def get_basic_member_info(db: Session, member_id: int):
     
     return MemberSchema.model_validate(basic_info)
 
-def create_schedule(db: Session, schedule: ScheduleCreate):
+async def create_schedule(db: Session, schedule: ScheduleCreate):
     try:
         schedule_data_for_db = schedule.model_dump()
         db_schedule = Schedule(**schedule_data_for_db)
         db.add(db_schedule)
         db.commit()
         db.refresh(db_schedule)
+        
+        for assignee_id in db_schedule.assignee_id:
+          if assignee_id != db_schedule.created_by:
+            member = get_basic_member_info(db, assignee_id)
+            if member:
+              await send_notification(
+                db=db,
+                id=int(datetime.now().timestamp()),
+                title="스케줄 생성",
+                message=f'"{db_schedule.title}" 스케줄에 참여되었습니다.',
+                type="schedule",
+                isRead=False,
+                sender_id=db_schedule.created_by,
+                receiver_id=member.id,
+                project_id=db_schedule.project_id
+              )
         return db_schedule
     except Exception as e:
         print(f"Error in create_schedule: {str(e)}")

@@ -16,7 +16,7 @@ async def send_notification(
     isRead: bool,
     sender_id: int,
     receiver_id: int,
-    project_id: int,
+    project_id: str,
 ):
     notification_pydantic_model = NotificationInfo(
         id=id,

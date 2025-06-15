@@ -2,6 +2,9 @@ import json
 import asyncio
 import logging
 from typing import Dict, Set, Optional, Any
+from sqlalchemy.orm import Session
+from crud.channel import get_channel_by_channel_id
+from utils.send_notification import send_notification
 from datetime import datetime
 
 from fastapi import WebSocket, WebSocketDisconnect, HTTPException, status
@@ -138,7 +141,7 @@ async def publish_system_message(project_id: str, channel_id: str, message: str)
     except Exception as e:
         logger.error(f"시스템 메시지 발행 오류: {e}")
 
-async def websocket_handler(websocket: WebSocket, channelId: str, projectId: str) -> None:
+async def websocket_handler(websocket: WebSocket, channelId: str, projectId: str, db: Session) -> None:
     """웹소켓 연결을 처리합니다."""
     # 사용자 ID 확인
     user_id = None
@@ -221,6 +224,38 @@ async def websocket_handler(websocket: WebSocket, channelId: str, projectId: str
                         
                         # 메시지 직접 브로드캐스트
                         await broadcast_message(projectId, channelId, data)
+
+                        # 채널의 다른 사용자에게 알림 전송
+                        try:
+                            channel_members = get_channel_by_channel_id(db, projectId, channelId).member_id
+                            sender_id = int(user_id)
+                            sender_name = message_data.get("user", "알 수 없는 사용자")
+                            logger.info(f"{message_data}")
+                            
+                            notification_tasks = []
+                            for member_id in channel_members:
+                                if member_id != sender_id:
+                                    notification_id = int(datetime.now().timestamp() * 1000)
+                                    notification_tasks.append(
+                                        send_notification(
+                                            db=db,
+                                            id=notification_id,
+                                            title=f"{sender_name}님의 새로운 메시지",
+                                            message=message_data.get("message", ""),
+                                            type="chat",
+                                            isRead=False,
+                                            sender_id=sender_id,
+                                            receiver_id=member_id,
+                                            project_id=projectId
+                                        )
+                                    )
+                            
+                            if notification_tasks:
+                                await asyncio.gather(*notification_tasks)
+                                logger.info(f"{len(notification_tasks)}명에게 알림을 전송했습니다.")
+
+                        except Exception as e:
+                            logger.error(f"알림 전송 중 오류 발생: {e}")
                         
                     except json.JSONDecodeError:
                         logger.error(f"잘못된 JSON 형식: {data[:100]}...")

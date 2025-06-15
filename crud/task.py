@@ -5,6 +5,8 @@ import json
 from typing import List
 from models.member import Member as MemberModel
 from schemas.member import Member as MemberSchema
+from utils.send_notification import send_notification
+from datetime import datetime
 
 def get_basic_member_info(db: Session, member_id: int):
     """Get basic member info without loading related data to avoid circular references"""
@@ -31,10 +33,10 @@ def get_basic_member_info(db: Session, member_id: int):
     
     return MemberSchema.model_validate(basic_info)
 
-def create_task(db: Session, project_id: str, task: TaskCreate):
+async def create_task(db: Session, project_id: str, task: TaskCreate):
     try:
         json_fields = ['assignee_id', 'tags', 'subtasks', 'comments']
-        task_data = task.dict()
+        task_data = task.model_dump()
         task_data['project_id'] = project_id
 
         for field in json_fields:
@@ -46,6 +48,22 @@ def create_task(db: Session, project_id: str, task: TaskCreate):
         db.add(db_task)
         db.commit()
         db.refresh(db_task)
+        
+        for assignee_id in db_task.assignee_id:
+          if assignee_id != db_task.createdBy:
+            member = get_basic_member_info(db, assignee_id)
+            if member:
+              await send_notification(
+                db=db,
+                id=int(datetime.now().timestamp()),
+                title="태스크 생성",
+                message=f'"{db_task.title}" 작업에 참여되었습니다.',
+                type="task",
+                isRead=False,
+                sender_id=db_task.createdBy,
+                receiver_id=member.id,
+                project_id=project_id
+              )
         return Task.model_validate(db_task)
     except Exception as e:
         print(f"Error in create_task: {str(e)}")
@@ -220,7 +238,7 @@ def update_subtask_state_by_id(db: Session, project_id: str, task_id: int, subta
       return Task.model_validate(task)
   return None
 
-def upload_task_comment(db: Session, project_id: str, task_id: int, comment: Comment):
+async def upload_task_comment(db: Session, project_id: str, task_id: int, comment: Comment):
   try:
     # Get task
     task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
@@ -236,6 +254,7 @@ def upload_task_comment(db: Session, project_id: str, task_id: int, comment: Com
         current_comments = json.loads(task.comments)
     
     comment_dict = {
+      "id": int(datetime.now().timestamp() * 1000),
       "author_id": comment.author_id,
       "content": comment.content,
       "createdAt": comment.createdAt
@@ -251,6 +270,22 @@ def upload_task_comment(db: Session, project_id: str, task_id: int, comment: Com
       comments=current_comments
     )
     
+    for assignee_id in task.assignee_id:
+      if assignee_id != comment.author_id:
+        member = get_basic_member_info(db, assignee_id)
+        if member:
+          await send_notification(
+            db=db,
+            id=int(datetime.now().timestamp()),
+            title=f"{task.title}에 대한 {member.name}님의 새 댓글",
+            message=comment.content,
+            type="task",
+            isRead=False,
+            sender_id=comment.author_id,
+            receiver_id=assignee_id,
+            project_id=project_id,
+          )
+    
     db.execute(stmt)
     db.commit()
     
@@ -262,3 +297,13 @@ def upload_task_comment(db: Session, project_id: str, task_id: int, comment: Com
     import traceback
     print(traceback.format_exc())
     raise
+  
+def delete_task_comment(db: Session, project_id: str, task_id: int, comment_id: int):
+  task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
+  if task:
+    if task.comments:
+      task.comments = [comment for comment in task.comments if comment.get('id') != comment_id]
+      db.commit()
+      db.refresh(task)
+    return Task.model_validate(task)
+  return None
