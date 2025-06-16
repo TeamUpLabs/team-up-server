@@ -8,8 +8,7 @@ GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 JWT_SECRET = os.getenv("SECRET_KEY")
 
-async def get_github_user_info(code: str) -> dict:
-    # 1. GitHub에 code를 보내서 access token을 받아옴
+async def get_github_access_token(code: str) -> str:
     async with httpx.AsyncClient() as client:
         token_res = await client.post(
             "https://github.com/login/oauth/access_token",
@@ -22,8 +21,13 @@ async def get_github_user_info(code: str) -> dict:
         )
         token_res.raise_for_status()
         token_data = token_res.json()
-        access_token = token_data["access_token"]
+        return token_data["access_token"]
 
+async def get_github_user_info(code: str) -> dict:
+    # 1. GitHub에 code를 보내서 access token을 받아옴
+    access_token = await get_github_access_token(code)
+    
+    async with httpx.AsyncClient() as client:
         # 2. access token으로 유저 정보 요청
         user_res = await client.get(
             "https://api.github.com/user",
