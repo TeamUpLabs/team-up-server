@@ -14,9 +14,10 @@ class Token(BaseModel):
     user_email: str
     
     
-class GithubNewMember(BaseModel):
+class SocialNewMember(BaseModel):
     name: str
     email: str
+    password: Optional[str] = None
     role: str
     status: str
     contactNumber: str
@@ -31,4 +32,8 @@ class GithubNewMember(BaseModel):
     profileImage: Optional[str] = None
     github_id: Optional[str] = None
     isGithub: Optional[bool] = True
-    signupMethod: Optional[str] = "github"
+    google_id: Optional[str] = None
+    isGoogle: Optional[bool] = False
+    apple_id: Optional[str] = None
+    isApple: Optional[bool] = False
+    signupMethod: Optional[str] = None

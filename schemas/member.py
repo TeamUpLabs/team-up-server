@@ -41,6 +41,13 @@ class MemberBase(BaseModel):
     workingHours: Optional[WorkingHoursInfo] = None
     languages: Optional[List[str]] = []
     socialLinks: Optional[List[SocialLinksInfo]] = []
+    isGithub: Optional[bool] = False
+    github_id: Optional[str] = None
+    isGoogle: Optional[bool] = False
+    google_id: Optional[str] = None
+    isApple: Optional[bool] = False
+    apple_id: Optional[str] = None
+    signupMethod: Optional[str] = None
 # Schema for creating a new member
 class MemberCreate(BaseModel):
     name: str
