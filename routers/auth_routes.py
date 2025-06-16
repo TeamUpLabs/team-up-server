@@ -91,18 +91,19 @@ async def auth_callback(social: str, code: str, db: SessionLocal = Depends(get_d
     raise HTTPException(status_code=400, detail="GitHub 이메일 접근 실패")
   
   existing = db.query(MemberModel).filter(MemberModel.email == user.get("email")).first()
+  logging.info(existing.__dict__)
   
   if existing:
     access_token = create_access_token(
       data={
         "sub": user.get("email"),
-        "user_info": user
+        "user_info": existing.__dict__
       }
     )
     return {
       "status": "logged_in", 
       "access_token": access_token, 
-      "user_info": user
+      "user_info": existing.__dict__
     }
   else:
     return {
