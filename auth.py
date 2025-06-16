@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 import os
 from dotenv import load_dotenv
 import bcrypt
+import logging
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -44,7 +45,8 @@ def serialize_data(data):
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    # Convert expiration time to Unix timestamp (seconds since epoch)
+    expire = int((datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)).timestamp())
     to_encode.update({"exp": expire})
     
     # Serialize the data to ensure all objects are JSON serializable
@@ -54,9 +56,15 @@ def create_access_token(data: dict):
 
 def verify_token(token: str):
     try:
+        logging.info(f"Verifying token: {token}")
+        logging.info(f"Using SECRET_KEY: {SECRET_KEY is not None}")
+        logging.info(f"ALGORITHM: {ALGORITHM}")
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        logging.info(f"Decoded payload: {payload}")
         return payload
-    except JWTError:
+    except JWTError as e:
+        logging.error(f"JWTError: {str(e)}")
+        logging.error(f"Error type: {type(e).__name__}")
         return None
       
 

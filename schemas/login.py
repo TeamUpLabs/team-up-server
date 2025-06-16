@@ -1,9 +1,9 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import List, Optional
 from schemas.member import WorkingHoursInfo, SocialLinksInfo
 
 class LoginForm(BaseModel):
-    userEmail: EmailStr
+    userEmail: str
     password: str
 
 class Token(BaseModel):

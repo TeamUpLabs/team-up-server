@@ -52,14 +52,21 @@ def login(login: LoginForm, db: SessionLocal = Depends(get_db)):  # type: ignore
         "workingHours": member.workingHours,
         "languages": member.languages,
         "socialLinks": member.socialLinks,
-        "notification": member.notification
+        "notification": member.notification,
+        "isGithub": member.isGithub,
+        "github_id": member.github_id,
+        "isGoogle": member.isGoogle,
+        "google_id": member.google_id,
+        "isApple": member.isApple,
+        "apple_id": member.apple_id,
+        "signupMethod": member.signupMethod
     }
     
     access_token = create_access_token(
-        data={
-            "sub": member.email,
-            "user_info": member_data
-        }
+      data={
+        "sub": member.email,
+        "user_info": member_data
+      }
     )
     
     return {
@@ -74,6 +81,7 @@ def login(login: LoginForm, db: SessionLocal = Depends(get_db)):  # type: ignore
 def get_me(current_user: dict = Depends(get_current_user), db: SessionLocal = Depends(get_db)):  # type: ignore
     # Fetch fresh user data from the database using the email from token
     member = get_member_by_email(db, current_user['email'])
+    logging.info(f"User data: {member}")
     if not member:
         raise HTTPException(
             status_code=404,
