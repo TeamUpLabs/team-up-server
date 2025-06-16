@@ -56,11 +56,7 @@ def create_access_token(data: dict):
 
 def verify_token(token: str):
     try:
-        logging.info(f"Verifying token: {token}")
-        logging.info(f"Using SECRET_KEY: {SECRET_KEY is not None}")
-        logging.info(f"ALGORITHM: {ALGORITHM}")
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        logging.info(f"Decoded payload: {payload}")
         return payload
     except JWTError as e:
         logging.error(f"JWTError: {str(e)}")

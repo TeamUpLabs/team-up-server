@@ -1,13 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import Optional, Dict, Any
 from database import SessionLocal
-from crud.auth import get_github_access_token
-from auth import get_current_user
-from models.member import Member
 import requests
 import logging
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import HTTPException
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,37 +21,22 @@ def get_db():
     finally:
         db.close()
 
-class CreateRepoRequest(BaseModel):
+class CreateOrgRepo(BaseModel):
+    github_access_token: str
     repo_name: str
-    github_token: str
-
+    
 @router.post("/org/create-repo")
-def create_org_repo(payload: CreateRepoRequest):
-    headers = {
-        "Authorization": f"token {payload.github_token}",
-        "Accept": "application/vnd.github+json",
-    }
-
-    org = "TeamUpLabs"
-    repo_payload = {
-        "name": payload.repo_name,
+def create_org_repo(repo: CreateOrgRepo):
+    github_token = repo.github_access_token
+    headers = {"Authorization": f"token {github_token}", "Accept": "application/vnd.github+json"}
+    payload = {
+        "name": repo.repo_name,
         "private": True,
         "auto_init": True,
     }
-
-    res = requests.post(
-        f"https://api.github.com/orgs/{org}/repos",
-        json=repo_payload,
-        headers=headers
-    )
-
+    org = "TeamUpLabs"
+    res = requests.post(f"https://api.github.com/orgs/{org}/repos", json=payload, headers=headers)
     if res.status_code == 201:
         return {"success": True, "repo": res.json()}
     else:
-        raise HTTPException(
-            status_code=res.status_code,
-            detail={
-                "error": "GitHub 레포 생성 실패",
-                "github_response": res.json()
-            }
-        )
+        raise HTTPException(status_code=res.status_code, detail=res.json())

@@ -43,10 +43,13 @@ class MemberBase(BaseModel):
     socialLinks: Optional[List[SocialLinksInfo]] = []
     isGithub: Optional[bool] = False
     github_id: Optional[str] = None
+    github_access_token: Optional[str] = None
     isGoogle: Optional[bool] = False
     google_id: Optional[str] = None
+    google_access_token: Optional[str] = None
     isApple: Optional[bool] = False
     apple_id: Optional[str] = None
+    apple_access_token: Optional[str] = None
     signupMethod: Optional[str] = None
 # Schema for creating a new member
 class MemberCreate(BaseModel):
