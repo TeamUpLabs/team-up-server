@@ -15,7 +15,8 @@ from routers import (
     voice_call_routes,
     notification_routes,
     schedule_routes,
-    channel_routes
+    channel_routes,
+    github_routes
 )
 
 Base.metadata.create_all(bind=engine)
@@ -40,3 +41,4 @@ app.include_router(voice_call_routes.router)
 app.include_router(notification_routes.router)
 app.include_router(schedule_routes.router)
 app.include_router(channel_routes.router)
+app.include_router(github_routes.router)

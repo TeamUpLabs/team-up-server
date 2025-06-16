@@ -32,8 +32,11 @@ class SocialNewMember(BaseModel):
     profileImage: Optional[str] = None
     github_id: Optional[str] = None
     isGithub: Optional[bool] = True
+    github_access_token: Optional[str] = None
     google_id: Optional[str] = None
     isGoogle: Optional[bool] = False
+    google_access_token: Optional[str] = None
     apple_id: Optional[str] = None
     isApple: Optional[bool] = False
+    apple_access_token: Optional[str] = None
     signupMethod: Optional[str] = None

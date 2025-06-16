@@ -4,7 +4,7 @@ from auth import create_access_token, verify_password, get_current_user
 from schemas.login import LoginForm, SocialNewMember, Token
 from schemas.member import Member
 from crud.member import get_member_by_email
-from crud.auth import get_github_user_info
+from crud.auth import get_github_user_info, get_github_access_token
 from models.member import Member as MemberModel
 import logging
 
@@ -92,38 +92,56 @@ def get_me(current_user: dict = Depends(get_current_user), db: SessionLocal = De
 
 @router.get("/auth/callback")
 async def auth_callback(social: str, code: str, db: SessionLocal = Depends(get_db)):
-  if social == "github":
-    user = await get_github_user_info(code)
-    
-  if not user.get("email"):
-    raise HTTPException(status_code=400, detail="GitHub 이메일 접근 실패")
-  
-  existing = db.query(MemberModel).filter(MemberModel.email == user.get("email")).first()
-  
-  if existing:
-    access_token = create_access_token(
-      data={
-        "sub": user.get("email"),
-        "user_info": existing.__dict__
-      }
-    )
-    return {
-      "status": "logged_in", 
-      "access_token": access_token, 
-      "user_info": existing.__dict__
-    }
-  else:
-    return {
-      "status": "need_additional_info",
-      "user_info": {
-        "name": user.get("name"),
-        "email": user.get("email"),
-        "profileImage": user.get("avatar_url"),
-        "socialLinks": [{"name": "github", "url": user.get("html_url")}],
-        "introduction": user.get("bio"),
-        "social_id": user.get("login") if social == "github" else None,
-      }
-    }
+    if not code:
+        raise HTTPException(status_code=400, detail="Authorization code is required")
+        
+    try:
+        if social == "github":
+            social_access_token, user = await get_github_user_info(code)
+            logging.info(f"Social access token: {social_access_token}")
+        else:
+            raise HTTPException(status_code=400, detail=f"Unsupported social provider: {social}")
+            
+        if not user or not user.get("email"):
+            raise HTTPException(
+                status_code=400,
+                detail="Could not retrieve user email from GitHub. Please ensure your GitHub account has a verified email address and that you've granted email access permissions."
+            )
+            
+        existing = db.query(MemberModel).filter(MemberModel.email == user.get("email")).first()
+        
+        if existing:
+            access_token = create_access_token(
+                data={
+                    "sub": user.get("email"),
+                    "user_info": existing.__dict__
+                }
+            )
+            return {
+                "status": "logged_in",
+                "access_token": access_token,
+                "user_info": existing.__dict__
+            }
+        else:
+            return {
+                "status": "need_additional_info",
+                "user_info": {
+                    "name": user.get("name"),
+                    "email": user.get("email"),
+                    "profileImage": user.get("avatar_url"),
+                    "socialLinks": [{"name": "github", "url": user.get("html_url")}],
+                    "introduction": user.get("bio"),
+                    "social_id": user.get("login") if social == "github" else None,
+                    "social_access_token": social_access_token
+                }
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred during authentication: {str(e)}"
+        )
     
 @router.post("/auth/signup")
 def register_with_social(payload: SocialNewMember, db: SessionLocal = Depends(get_db)):
@@ -153,10 +171,13 @@ def register_with_social(payload: SocialNewMember, db: SessionLocal = Depends(ge
       createdAt=payload.createdAt,
       isGithub=payload.isGithub,
       github_id=payload.github_id,
+      github_access_token=payload.github_access_token,
       isGoogle=payload.isGoogle,
       google_id=payload.google_id,
+      google_access_token=payload.google_access_token,
       isApple=payload.isApple,
       apple_id=payload.apple_id,
+      apple_access_token=payload.apple_access_token,
       signupMethod=payload.signupMethod
     )
     db.add(new_user)

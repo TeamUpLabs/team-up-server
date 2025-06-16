@@ -24,11 +24,9 @@ async def get_github_access_token(code: str) -> str:
         return token_data["access_token"]
 
 async def get_github_user_info(code: str) -> dict:
-    # 1. GitHub에 code를 보내서 access token을 받아옴
     access_token = await get_github_access_token(code)
     
     async with httpx.AsyncClient() as client:
-        # 2. access token으로 유저 정보 요청
         user_res = await client.get(
             "https://api.github.com/user",
             headers={"Authorization": f"Bearer {access_token}"}
@@ -48,4 +46,4 @@ async def get_github_user_info(code: str) -> dict:
                     primary_email = emails[0]["email"] # Fallback to the first email
                 user_data["email"] = primary_email
 
-        return user_data
+        return access_token, user_data
