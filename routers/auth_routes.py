@@ -91,7 +91,6 @@ async def auth_callback(social: str, code: str, db: SessionLocal = Depends(get_d
     raise HTTPException(status_code=400, detail="GitHub 이메일 접근 실패")
   
   existing = db.query(MemberModel).filter(MemberModel.email == user.get("email")).first()
-  logging.info(existing.__dict__)
   
   if existing:
     access_token = create_access_token(
@@ -170,7 +169,8 @@ def register_with_social(payload: SocialNewMember, db: SessionLocal = Depends(ge
         "user_info": user_info
       }
     )
-    return {"status": "registered", "access_token": token}
+    member = db.query(MemberModel).filter(MemberModel.email == payload.email).first()
+    return {"status": "registered", "access_token": token, "user_info": member.__dict__}
   except Exception as e:
     import traceback
     traceback.print_exc()

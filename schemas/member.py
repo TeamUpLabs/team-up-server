@@ -64,6 +64,7 @@ class MemberCreate(BaseModel):
     lastLogin: str
     createdAt: str
     profileImage: Optional[str] = None
+    signupMethod: Optional[str] = None
     
     model_config = ConfigDict(from_attributes=True)
 
