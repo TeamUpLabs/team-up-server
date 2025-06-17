@@ -20,4 +20,5 @@ class Project(Base):
     projectType = Column(String, nullable=False)
     participationRequest = Column(JSONB, nullable=True)
     createdAt = Column(String, nullable=False)
+    github_repo_url = Column(String, nullable=True)
     

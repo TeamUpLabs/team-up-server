@@ -19,6 +19,7 @@ class ProjectBase(BaseModel):
     location: str
     projectType: str
     createdAt: str
+    github_repo_url: Optional[str] = None
     
     
 class ProjectCreate(ProjectBase):
@@ -65,6 +66,7 @@ class ProjectInfoUpdate(BaseModel):
     location: Optional[str] = None
     projectType: Optional[str] = None
     status: Optional[str] = None
+    github_repo_url: Optional[str] = None
     class Config:
         from_attributes = True
         
