@@ -14,7 +14,7 @@ class Comment(BaseModel):
 
 class TaskBase(BaseModel):
   project_id: str
-  milestone_id: int
+  milestone_id: Optional[int] = None
   title: str
   description: str
   status: str

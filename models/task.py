@@ -7,7 +7,7 @@ class Task(Base):
   
   id = Column(Integer, primary_key=True, index=True, nullable=False)
   project_id = Column(String, nullable=False)
-  milestone_id = Column(Integer, nullable=False)
+  milestone_id = Column(Integer, nullable=True)
   title = Column(String, nullable=False)
   description = Column(Text, nullable=False)
   status = Column(Enum("not-started", "in-progress", "done", name="status"), nullable=False)
