@@ -1,4 +1,3 @@
-from stat import SF_DATALESS
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from database import SessionLocal
