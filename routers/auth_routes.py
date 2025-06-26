@@ -97,8 +97,8 @@ async def auth_callback(social: str, code: str, db: SessionLocal = Depends(get_d
         
     try:
         if social == "github":
-            social_access_token, user = await get_github_user_info(code)
-            logging.info(f"Social access token: {social_access_token}")
+            social_access_token, user, github_username = await get_github_user_info(code)
+            logging.info(f"Social access token received for GitHub user: {github_username}")
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported social provider: {social}")
             
@@ -111,16 +111,55 @@ async def auth_callback(social: str, code: str, db: SessionLocal = Depends(get_d
         existing = db.query(MemberModel).filter(MemberModel.email == user.get("email")).first()
         
         if existing:
+            # Update the existing user's GitHub access token and last login
+            existing.github_access_token = social_access_token
+            existing.github_id = github_username
+            existing.isGithub = True
+            db.commit()
+            db.refresh(existing)
+            
+            # Create a serializable dictionary of user info
+            user_info = {
+                "id": existing.id,
+                "name": existing.name,
+                "email": existing.email,
+                "role": existing.role,
+                "status": existing.status,
+                "lastLogin": existing.lastLogin,
+                "createdAt": existing.createdAt,
+                "skills": existing.skills,
+                "projects": existing.projects,
+                "profileImage": existing.profileImage,
+                "contactNumber": existing.contactNumber,
+                "birthDate": existing.birthDate,
+                "introduction": existing.introduction,
+                "workingHours": existing.workingHours,
+                "languages": existing.languages,
+                "socialLinks": existing.socialLinks,
+                "notification": existing.notification,
+                "isGithub": existing.isGithub,
+                "github_id": existing.github_id,
+                "github_access_token": existing.github_access_token,
+                "isGoogle": existing.isGoogle,
+                "google_id": existing.google_id,
+                "google_access_token": existing.google_access_token,
+                "isApple": existing.isApple,
+                "apple_id": existing.apple_id,
+                "apple_access_token": existing.apple_access_token,
+                "signupMethod": existing.signupMethod
+            }
+            
+            # Create token with serialized user info
             access_token = create_access_token(
                 data={
                     "sub": user.get("email"),
-                    "user_info": existing.__dict__
+                    "user_info": user_info
                 }
             )
             return {
                 "status": "logged_in",
                 "access_token": access_token,
-                "user_info": existing.__dict__
+                "user_info": user_info
             }
         else:
             return {
@@ -135,12 +174,16 @@ async def auth_callback(social: str, code: str, db: SessionLocal = Depends(get_d
                     "social_access_token": social_access_token
                 }
             }
-    except HTTPException:
+    except HTTPException as he:
+        logging.error(f"HTTP Exception in auth_callback: {str(he)}")
         raise
     except Exception as e:
+        import traceback
+        error_detail = f"An error occurred during authentication: {str(e)}\n{traceback.format_exc()}"
+        logging.error(error_detail)
         raise HTTPException(
             status_code=500,
-            detail=f"An error occurred during authentication: {str(e)}"
+            detail="An error occurred during authentication. Please try again later."
         )
     
 @router.post("/auth/signup")
@@ -184,12 +227,21 @@ def register_with_social(payload: SocialNewMember, db: SessionLocal = Depends(ge
     db.commit()
     db.refresh(new_user)
 
-    # Create a minimal user info dict for the token
+    # Create a serializable dictionary of user info
     user_info = {
         "id": new_user.id,
-        "email": new_user.email,
         "name": new_user.name,
-        "role": new_user.role
+        "email": new_user.email,
+        "role": new_user.role,
+        "status": new_user.status,
+        "profileImage": new_user.profileImage,
+        "isGithub": new_user.isGithub,
+        "github_id": new_user.github_id,
+        "isGoogle": new_user.isGoogle,
+        "google_id": new_user.google_id,
+        "isApple": new_user.isApple,
+        "apple_id": new_user.apple_id,
+        "signupMethod": new_user.signupMethod
     }
     
     token = create_access_token(
