@@ -1,0 +1,305 @@
+#!/usr/bin/env python3
+"""
+이 스크립트는 샘플 데이터를 데이터베이스에 추가합니다.
+샘플 데이터는 sample_data.json 파일에서 읽어옵니다.
+"""
+
+import sys
+import os
+import json
+from pathlib import Path
+from datetime import datetime
+import logging
+from typing import Dict, List, Any
+
+# 프로젝트 루트 경로 추가
+project_root = Path(__file__).resolve().parent.parent
+sys.path.append(str(project_root))
+
+# 로깅 설정
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger("seed-database")
+
+# 모듈 임포트
+from database import SessionLocal, engine, Base
+from new_models.user import User
+from new_models.project import Project
+from new_models.task import Task
+from new_models.milestone import Milestone
+from new_models.tech_stack import TechStack
+from auth import get_password_hash
+
+def load_sample_data() -> Dict[str, List[Dict[str, Any]]]:
+    """sample_data.json에서 샘플 데이터 로드"""
+    data_path = project_root / "new_scripts" / "sample_data.json"
+    logger.info(f"샘플 데이터 파일 로드: {data_path}")
+    
+    try:
+        with open(data_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data
+    except Exception as e:
+        logger.error(f"샘플 데이터 로드 오류: {e}")
+        sys.exit(1)
+
+def create_database_tables():
+    """데이터베이스 테이블 생성"""
+    logger.info("데이터베이스 테이블 생성")
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("테이블 생성 완료")
+    except Exception as e:
+        logger.error(f"테이블 생성 오류: {e}")
+        sys.exit(1)
+
+def seed_users(db, users_data):
+    """사용자 데이터 추가"""
+    logger.info("사용자 데이터 추가 중...")
+    
+    for user_data in users_data:
+        # 이미 존재하는 사용자 확인
+        existing_user = db.query(User).filter(User.email == user_data["email"]).first()
+        if existing_user:
+            logger.info(f"사용자 이미 존재: {user_data['email']}")
+            continue
+            
+        # 비밀번호 해싱
+        hashed_password = get_password_hash(user_data["password"])
+        
+        # 사용자 생성
+        user = User(
+            name=user_data["name"],
+            email=user_data["email"],
+            hashed_password=hashed_password,
+            profile_image=user_data.get("profile_image"),
+            bio=user_data.get("bio"),
+            role=user_data.get("role"),
+            status=user_data.get("status", "active"),
+        )
+        
+        db.add(user)
+        logger.info(f"사용자 추가: {user_data['email']}")
+    
+    db.commit()
+    logger.info(f"사용자 데이터 추가 완료: {len(users_data)}명")
+
+def seed_tech_stacks(db, tech_stacks_data):
+    """기술 스택 데이터 추가"""
+    logger.info("기술 스택 데이터 추가 중...")
+    
+    for tech_data in tech_stacks_data:
+        # 이미 존재하는 기술 스택 확인
+        existing_tech = db.query(TechStack).filter(TechStack.name == tech_data["name"]).first()
+        if existing_tech:
+            logger.info(f"기술 스택 이미 존재: {tech_data['name']}")
+            continue
+            
+        # 기술 스택 생성
+        tech = TechStack(
+            name=tech_data["name"],
+            category=tech_data.get("category"),
+            icon_url=tech_data.get("icon_url"),
+        )
+        
+        db.add(tech)
+        logger.info(f"기술 스택 추가: {tech_data['name']}")
+    
+    db.commit()
+    logger.info(f"기술 스택 데이터 추가 완료: {len(tech_stacks_data)}개")
+
+def seed_projects(db, projects_data):
+    """프로젝트 데이터 추가"""
+    logger.info("프로젝트 데이터 추가 중...")
+    
+    for project_data in projects_data:
+        # 이미 존재하는 프로젝트 확인
+        existing_project = db.query(Project).filter(Project.id == project_data["id"]).first()
+        if existing_project:
+            logger.info(f"프로젝트 이미 존재: {project_data['id']}")
+            continue
+            
+        # 기본 데이터 준비
+        project_dict = {
+            "id": project_data["id"],
+            "title": project_data["title"],
+            "description": project_data["description"],
+            "short_description": project_data.get("short_description"),
+            "cover_image": project_data.get("cover_image"),
+            "status": project_data.get("status", "planning"),
+            "visibility": project_data.get("visibility", "public"),
+            "owner_id": project_data["owner_id"],
+            "tags": project_data.get("tags"),
+        }
+        
+        # 날짜 필드 처리
+        if "start_date" in project_data:
+            project_dict["start_date"] = datetime.fromisoformat(project_data["start_date"].replace("Z", "+00:00"))
+        if "end_date" in project_data:
+            project_dict["end_date"] = datetime.fromisoformat(project_data["end_date"].replace("Z", "+00:00"))
+        if "completed_at" in project_data:
+            project_dict["completed_at"] = datetime.fromisoformat(project_data["completed_at"].replace("Z", "+00:00"))
+        
+        # 프로젝트 생성
+        project = Project(**project_dict)
+        
+        # 기술 스택 연결
+        if "tech_stack_ids" in project_data:
+            tech_stacks = db.query(TechStack).filter(TechStack.id.in_(project_data["tech_stack_ids"])).all()
+            project.tech_stacks = tech_stacks
+            
+        # 멤버 추가
+        if "member_ids" in project_data:
+            members = db.query(User).filter(User.id.in_(project_data["member_ids"])).all()
+            project.members = members
+            
+        db.add(project)
+        db.flush()  # ID를 생성하기 위해 flush
+        
+        # 멤버 권한 설정 (소유자는 리더 및 관리자로 설정)
+        from new_models.association_tables import project_members
+        from sqlalchemy import update
+        
+        # 소유자를 리더 및 관리자로 설정
+        db.execute(
+            update(project_members).where(
+                project_members.c.project_id == project.id,
+                project_members.c.user_id == project.owner_id
+            ).values(
+                is_leader=1,
+                role="owner"
+            )
+        )
+        
+        # 멤버 역할 및 권한 설정 (예: 첫 번째 멤버를 관리자로 설정)
+        if "member_ids" in project_data and len(project_data["member_ids"]) > 1:
+            # 소유자를 제외한 첫 번째 멤버를 관리자로 설정
+            for member_id in project_data["member_ids"]:
+                if member_id != project.owner_id:
+                    db.execute(
+                        update(project_members).where(
+                            project_members.c.project_id == project.id,
+                            project_members.c.user_id == member_id
+                        ).values(
+                            is_manager=1,
+                            role="manager"
+                        )
+                    )
+                    break  # 한 명만 관리자로 설정
+            
+        logger.info(f"프로젝트 추가: {project_data['id']} - {project_data['title']}")
+    
+    db.commit()
+    logger.info(f"프로젝트 데이터 추가 완료: {len(projects_data)}개")
+
+def seed_milestones(db, milestones_data):
+    """마일스톤 데이터 추가"""
+    logger.info("마일스톤 데이터 추가 중...")
+    
+    for milestone_data in milestones_data:
+        # 기본 데이터 준비
+        milestone_dict = {
+            "title": milestone_data["title"],
+            "description": milestone_data.get("description"),
+            "status": milestone_data.get("status", "not_started"),
+            "priority": milestone_data.get("priority", "medium"),
+            "project_id": milestone_data["project_id"],
+            "created_by": milestone_data.get("created_by"),
+        }
+        
+        # 날짜 필드 처리
+        if "start_date" in milestone_data:
+            milestone_dict["start_date"] = datetime.fromisoformat(milestone_data["start_date"].replace("Z", "+00:00"))
+        if "due_date" in milestone_data:
+            milestone_dict["due_date"] = datetime.fromisoformat(milestone_data["due_date"].replace("Z", "+00:00"))
+        if "completed_at" in milestone_data:
+            milestone_dict["completed_at"] = datetime.fromisoformat(milestone_data["completed_at"].replace("Z", "+00:00"))
+        
+        # 마일스톤 생성
+        milestone = Milestone(**milestone_dict)
+        
+        # 담당자 추가
+        if "assignee_ids" in milestone_data:
+            assignees = db.query(User).filter(User.id.in_(milestone_data["assignee_ids"])).all()
+            milestone.assignees = assignees
+            
+        db.add(milestone)
+        logger.info(f"마일스톤 추가: {milestone_data['title']}")
+    
+    db.commit()
+    logger.info(f"마일스톤 데이터 추가 완료: {len(milestones_data)}개")
+
+def seed_tasks(db, tasks_data):
+    """업무 데이터 추가"""
+    logger.info("업무 데이터 추가 중...")
+    
+    for task_data in tasks_data:
+        # 기본 데이터 준비
+        task_dict = {
+            "title": task_data["title"],
+            "description": task_data.get("description"),
+            "status": task_data.get("status", "not_started"),
+            "priority": task_data.get("priority", "medium"),
+            "estimated_hours": task_data.get("estimated_hours"),
+            "actual_hours": task_data.get("actual_hours"),
+            "project_id": task_data["project_id"],
+            "milestone_id": task_data.get("milestone_id"),
+            "parent_task_id": task_data.get("parent_task_id"),
+            "created_by": task_data.get("created_by"),
+        }
+        
+        # 날짜 필드 처리
+        if "start_date" in task_data:
+            task_dict["start_date"] = datetime.fromisoformat(task_data["start_date"].replace("Z", "+00:00"))
+        if "due_date" in task_data:
+            task_dict["due_date"] = datetime.fromisoformat(task_data["due_date"].replace("Z", "+00:00"))
+        if "completed_at" in task_data:
+            task_dict["completed_at"] = datetime.fromisoformat(task_data["completed_at"].replace("Z", "+00:00"))
+        
+        # 업무 생성
+        task = Task(**task_dict)
+        
+        # 담당자 추가
+        if "assignee_ids" in task_data:
+            assignees = db.query(User).filter(User.id.in_(task_data["assignee_ids"])).all()
+            task.assignees = assignees
+            
+        db.add(task)
+        logger.info(f"업무 추가: {task_data['title']}")
+    
+    db.commit()
+    logger.info(f"업무 데이터 추가 완료: {len(tasks_data)}개")
+
+def seed_database():
+    """데이터베이스에 샘플 데이터 추가"""
+    logger.info("데이터베이스 시드 작업 시작")
+    
+    # 샘플 데이터 로드
+    data = load_sample_data()
+    
+    # 데이터베이스 세션 생성
+    db = SessionLocal()
+    
+    try:
+        # 데이터베이스 테이블 생성
+        create_database_tables()
+        
+        # 데이터 추가
+        seed_users(db, data.get("users", []))
+        seed_tech_stacks(db, data.get("tech_stacks", []))
+        seed_projects(db, data.get("projects", []))
+        seed_milestones(db, data.get("milestones", []))
+        seed_tasks(db, data.get("tasks", []))
+        
+        logger.info("데이터베이스 시드 작업 완료")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"데이터베이스 시드 작업 중 오류 발생: {e}")
+        raise
+    finally:
+        db.close()
+
+if __name__ == "__main__":
+    seed_database() 

@@ -1,12 +1,15 @@
 from typing import List, Dict
 import asyncio
+from datetime import datetime
 
 class ProjectSSEManager:
     def __init__(self):
         self.connections: Dict[str, List[asyncio.Queue]] = {}
         
     def convert_to_dict(self, obj):
-        if hasattr(obj, '__dict__'):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        elif hasattr(obj, '__dict__'):
             return {
                 key: self.convert_to_dict(value)
                 for key, value in obj.__dict__.items()
@@ -47,7 +50,9 @@ class NotificationSSEManager:
         self.connections: Dict[str, List[asyncio.Queue]] = {}
         
     def convert_to_dict(self, obj):
-        if hasattr(obj, '__dict__'):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        elif hasattr(obj, '__dict__'):
             return {
                 key: self.convert_to_dict(value)
                 for key, value in obj.__dict__.items()
