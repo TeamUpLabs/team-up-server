@@ -6,10 +6,7 @@ from .tech_stack import TechStackBase
 from .task import TaskDetail
 from .milestone import MilestoneDetail
 from .participation_request import ParticipationRequestResponse
-<<<<<<< HEAD
 from .schedule import ScheduleResponse
-=======
->>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
 
 # 기술 스택 스키마
 class TechStackBase(BaseModel):
@@ -88,10 +85,7 @@ class ProjectDetail(ProjectBase):
     tasks: List[TaskDetail] = []
     milestones: List[MilestoneDetail] = []
     participation_requests: List[ParticipationRequestResponse] = []
-<<<<<<< HEAD
     schedules: List[ScheduleResponse] = []
-=======
->>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
     
     # 통계
     task_count: Optional[int] = len(tasks)
@@ -99,11 +93,7 @@ class ProjectDetail(ProjectBase):
     milestone_count: Optional[int] = len(milestones)
     completed_milestone_count: Optional[int] = len([milestone for milestone in milestones if milestone.status == "completed"])
     participation_request_count: Optional[int] = len(participation_requests)
-<<<<<<< HEAD
     schedule_count: Optional[int] = len(schedules)
-=======
-    
->>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
     class Config:
         from_attributes = True
 

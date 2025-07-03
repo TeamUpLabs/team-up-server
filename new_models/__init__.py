@@ -4,10 +4,7 @@ from new_models.task import Task
 from new_models.milestone import Milestone
 from new_models.tech_stack import TechStack
 from new_models.participation_request import ParticipationRequest
-<<<<<<< HEAD
 from new_models.schedule import Schedule
-=======
->>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
 from new_models.association_tables import (
     project_members,
     task_assignees,

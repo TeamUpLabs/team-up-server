@@ -65,7 +65,6 @@ class User(Base, BaseModel):
         back_populates="user"
     )
     
-<<<<<<< HEAD
     # 스케줄 관계
     created_schedules = relationship(
         "Schedule",
@@ -79,7 +78,5 @@ class User(Base, BaseModel):
         back_populates="assignees"
     )
     
-=======
->>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
     def __repr__(self):
         return f"<User(id={self.id}, name='{self.name}', email='{self.email}')>" 
