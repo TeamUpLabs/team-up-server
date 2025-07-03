@@ -1,8 +1,13 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, JSON
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from database import Base
 from new_models.base import BaseModel
-from new_models.association_tables import project_members, task_assignees, milestone_assignees
+from new_models.association_tables import (
+    project_members, task_assignees, milestone_assignees,
+    user_tech_stacks, user_collaboration_preferences,
+    user_interests, user_social_links
+)
 
 class User(Base, BaseModel):
     """사용자 모델"""
@@ -21,6 +26,18 @@ class User(Base, BaseModel):
     # OAuth 관련 필드
     auth_provider = Column(String(20), default="local")  # local, github, google 등
     auth_provider_id = Column(String(100), nullable=True)
+    
+    # 알림 설정 (JSON 형태)
+    notification_settings = Column(JSON, default={
+        "emailEnable": 1,
+        "taskNotification": 1,
+        "milestoneNotification": 1,
+        "scheduleNotification": 1,
+        "deadlineNotification": 1,
+        "weeklyReport": 1,
+        "pushNotification": 1,
+        "securityNotification": 1
+    })
     
     # 관계 정의
     owned_projects = relationship(
@@ -78,5 +95,81 @@ class User(Base, BaseModel):
         back_populates="assignees"
     )
     
+    # 사용자-기술 스택 관계
+    tech_stacks = relationship(
+        "TechStack",
+        secondary=user_tech_stacks,
+        backref="users"
+    )
+    
+    # 사용자-협업 선호도 관계 (일대다)
+    collaboration_preferences = relationship(
+        "CollaborationPreference",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    
+    # 사용자-관심분야 관계 (일대다)
+    interests = relationship(
+        "UserInterest",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    
+    # 사용자-소셜링크 관계 (일대다)
+    social_links = relationship(
+        "UserSocialLink",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    
     def __repr__(self):
         return f"<User(id={self.id}, name='{self.name}', email='{self.email}')>" 
+
+# 사용자 협업 선호도 모델
+class CollaborationPreference(Base, BaseModel):
+    """사용자 협업 선호도 모델"""
+    __tablename__ = "collaboration_preferences"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    preference_type = Column(String(50), nullable=False)  # remote, in-person, hybrid, timezone
+    preference_value = Column(String(100), nullable=False)
+    
+    # 관계 정의
+    user = relationship("User", back_populates="collaboration_preferences")
+    
+    def __repr__(self):
+        return f"<CollaborationPreference(id={self.id}, user_id={self.user_id}, type='{self.preference_type}')>"
+
+# 사용자 관심분야 모델
+class UserInterest(Base, BaseModel):
+    """사용자 관심분야 모델"""
+    __tablename__ = "user_interests_detail"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    interest_category = Column(String(50), nullable=False)
+    interest_name = Column(String(100), nullable=False)
+    
+    # 관계 정의
+    user = relationship("User", back_populates="interests")
+    
+    def __repr__(self):
+        return f"<UserInterest(id={self.id}, user_id={self.user_id}, name='{self.interest_name}')>"
+
+# 사용자 소셜링크 모델
+class UserSocialLink(Base, BaseModel):
+    """사용자 소셜링크 모델"""
+    __tablename__ = "user_social_links_detail"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    platform = Column(String(50), nullable=False)  # github, linkedin, twitter 등
+    url = Column(String(255), nullable=False)
+    
+    # 관계 정의
+    user = relationship("User", back_populates="social_links")
+    
+    def __repr__(self):
+        return f"<UserSocialLink(id={self.id}, user_id={self.user_id}, platform='{self.platform}')>" 

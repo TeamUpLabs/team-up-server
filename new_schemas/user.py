@@ -1,5 +1,5 @@
-from typing import List, Optional
-from pydantic import BaseModel, Field, EmailStr, validator
+from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, Field, EmailStr, validator, AnyUrl
 from datetime import datetime
 
 # 기본 사용자 스키마
@@ -19,6 +19,11 @@ class UserCreate(UserBase):
         if len(v) < 8:
             raise ValueError('비밀번호는 8자 이상이어야 합니다.')
         return v
+    # 추가: 생성 시 함께 받을 수 있는 필드들
+    collaboration_preferences: Optional[List["CollaborationPreferenceCreate"]] = None
+    interests: Optional[List["UserInterestCreate"]] = None
+    notification_settings: Optional[Dict[str, int]] = None
+    social_links: Optional[List["UserSocialLinkCreate"]] = None
 
 # 사용자 업데이트 스키마
 class UserUpdate(BaseModel):
@@ -26,6 +31,7 @@ class UserUpdate(BaseModel):
     profile_image: Optional[str] = None
     bio: Optional[str] = None
     role: Optional[str] = None
+    notification_settings: Optional[Dict[str, int]] = None
 
 # 사용자 응답 스키마
 class UserBrief(BaseModel):
@@ -70,6 +76,102 @@ class MilestoneBrief(BaseModel):
     class Config:
         from_attributes = True
 
+# 기술 스택 스키마
+class TechStackBrief(BaseModel):
+    id: int
+    name: str
+    category: Optional[str] = None
+    icon_url: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+# 사용자 기술 스택 스키마
+class UserTechStackCreate(BaseModel):
+    tech_stack_id: int
+    proficiency_level: Optional[int] = None
+    years_experience: Optional[int] = None
+
+class UserTechStackResponse(BaseModel):
+    tech_stack: TechStackBrief
+    proficiency_level: Optional[int] = None
+    years_experience: Optional[int] = None
+    
+    class Config:
+        from_attributes = True
+
+# 협업 선호도 스키마
+class CollaborationPreferenceCreate(BaseModel):
+    preference_type: str
+    preference_value: str
+
+class CollaborationPreferenceResponse(BaseModel):
+    id: int
+    preference_type: str
+    preference_value: str
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# 사용자 프로젝트 스키마
+class UserProjectCreate(BaseModel):
+    project_id: str
+    role_description: Optional[str] = None
+    contribution: Optional[str] = None
+
+class UserProjectResponse(BaseModel):
+    id: int
+    project: ProjectBrief
+    role_description: Optional[str] = None
+    contribution: Optional[str] = None
+    joined_at: datetime
+    left_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+# 사용자 관심분야 스키마
+class UserInterestCreate(BaseModel):
+    interest_category: str
+    interest_name: str
+
+class UserInterestResponse(BaseModel):
+    id: int
+    interest_category: str
+    interest_name: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+# 알림 설정 스키마 (JSON 형태)
+class NotificationSettingsUpdate(BaseModel):
+    emailEnable: Optional[int] = 1
+    taskNotification: Optional[int] = 1
+    milestoneNotification: Optional[int] = 1
+    scheduleNotification: Optional[int] = 1
+    deadlineNotification: Optional[int] = 1
+    weeklyReport: Optional[int] = 1
+    pushNotification: Optional[int] = 1
+    securityNotification: Optional[int] = 1
+
+# 소셜 링크 스키마
+class UserSocialLinkCreate(BaseModel):
+    platform: str
+    url: str
+
+class UserSocialLinkResponse(BaseModel):
+    id: int
+    platform: str
+    url: str
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 # 상세 사용자 응답 스키마
 class UserDetail(UserBase):
     id: int
@@ -85,7 +187,11 @@ class UserDetail(UserBase):
     assigned_milestones: Optional[List[MilestoneBrief]] = None
     created_milestones: Optional[List[MilestoneBrief]] = None
     
-    # 프로젝트 관계는 필요에 따라 추가
+    tech_stacks: Optional[List[TechStackBrief]] = None
+    collaboration_preferences: Optional[List[CollaborationPreferenceResponse]] = None
+    interests: Optional[List[UserInterestResponse]] = None
+    notification_settings: Optional[Dict[str, int]] = None
+    social_links: Optional[List[UserSocialLinkResponse]] = None
     
     class Config:
         from_attributes = True
@@ -95,3 +201,5 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user: UserBrief 
+
+UserCreate.update_forward_refs() 

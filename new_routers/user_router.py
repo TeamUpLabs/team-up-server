@@ -1,12 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from typing import List
+from typing import List, Dict
 from sqlalchemy.orm import Session
 
 from database import get_db
 from auth import create_access_token, get_current_user
 from new_crud import user
-from new_schemas.user import UserCreate, UserUpdate, UserDetail, UserBrief, Token
+from new_schemas.user import (
+    UserCreate, UserUpdate, UserDetail, UserBrief, Token,
+    UserTechStackCreate, CollaborationPreferenceCreate,
+    UserProjectCreate, UserInterestCreate,
+    NotificationSettingsUpdate, UserSocialLinkCreate,
+    UserTechStackResponse, CollaborationPreferenceResponse,
+    UserProjectResponse, UserInterestResponse,
+    UserSocialLinkResponse
+)
 from new_models.user import User
 from new_routers.project_router import convert_project_to_project_detail
 from utils.sse_manager import project_sse_manager
@@ -85,4 +93,249 @@ def read_user_tasks(user_id: int, db: Session = Depends(get_db)):
     """특정 사용자의 업무 목록 조회"""
     from new_schemas.task import TaskBrief
     tasks = user.get_tasks(db=db, user_id=user_id)
-    return [TaskBrief.model_validate(t, from_attributes=True) for t in tasks] 
+    return [TaskBrief.model_validate(t, from_attributes=True) for t in tasks]
+
+# 알림 설정 관련 엔드포인트
+@router.get("/{user_id}/notification-settings", response_model=Dict[str, int])
+def get_user_notification_settings(
+    user_id: int, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    """사용자 알림 설정 조회"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    return user.get_notification_settings(db=db, user_id=user_id)
+
+@router.put("/{user_id}/notification-settings", response_model=Dict[str, int])
+def update_user_notification_settings(
+    user_id: int, 
+    settings_in: NotificationSettingsUpdate,
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    """사용자 알림 설정 업데이트"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    return user.update_notification_settings(db=db, user_id=user_id, settings_in=settings_in)
+
+# 기술 스택 관련 엔드포인트
+@router.post("/{user_id}/tech-stacks", response_model=UserTechStackResponse)
+def add_user_tech_stack(
+    user_id: int, tech_stack_in: UserTechStackCreate, 
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """사용자 기술 스택 추가"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    result = user.add_tech_stack(db=db, user_id=user_id, tech_stack_in=tech_stack_in)
+    return UserTechStackResponse.model_validate(result, from_attributes=True)
+
+@router.get("/{user_id}/tech-stacks", response_model=List[UserTechStackResponse])
+def get_user_tech_stacks(user_id: int, db: Session = Depends(get_db)):
+    """사용자 기술 스택 목록 조회"""
+    tech_stacks = user.get_tech_stacks(db=db, user_id=user_id)
+    return [UserTechStackResponse.model_validate(ts, from_attributes=True) for ts in tech_stacks]
+
+@router.delete("/{user_id}/tech-stacks/{tech_stack_id}", response_model=Dict)
+def remove_user_tech_stack(
+    user_id: int, tech_stack_id: int, 
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """사용자 기술 스택 제거"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    return user.remove_tech_stack(db=db, user_id=user_id, tech_stack_id=tech_stack_id)
+
+# 협업 선호도 관련 엔드포인트
+@router.post("/{user_id}/collaboration-preferences", response_model=CollaborationPreferenceResponse)
+def create_user_collaboration_preference(
+    user_id: int, pref_in: CollaborationPreferenceCreate, 
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """사용자 협업 선호도 생성"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    db_pref = user.create_collaboration_preference(db=db, user_id=user_id, pref_in=pref_in)
+    return CollaborationPreferenceResponse.model_validate(db_pref, from_attributes=True)
+
+@router.delete("/{user_id}/collaboration-preferences/{pref_id}", response_model=Dict)
+def delete_user_collaboration_preference(
+    user_id: int, pref_id: int, 
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """사용자 협업 선호도 삭제"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    return user.delete_collaboration_preference(db=db, user_id=user_id, pref_id=pref_id)
+
+@router.put("/{user_id}/collaboration-preferences/{pref_id}", response_model=CollaborationPreferenceResponse)
+def update_user_collaboration_preference(
+    user_id: int, pref_id: int, pref_in: CollaborationPreferenceCreate,
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
+    db_pref = db.query(user.CollaborationPreference).filter(
+        user.CollaborationPreference.id == pref_id,
+        user.CollaborationPreference.user_id == user_id
+    ).first()
+    if not db_pref:
+        raise HTTPException(status_code=404, detail="해당 협업 선호도를 찾을 수 없습니다.")
+    db_pref.preference_type = pref_in.preference_type
+    db_pref.preference_value = pref_in.preference_value
+    db.commit()
+    db.refresh(db_pref)
+    return CollaborationPreferenceResponse.model_validate(db_pref, from_attributes=True)
+
+# 사용자 프로젝트 관련 엔드포인트
+@router.post("/{user_id}/detailed-projects", response_model=UserProjectResponse)
+def create_user_detailed_project(
+    user_id: int, proj_in: UserProjectCreate, 
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """사용자 프로젝트 상세 정보 생성"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    db_proj = user.create_user_project(db=db, user_id=user_id, proj_in=proj_in)
+    return UserProjectResponse.model_validate(db_proj, from_attributes=True)
+
+@router.delete("/{user_id}/detailed-projects/{user_project_id}", response_model=Dict)
+def delete_user_detailed_project(
+    user_id: int, user_project_id: int, 
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """사용자 프로젝트 상세 정보 삭제"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    return user.delete_user_project(db=db, user_id=user_id, user_project_id=user_project_id)
+
+# 사용자 관심분야 관련 엔드포인트
+@router.post("/{user_id}/interests", response_model=UserInterestResponse)
+def create_user_interest_endpoint(
+    user_id: int, interest_in: UserInterestCreate, 
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """사용자 관심분야 생성"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    db_interest = user.create_user_interest(db=db, user_id=user_id, interest_in=interest_in)
+    return UserInterestResponse.model_validate(db_interest, from_attributes=True)
+
+@router.delete("/{user_id}/interests/{interest_id}", response_model=Dict)
+def delete_user_interest_endpoint(
+    user_id: int, interest_id: int, 
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """사용자 관심분야 삭제"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    return user.delete_user_interest(db=db, user_id=user_id, interest_id=interest_id)
+
+@router.put("/{user_id}/interests/{interest_id}", response_model=UserInterestResponse)
+def update_user_interest(
+    user_id: int, interest_id: int, interest_in: UserInterestCreate,
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
+    db_interest = db.query(user.UserInterest).filter(
+        user.UserInterest.id == interest_id,
+        user.UserInterest.user_id == user_id
+    ).first()
+    if not db_interest:
+        raise HTTPException(status_code=404, detail="해당 관심분야를 찾을 수 없습니다.")
+    db_interest.interest_category = interest_in.interest_category
+    db_interest.interest_name = interest_in.interest_name
+    db.commit()
+    db.refresh(db_interest)
+    return UserInterestResponse.model_validate(db_interest, from_attributes=True)
+
+# 소셜 링크 관련 엔드포인트
+@router.post("/{user_id}/social-links", response_model=UserSocialLinkResponse)
+def create_user_social_link(
+    user_id: int, link_in: UserSocialLinkCreate, 
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """사용자 소셜 링크 생성"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    db_link = user.create_social_link(db=db, user_id=user_id, link_in=link_in)
+    return UserSocialLinkResponse.model_validate(db_link, from_attributes=True)
+
+@router.delete("/{user_id}/social-links/{link_id}", response_model=Dict)
+def delete_user_social_link(
+    user_id: int, link_id: int, 
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    """사용자 소셜 링크 삭제"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    return user.delete_social_link(db=db, user_id=user_id, link_id=link_id)
+
+@router.put("/{user_id}/social-links/{link_id}", response_model=UserSocialLinkResponse)
+def update_user_social_link(
+    user_id: int, link_id: int, link_in: UserSocialLinkCreate,
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
+    db_link = db.query(user.UserSocialLink).filter(
+        user.UserSocialLink.id == link_id,
+        user.UserSocialLink.user_id == user_id
+    ).first()
+    if not db_link:
+        raise HTTPException(status_code=404, detail="해당 소셜 링크를 찾을 수 없습니다.")
+    db_link.platform = link_in.platform
+    db_link.url = link_in.url
+    db.commit()
+    db.refresh(db_link)
+    return UserSocialLinkResponse.model_validate(db_link, from_attributes=True) 
