@@ -35,6 +35,7 @@ milestone_assignees = Table(
     Index('idx_milestone_assignees', 'milestone_id', 'user_id')
 )
 
+<<<<<<< HEAD
 # 스케줄-담당자 관계 테이블
 schedule_assignees = Table(
     'schedule_assignees',
@@ -45,6 +46,8 @@ schedule_assignees = Table(
     Index('idx_schedule_assignees', 'schedule_id', 'user_id')
 )
 
+=======
+>>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
 # 프로젝트-기술 스택 관계 테이블
 project_tech_stacks = Table(
     'project_tech_stacks',

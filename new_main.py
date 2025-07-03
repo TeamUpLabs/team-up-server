@@ -8,8 +8,12 @@ from new_routers import (
     task_router,
     milestone_router,
     tech_stack_router,
+<<<<<<< HEAD
     participation_request_router,
     schedule_router
+=======
+    participation_request_router
+>>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
 )
 
 # 모든 모델이 정의된 후 테이블 생성
@@ -38,7 +42,10 @@ app.include_router(task_router)
 app.include_router(milestone_router)
 app.include_router(tech_stack_router)
 app.include_router(participation_request_router)
+<<<<<<< HEAD
 app.include_router(schedule_router)
+=======
+>>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
 
 @app.get("/")
 async def root():

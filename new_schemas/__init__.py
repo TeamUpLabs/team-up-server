@@ -23,12 +23,19 @@ from new_schemas.participation_request import (
     ParticipationRequestUpdate, ParticipationRequestResponse,
     ParticipationRequestList
 )
+<<<<<<< HEAD
 from new_schemas.schedule import (
     ScheduleBase, ScheduleCreate, ScheduleUpdate, ScheduleResponse
 )
+=======
+>>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
 
 # 순환 참조 해결을 위한 forward refs 업데이트
 ProjectDetail.update_forward_refs()
 TaskDetail.update_forward_refs()
+<<<<<<< HEAD
 MilestoneDetail.update_forward_refs() 
 ScheduleResponse.update_forward_refs()
+=======
+MilestoneDetail.update_forward_refs() 
+>>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)

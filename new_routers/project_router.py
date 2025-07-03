@@ -11,7 +11,10 @@ from new_schemas.project import ProjectCreate, ProjectUpdate, ProjectDetail, Pro
 from new_schemas.user import UserBrief
 from new_schemas.milestone import MilestoneDetail
 from new_schemas.task import TaskBrief
+<<<<<<< HEAD
 from new_schemas.schedule import ScheduleResponse
+=======
+>>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
 from utils.sse_manager import project_sse_manager
 import json
 
@@ -176,6 +179,7 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
             )
     project_detail.participation_requests = participation_requests
     
+<<<<<<< HEAD
     # 스케줄 정보 추가
     schedules = []
     if db_project.schedules:
@@ -183,12 +187,17 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
             schedules.append(ScheduleResponse.model_validate(schedule, from_attributes=True))
     project_detail.schedules = schedules
     
+=======
+>>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
     # 통계 정보 추가
     project_detail.task_count = len(db_project.tasks)
     project_detail.completed_task_count = len([t for t in db_project.tasks if t.status == "completed"])
     project_detail.milestone_count = len(db_project.milestones)
     project_detail.participation_request_count = len(db_project.participation_requests)
+<<<<<<< HEAD
     project_detail.schedule_count = len(db_project.schedules)
+=======
+>>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
     
     return project_detail
 

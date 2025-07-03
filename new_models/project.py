@@ -53,12 +53,15 @@ class Project(Base, BaseModel):
         cascade="all, delete-orphan"
     )
     
+<<<<<<< HEAD
     schedules = relationship(
         "Schedule",
         back_populates="project",
         cascade="all, delete-orphan"
     )
     
+=======
+>>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
     tech_stacks = relationship(
         "TechStack",
         secondary=project_tech_stacks,
