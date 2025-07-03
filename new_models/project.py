@@ -53,6 +53,12 @@ class Project(Base, BaseModel):
         cascade="all, delete-orphan"
     )
     
+    schedules = relationship(
+        "Schedule",
+        back_populates="project",
+        cascade="all, delete-orphan"
+    )
+    
     tech_stacks = relationship(
         "TechStack",
         secondary=project_tech_stacks,

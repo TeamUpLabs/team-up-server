@@ -65,5 +65,18 @@ class User(Base, BaseModel):
         back_populates="user"
     )
     
+    # 스케줄 관계
+    created_schedules = relationship(
+        "Schedule",
+        back_populates="creator",
+        foreign_keys="[Schedule.created_by]"
+    )
+    
+    assigned_schedules = relationship(
+        "Schedule",
+        secondary="schedule_assignees",
+        back_populates="assignees"
+    )
+    
     def __repr__(self):
         return f"<User(id={self.id}, name='{self.name}', email='{self.email}')>" 

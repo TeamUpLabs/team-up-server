@@ -17,7 +17,7 @@ from database import engine, Base
 #     channel_routes,
 #     github_routes
 # )
-from router import user_router, project_router, task_router, milestone_router
+from new_routers import user_router, project_router, task_router, milestone_router, schedule_router, participation_request_router
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -33,6 +33,8 @@ app.include_router(user_router.router)
 app.include_router(project_router.router)
 app.include_router(task_router.router)
 app.include_router(milestone_router.router)
+app.include_router(participation_request_router.router)
+app.include_router(schedule_router.router)
 
 @app.get("/")
 async def root():

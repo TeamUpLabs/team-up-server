@@ -6,6 +6,7 @@ from .tech_stack import TechStackBase
 from .task import TaskDetail
 from .milestone import MilestoneDetail
 from .participation_request import ParticipationRequestResponse
+from .schedule import ScheduleResponse
 
 # 기술 스택 스키마
 class TechStackBase(BaseModel):
@@ -84,6 +85,7 @@ class ProjectDetail(ProjectBase):
     tasks: List[TaskDetail] = []
     milestones: List[MilestoneDetail] = []
     participation_requests: List[ParticipationRequestResponse] = []
+    schedules: List[ScheduleResponse] = []
     
     # 통계
     task_count: Optional[int] = len(tasks)
@@ -91,7 +93,7 @@ class ProjectDetail(ProjectBase):
     milestone_count: Optional[int] = len(milestones)
     completed_milestone_count: Optional[int] = len([milestone for milestone in milestones if milestone.status == "completed"])
     participation_request_count: Optional[int] = len(participation_requests)
-    
+    schedule_count: Optional[int] = len(schedules)
     class Config:
         from_attributes = True
 

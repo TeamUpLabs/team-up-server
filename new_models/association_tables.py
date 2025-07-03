@@ -35,6 +35,16 @@ milestone_assignees = Table(
     Index('idx_milestone_assignees', 'milestone_id', 'user_id')
 )
 
+# 스케줄-담당자 관계 테이블
+schedule_assignees = Table(
+    'schedule_assignees',
+    Base.metadata,
+    Column('schedule_id', Integer, ForeignKey('schedules.id', ondelete='CASCADE'), primary_key=True),
+    Column('user_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    Column('assigned_at', DateTime, nullable=False, server_default=func.now()),
+    Index('idx_schedule_assignees', 'schedule_id', 'user_id')
+)
+
 # 프로젝트-기술 스택 관계 테이블
 project_tech_stacks = Table(
     'project_tech_stacks',
