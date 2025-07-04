@@ -567,7 +567,8 @@
       "due_date": "2023-09-30T00:00:00Z",
       "project_id": "PRJ001",
       "created_by": 1,
-      "assignee_ids": [1]
+      "assignee_ids": [1],
+      "tags": ["API", "백엔드", "인증", "문서화"]
     },
     {
       "title": "데이터베이스 모델링 완료",
@@ -579,7 +580,8 @@
       "completed_at": "2023-08-10T00:00:00Z",
       "project_id": "PRJ001",
       "created_by": 1,
-      "assignee_ids": [1, 3]
+      "assignee_ids": [1, 3],
+      "tags": ["데이터베이스", "모델링", "스키마", "최적화"]
     },
     {
       "title": "UI 디자인 완료",
@@ -590,7 +592,8 @@
       "due_date": "2023-09-15T00:00:00Z",
       "project_id": "PRJ002",
       "created_by": 2,
-      "assignee_ids": [2]
+      "assignee_ids": [2],
+      "tags": ["UI/UX", "Figma", "디자인시스템", "사용자경험"]
     },
     {
       "title": "프론트엔드 기본 구조 개발",
@@ -601,7 +604,8 @@
       "due_date": "2023-09-30T00:00:00Z",
       "project_id": "PRJ002",
       "created_by": 4,
-      "assignee_ids": [4]
+      "assignee_ids": [4],
+      "tags": ["React", "컴포넌트", "상태관리", "레이아웃"]
     },
     {
       "title": "AWS 인프라 설계",
@@ -612,7 +616,8 @@
       "due_date": "2023-09-30T00:00:00Z",
       "project_id": "PRJ003",
       "created_by": 5,
-      "assignee_ids": [5]
+      "assignee_ids": [5],
+      "tags": ["AWS", "클라우드", "아키텍처", "보안", "비용최적화"]
     },
     {
       "title": "CI/CD 파이프라인 구축",
@@ -623,7 +628,8 @@
       "due_date": "2023-10-31T00:00:00Z",
       "project_id": "PRJ003",
       "created_by": 5,
-      "assignee_ids": [1, 5]
+      "assignee_ids": [1, 5],
+      "tags": ["CI/CD", "GitHub Actions", "자동화", "배포", "테스트"]
     }
   ],
   "tasks": [

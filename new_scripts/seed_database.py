@@ -309,6 +309,7 @@ def seed_milestones(db, milestones_data):
             "priority": milestone_data.get("priority", "medium"),
             "project_id": milestone_data["project_id"],
             "created_by": milestone_data.get("created_by"),
+            "tags": milestone_data.get("tags"),
         }
         
         # 날짜 필드 처리

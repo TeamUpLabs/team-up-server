@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from database import Base
 from new_models.base import BaseModel
@@ -27,6 +27,9 @@ class Milestone(Base, BaseModel):
     # 외래 키
     project_id = Column(String(6), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    
+    # 메타데이터
+    tags = Column(JSON, nullable=True)
     
     # 관계 정의
     project = relationship("Project", back_populates="milestones")

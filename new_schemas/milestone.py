@@ -16,6 +16,7 @@ class MilestoneBase(BaseModel):
     due_date: Optional[datetime] = None
     
     project_id: str
+    tags: Optional[List[str]] = None
 
 # 마일스톤 생성 스키마
 class MilestoneCreate(MilestoneBase):
@@ -34,6 +35,7 @@ class MilestoneUpdate(BaseModel):
     due_date: Optional[datetime] = None
     
     assignee_ids: Optional[List[int]] = None
+    tags: Optional[List[str]] = None
 
 # 마일스톤 간략 정보
 class MilestoneBrief(BaseModel):
@@ -43,6 +45,7 @@ class MilestoneBrief(BaseModel):
     priority: str
     progress: int
     due_date: Optional[datetime] = None
+    tags: Optional[List[str]] = None
     
     class Config:
         orm_mode = True

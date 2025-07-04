@@ -142,7 +142,8 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
                 "progress": milestone.progress,
                 "created_at": milestone.created_at,
                 "updated_at": milestone.updated_at,
-                "project_id": milestone.project_id
+                "project_id": milestone.project_id,
+                "tags": milestone.tags
             }
             
             # 담당자 정보 추가

@@ -89,6 +89,100 @@ class CRUDMilestone(CRUDBase[Milestone, MilestoneCreate, MilestoneUpdate]):
             )
         return user.assigned_milestones[skip:skip+limit]
     
+    def get_multi_filtered(self, db: Session, *, skip: int = 0, limit: int = 100, 
+                          project_id: Optional[str] = None, status: Optional[str] = None, 
+                          priority: Optional[str] = None) -> List[Milestone]:
+        """필터링된 마일스톤 목록 조회"""
+        query = db.query(Milestone)
+        
+        if project_id:
+            query = query.filter(Milestone.project_id == project_id)
+        if status:
+            query = query.filter(Milestone.status == status)
+        if priority:
+            query = query.filter(Milestone.priority == priority)
+            
+        return query.offset(skip).limit(limit).all()
+    
+    def get_tasks(self, db: Session, *, milestone_id: int) -> List:
+        """마일스톤에 속한 업무 목록 조회"""
+        milestone = self.get(db, id=milestone_id)
+        if not milestone:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"마일스톤 ID {milestone_id}를 찾을 수 없습니다."
+            )
+        return milestone.tasks
+    
+    def get_assignees(self, db: Session, *, milestone_id: int) -> List:
+        """마일스톤 담당자 목록 조회"""
+        milestone = self.get(db, id=milestone_id)
+        if not milestone:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"마일스톤 ID {milestone_id}를 찾을 수 없습니다."
+            )
+        return milestone.assignees
+    
+    def add_assignee(self, db: Session, *, milestone_id: int, user_id: int) -> Milestone:
+        """마일스톤에 담당자 추가"""
+        milestone = self.get(db, id=milestone_id)
+        if not milestone:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"마일스톤 ID {milestone_id}를 찾을 수 없습니다."
+            )
+        
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"사용자 ID {user_id}를 찾을 수 없습니다."
+            )
+        
+        if user not in milestone.assignees:
+            milestone.assignees.append(user)
+            db.commit()
+            db.refresh(milestone)
+        
+        return milestone
+    
+    def remove_assignee(self, db: Session, *, milestone_id: int, user_id: int) -> Milestone:
+        """마일스톤에서 담당자 제거"""
+        milestone = self.get(db, id=milestone_id)
+        if not milestone:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"마일스톤 ID {milestone_id}를 찾을 수 없습니다."
+            )
+        
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"사용자 ID {user_id}를 찾을 수 없습니다."
+            )
+        
+        if user in milestone.assignees:
+            milestone.assignees.remove(user)
+            db.commit()
+            db.refresh(milestone)
+        
+        return milestone
+    
+    def is_project_manager(self, db: Session, *, milestone_id: int, user_id: int) -> bool:
+        """사용자가 마일스톤의 프로젝트 관리자인지 확인"""
+        milestone = self.get(db, id=milestone_id)
+        if not milestone:
+            return False
+        
+        # 프로젝트 소유자 확인
+        if milestone.project.owner_id == user_id:
+            return True
+        
+        # 프로젝트 관리자 확인 (TODO: 프로젝트 멤버 관리자 권한 확인 로직 추가)
+        return False
+    
     def remove(self, db: Session, *, id: int) -> Milestone:
         """
         마일스톤 삭제
