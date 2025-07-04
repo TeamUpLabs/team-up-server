@@ -247,6 +247,8 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
     project_detail.milestone_count = len(db_project.milestones)
     project_detail.participation_request_count = len(db_project.participation_requests)
     project_detail.schedule_count = len(db_project.schedules)
+    project_detail.channel_count = len(db_project.channels)
+    project_detail.chat_count = len([chat for channel in db_project.channels for chat in channel.chats])
     
     return project_detail
 

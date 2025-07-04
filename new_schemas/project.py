@@ -95,6 +95,8 @@ class ProjectDetail(ProjectBase):
     completed_milestone_count: Optional[int] = len([milestone for milestone in milestones if milestone.status == "completed"])
     participation_request_count: Optional[int] = len(participation_requests)
     schedule_count: Optional[int] = len(schedules)
+    channel_count: Optional[int] = len(channels)
+    chat_count: Optional[int] = len([chat for channel in channels for chat in channel.chats])
     class Config:
         from_attributes = True
 
