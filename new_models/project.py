@@ -11,21 +11,23 @@ class Project(Base, BaseModel):
     id = Column(String(6), primary_key=True)
     title = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
-    short_description = Column(String(255), nullable=True)
-    cover_image = Column(String(255), nullable=True)
-    
+
     # 프로젝트 상태 및 설정
     status = Column(String(20), default="planning")  # planning, in_progress, completed, on_hold
     visibility = Column(String(20), default="public")  # public, private
     
     # 프로젝트 메타데이터
+    project_type = Column(String, nullable=True)
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
     completed_at = Column(DateTime, nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     
     # 추가 메타데이터
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=False)
     tags = Column(JSON, nullable=True)
+    location = Column(String(255), nullable=True)
     github_url = Column(String(255), nullable=True)
     
     # 관계 정의

@@ -7,7 +7,55 @@
       "profile_image": "https://randomuser.me/api/portraits/men/1.jpg",
       "bio": "백엔드 개발자입니다. FastAPI와 Python을 주로 사용합니다. 5년차 개발자로 클라우드 인프라 구축 경험이 있습니다.",
       "role": "backend_developer",
-      "status": "active"
+      "status": "active",
+      "notification_settings": {
+        "emailEnable": 1,
+        "taskNotification": 1,
+        "milestoneNotification": 1,
+        "scheduleNotification": 1,
+        "deadlineNotification": 1,
+        "weeklyReport": 1,
+        "pushNotification": 1,
+        "securityNotification": 1
+      },
+      "collaboration_preferences": [
+        {
+          "preference_type": "remote",
+          "preference_value": "hybrid"
+        },
+        {
+          "preference_type": "timezone",
+          "preference_value": "KST"
+        },
+        {
+          "preference_type": "communication",
+          "preference_value": "slack"
+        }
+      ],
+      "interests": [
+        {
+          "interest_category": "technology",
+          "interest_name": "Cloud Computing"
+        },
+        {
+          "interest_category": "technology",
+          "interest_name": "Microservices"
+        },
+        {
+          "interest_category": "hobby",
+          "interest_name": "Gaming"
+        }
+      ],
+      "social_links": [
+        {
+          "platform": "github",
+          "url": "https://github.com/kimdev"
+        },
+        {
+          "platform": "linkedin",
+          "url": "https://linkedin.com/in/kimdev"
+        }
+      ]
     },
     {
       "name": "이디자인",
@@ -16,7 +64,55 @@
       "profile_image": "https://randomuser.me/api/portraits/women/2.jpg",
       "bio": "UI/UX 디자이너입니다. Figma를 주로 사용하며 사용자 중심 디자인에 관심이 많습니다. 모바일 앱 디자인 전문가입니다.",
       "role": "designer",
-      "status": "active"
+      "status": "active",
+      "notification_settings": {
+        "emailEnable": 1,
+        "taskNotification": 1,
+        "milestoneNotification": 1,
+        "scheduleNotification": 1,
+        "deadlineNotification": 1,
+        "weeklyReport": 0,
+        "pushNotification": 1,
+        "securityNotification": 1
+      },
+      "collaboration_preferences": [
+        {
+          "preference_type": "remote",
+          "preference_value": "remote"
+        },
+        {
+          "preference_type": "timezone",
+          "preference_value": "KST"
+        },
+        {
+          "preference_type": "communication",
+          "preference_value": "figma"
+        }
+      ],
+      "interests": [
+        {
+          "interest_category": "design",
+          "interest_name": "User Experience"
+        },
+        {
+          "interest_category": "design",
+          "interest_name": "Mobile Design"
+        },
+        {
+          "interest_category": "hobby",
+          "interest_name": "Photography"
+        }
+      ],
+      "social_links": [
+        {
+          "platform": "behance",
+          "url": "https://behance.net/leedesign"
+        },
+        {
+          "platform": "dribbble",
+          "url": "https://dribbble.com/leedesign"
+        }
+      ]
     },
     {
       "name": "박매니저",
@@ -25,7 +121,51 @@
       "profile_image": "https://randomuser.me/api/portraits/men/3.jpg",
       "bio": "프로젝트 매니저입니다. 5년 경력이 있으며 애자일 방법론을 활용한 프로젝트 관리를 선호합니다.",
       "role": "project_manager",
-      "status": "active"
+      "status": "active",
+      "notification_settings": {
+        "emailEnable": 1,
+        "taskNotification": 1,
+        "milestoneNotification": 1,
+        "scheduleNotification": 1,
+        "deadlineNotification": 1,
+        "weeklyReport": 1,
+        "pushNotification": 1,
+        "securityNotification": 1
+      },
+      "collaboration_preferences": [
+        {
+          "preference_type": "remote",
+          "preference_value": "in-person"
+        },
+        {
+          "preference_type": "timezone",
+          "preference_value": "KST"
+        },
+        {
+          "preference_type": "communication",
+          "preference_value": "meeting"
+        }
+      ],
+      "interests": [
+        {
+          "interest_category": "management",
+          "interest_name": "Agile"
+        },
+        {
+          "interest_category": "management",
+          "interest_name": "Scrum"
+        },
+        {
+          "interest_category": "hobby",
+          "interest_name": "Reading"
+        }
+      ],
+      "social_links": [
+        {
+          "platform": "linkedin",
+          "url": "https://linkedin.com/in/parkpm"
+        }
+      ]
     },
     {
       "name": "최프론트",
@@ -34,7 +174,55 @@
       "profile_image": "https://randomuser.me/api/portraits/women/4.jpg",
       "bio": "프론트엔드 개발자입니다. React와 TypeScript를 주로 사용하며 접근성 높은 웹 개발에 관심이 많습니다.",
       "role": "frontend_developer",
-      "status": "active"
+      "status": "active",
+      "notification_settings": {
+        "emailEnable": 1,
+        "taskNotification": 1,
+        "milestoneNotification": 1,
+        "scheduleNotification": 0,
+        "deadlineNotification": 1,
+        "weeklyReport": 1,
+        "pushNotification": 1,
+        "securityNotification": 1
+      },
+      "collaboration_preferences": [
+        {
+          "preference_type": "remote",
+          "preference_value": "hybrid"
+        },
+        {
+          "preference_type": "timezone",
+          "preference_value": "KST"
+        },
+        {
+          "preference_type": "communication",
+          "preference_value": "slack"
+        }
+      ],
+      "interests": [
+        {
+          "interest_category": "technology",
+          "interest_name": "React"
+        },
+        {
+          "interest_category": "technology",
+          "interest_name": "Accessibility"
+        },
+        {
+          "interest_category": "hobby",
+          "interest_name": "Cooking"
+        }
+      ],
+      "social_links": [
+        {
+          "platform": "github",
+          "url": "https://github.com/choifrontend"
+        },
+        {
+          "platform": "twitter",
+          "url": "https://twitter.com/choifrontend"
+        }
+      ]
     },
     {
       "name": "정데브옵스",
@@ -43,7 +231,55 @@
       "profile_image": "https://randomuser.me/api/portraits/men/5.jpg",
       "bio": "DevOps 엔지니어입니다. AWS, Docker, Kubernetes를 활용한 CI/CD 파이프라인 구축을 전문으로 합니다.",
       "role": "devops_engineer",
-      "status": "active"
+      "status": "active",
+      "notification_settings": {
+        "emailEnable": 1,
+        "taskNotification": 1,
+        "milestoneNotification": 1,
+        "scheduleNotification": 1,
+        "deadlineNotification": 1,
+        "weeklyReport": 1,
+        "pushNotification": 1,
+        "securityNotification": 1
+      },
+      "collaboration_preferences": [
+        {
+          "preference_type": "remote",
+          "preference_value": "remote"
+        },
+        {
+          "preference_type": "timezone",
+          "preference_value": "KST"
+        },
+        {
+          "preference_type": "communication",
+          "preference_value": "slack"
+        }
+      ],
+      "interests": [
+        {
+          "interest_category": "technology",
+          "interest_name": "Kubernetes"
+        },
+        {
+          "interest_category": "technology",
+          "interest_name": "AWS"
+        },
+        {
+          "interest_category": "hobby",
+          "interest_name": "Hiking"
+        }
+      ],
+      "social_links": [
+        {
+          "platform": "github",
+          "url": "https://github.com/jungdevops"
+        },
+        {
+          "platform": "linkedin",
+          "url": "https://linkedin.com/in/jungdevops"
+        }
+      ]
     },
     {
       "name": "한테스터",
@@ -52,7 +288,51 @@
       "profile_image": "https://randomuser.me/api/portraits/women/6.jpg",
       "bio": "QA 엔지니어입니다. 자동화 테스트와 품질 관리 프로세스 개선에 관심이 많습니다.",
       "role": "qa_engineer",
-      "status": "active"
+      "status": "active",
+      "notification_settings": {
+        "emailEnable": 1,
+        "taskNotification": 1,
+        "milestoneNotification": 1,
+        "scheduleNotification": 1,
+        "deadlineNotification": 1,
+        "weeklyReport": 0,
+        "pushNotification": 1,
+        "securityNotification": 1
+      },
+      "collaboration_preferences": [
+        {
+          "preference_type": "remote",
+          "preference_value": "hybrid"
+        },
+        {
+          "preference_type": "timezone",
+          "preference_value": "KST"
+        },
+        {
+          "preference_type": "communication",
+          "preference_value": "jira"
+        }
+      ],
+      "interests": [
+        {
+          "interest_category": "technology",
+          "interest_name": "Test Automation"
+        },
+        {
+          "interest_category": "technology",
+          "interest_name": "Quality Assurance"
+        },
+        {
+          "interest_category": "hobby",
+          "interest_name": "Yoga"
+        }
+      ],
+      "social_links": [
+        {
+          "platform": "linkedin",
+          "url": "https://linkedin.com/in/hanqa"
+        }
+      ]
     }
   ],
   "tech_stacks": [
@@ -129,13 +409,73 @@
       "description": "컨테이너화된 애플리케이션의 배포, 확장, 관리를 자동화하는 오픈소스 시스템입니다."
     }
   ],
+  "user_tech_stacks": [
+    {
+      "user_id": 1,
+      "tech_stack_id": 1,
+      "proficiency_level": 5,
+      "years_experience": 5
+    },
+    {
+      "user_id": 1,
+      "tech_stack_id": 4,
+      "proficiency_level": 4,
+      "years_experience": 3
+    },
+    {
+      "user_id": 1,
+      "tech_stack_id": 5,
+      "proficiency_level": 4,
+      "years_experience": 4
+    },
+    {
+      "user_id": 2,
+      "tech_stack_id": 8,
+      "proficiency_level": 5,
+      "years_experience": 4
+    },
+    {
+      "user_id": 4,
+      "tech_stack_id": 2,
+      "proficiency_level": 4,
+      "years_experience": 3
+    },
+    {
+      "user_id": 4,
+      "tech_stack_id": 3,
+      "proficiency_level": 5,
+      "years_experience": 4
+    },
+    {
+      "user_id": 4,
+      "tech_stack_id": 9,
+      "proficiency_level": 4,
+      "years_experience": 3
+    },
+    {
+      "user_id": 5,
+      "tech_stack_id": 6,
+      "proficiency_level": 5,
+      "years_experience": 4
+    },
+    {
+      "user_id": 5,
+      "tech_stack_id": 7,
+      "proficiency_level": 4,
+      "years_experience": 3
+    },
+    {
+      "user_id": 5,
+      "tech_stack_id": 12,
+      "proficiency_level": 4,
+      "years_experience": 3
+    }
+  ],
   "projects": [
     {
       "id": "PRJ001",
       "title": "TeamUp 서버 개발",
       "description": "팀 협업 프로젝트 관리 시스템 서버 개발 프로젝트입니다. RESTful API를 제공하여 클라이언트와 통신하며, 사용자 인증, 프로젝트 관리, 업무 할당, 일정 관리 등의 기능을 구현합니다. FastAPI 프레임워크와 PostgreSQL 데이터베이스를 사용하여 개발하고, Docker 컨테이너로 배포합니다.",
-      "short_description": "협업 툴 서버 개발",
-      "cover_image": "https://placeimg.com/1000/300/tech",
       "status": "in_progress",
       "visibility": "public",
       "start_date": "2023-07-01T00:00:00Z",
@@ -143,14 +483,17 @@
       "owner_id": 1,
       "tags": ["서버", "백엔드", "API", "FastAPI", "PostgreSQL", "Docker"],
       "tech_stack_ids": [1, 4, 5, 6, 11],
-      "member_ids": [1, 3, 5]
+      "member_ids": [1, 3, 5],
+      "project_type": "backend",
+      "location": "Seoul, Korea",
+      "github_url": "https://github.com/jungdevops/teamup-server",
+      "created_at": "2023-07-01T00:00:00Z",
+      "updated_at": "2023-07-01T00:00:00Z"
     },
     {
       "id": "PRJ002",
       "title": "TeamUp 클라이언트 개발",
       "description": "팀 협업 프로젝트 관리 시스템 클라이언트 개발 프로젝트입니다. 사용자 친화적인 인터페이스를 제공하여 프로젝트 관리, 업무 할당, 일정 관리 등의 기능을 시각적으로 표현합니다. React와 TypeScript를 사용하여 개발하고, 반응형 디자인을 적용하여 다양한 디바이스에서 사용할 수 있도록 합니다.",
-      "short_description": "협업 툴 프론트엔드 개발",
-      "cover_image": "https://placeimg.com/1000/300/tech",
       "status": "in_progress",
       "visibility": "public",
       "start_date": "2023-07-15T00:00:00Z",
@@ -158,14 +501,17 @@
       "owner_id": 2,
       "tags": ["클라이언트", "프론트엔드", "UI/UX", "React", "TypeScript"],
       "tech_stack_ids": [2, 3, 8, 9],
-      "member_ids": [2, 3, 4, 6]
+      "member_ids": [2, 3, 4, 6],
+      "project_type": "frontend",
+      "location": "Seoul, Korea",
+      "github_url": "https://github.com/jungdevops/teamup-client",
+      "created_at": "2023-07-01T00:00:00Z",
+      "updated_at": "2023-07-01T00:00:00Z"
     },
     {
       "id": "PRJ003",
       "title": "TeamUp 인프라 구축",
       "description": "TeamUp 프로젝트의 클라우드 인프라 구축 및 CI/CD 파이프라인 개발 프로젝트입니다. AWS 클라우드 환경에서 서버와 클라이언트 애플리케이션을 안정적으로 운영하기 위한 인프라를 설계하고 구축합니다. Kubernetes를 활용한 컨테이너 오케스트레이션, GitHub Actions를 통한 CI/CD 자동화, 모니터링 및 로깅 시스템 구축 등을 포함합니다.",
-      "short_description": "협업 툴 인프라 구축",
-      "cover_image": "https://placeimg.com/1000/300/tech",
       "status": "planning",
       "visibility": "public",
       "start_date": "2023-09-01T00:00:00Z",
@@ -173,7 +519,12 @@
       "owner_id": 5,
       "tags": ["인프라", "DevOps", "AWS", "Kubernetes", "CI/CD"],
       "tech_stack_ids": [6, 7, 12],
-      "member_ids": [1, 5]
+      "member_ids": [1, 5],
+      "project_type": "infrastructure",
+      "location": "Seoul, Korea",
+      "github_url": "https://github.com/jungdevops/teamup-infrastructure",
+      "created_at": "2023-07-01T00:00:00Z",
+      "updated_at": "2023-07-01T00:00:00Z"
     }
   ],
   "milestones": [

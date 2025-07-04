@@ -20,12 +20,15 @@ class TechStackBase(BaseModel):
 class ProjectBase(BaseModel):
     title: str = Field(..., min_length=2, max_length=100)
     description: Optional[str] = None
-    short_description: Optional[str] = Field(None, max_length=255)
     status: str = "planning"  # planning, in_progress, completed, on_hold
     visibility: str = "public"  # public, private
+    project_type: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     tags: Optional[List[str]] = None
+    location: Optional[str] = None
     github_url: Optional[str] = None
 
 # 프로젝트 생성 스키마
@@ -39,15 +42,16 @@ class ProjectCreate(ProjectBase):
 class ProjectUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=2, max_length=100)
     description: Optional[str] = None
-    short_description: Optional[str] = Field(None, max_length=255)
-    cover_image: Optional[str] = None
     status: Optional[str] = None
     visibility: Optional[str] = None
+    project_type: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
     tags: Optional[List[str]] = None
-    github_url: Optional[str] = None
+    location: Optional[str] = None
     tech_stack_ids: Optional[List[int]] = None
+    github_url: Optional[str] = None
+    updated_at: datetime
 
 # 프로젝트 멤버 스키마
 class ProjectMember(BaseModel):
@@ -64,9 +68,7 @@ class ProjectMember(BaseModel):
 class ProjectBrief(BaseModel):
     id: str
     title: str
-    short_description: Optional[str] = None
     status: str
-    cover_image: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -74,8 +76,6 @@ class ProjectBrief(BaseModel):
 # 상세 프로젝트 정보
 class ProjectDetail(ProjectBase):
     id: str
-    created_at: datetime
-    updated_at: datetime
     completed_at: Optional[datetime] = None
     
     # 관계

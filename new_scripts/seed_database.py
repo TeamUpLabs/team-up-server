@@ -11,6 +11,7 @@ from pathlib import Path
 from datetime import datetime
 import logging
 from typing import Dict, List, Any
+from sqlalchemy import text
 
 # 프로젝트 루트 경로 추가
 project_root = Path(__file__).resolve().parent.parent
@@ -25,7 +26,10 @@ logger = logging.getLogger("seed-database")
 
 # 모듈 임포트
 from database import SessionLocal, engine, Base
-from new_models.user import User
+from new_models.user import (
+    User, CollaborationPreference, UserInterest, 
+    UserSocialLink
+)
 from new_models.project import Project
 from new_models.task import Task
 from new_models.milestone import Milestone
@@ -69,6 +73,22 @@ def seed_users(db, users_data):
         # 비밀번호 해싱
         hashed_password = get_password_hash(user_data["password"])
         
+        # 기본 알림 설정
+        default_notification_settings = {
+            "emailEnable": 1,
+            "taskNotification": 1,
+            "milestoneNotification": 1,
+            "scheduleNotification": 1,
+            "deadlineNotification": 1,
+            "weeklyReport": 1,
+            "pushNotification": 1,
+            "securityNotification": 1
+        }
+        
+        # 사용자가 제공한 알림 설정이 있으면 병합
+        if "notification_settings" in user_data:
+            default_notification_settings.update(user_data["notification_settings"])
+        
         # 사용자 생성
         user = User(
             name=user_data["name"],
@@ -78,9 +98,42 @@ def seed_users(db, users_data):
             bio=user_data.get("bio"),
             role=user_data.get("role"),
             status=user_data.get("status", "active"),
+            notification_settings=default_notification_settings,
         )
         
         db.add(user)
+        db.flush()  # ID를 생성하기 위해 flush
+        
+        # 협업 선호도 추가
+        if "collaboration_preferences" in user_data:
+            for pref_data in user_data["collaboration_preferences"]:
+                pref = CollaborationPreference(
+                    user_id=user.id,
+                    preference_type=pref_data["preference_type"],
+                    preference_value=pref_data["preference_value"]
+                )
+                db.add(pref)
+        
+        # 관심분야 추가
+        if "interests" in user_data:
+            for interest_data in user_data["interests"]:
+                interest = UserInterest(
+                    user_id=user.id,
+                    interest_category=interest_data["interest_category"],
+                    interest_name=interest_data["interest_name"]
+                )
+                db.add(interest)
+        
+        # 소셜 링크 추가
+        if "social_links" in user_data:
+            for link_data in user_data["social_links"]:
+                link = UserSocialLink(
+                    user_id=user.id,
+                    platform=link_data["platform"],
+                    url=link_data["url"]
+                )
+                db.add(link)
+        
         logger.info(f"사용자 추가: {user_data['email']}")
     
     db.commit()
@@ -110,6 +163,43 @@ def seed_tech_stacks(db, tech_stacks_data):
     db.commit()
     logger.info(f"기술 스택 데이터 추가 완료: {len(tech_stacks_data)}개")
 
+def seed_user_tech_stacks(db, user_tech_stacks_data):
+    """사용자 기술 스택 관계 데이터 추가"""
+    logger.info("사용자 기술 스택 관계 데이터 추가 중...")
+    
+    for uts_data in user_tech_stacks_data:
+        # 이미 존재하는 관계 확인
+        existing_uts = db.execute(
+            text("""
+            SELECT * FROM user_tech_stacks 
+            WHERE user_id = :user_id AND tech_stack_id = :tech_stack_id
+            """),
+            {"user_id": uts_data["user_id"], "tech_stack_id": uts_data["tech_stack_id"]}
+        ).fetchone()
+        
+        if existing_uts:
+            logger.info(f"사용자 기술 스택 관계 이미 존재: user_id={uts_data['user_id']}, tech_stack_id={uts_data['tech_stack_id']}")
+            continue
+        
+        # 사용자 기술 스택 관계 추가
+        db.execute(
+            text("""
+            INSERT INTO user_tech_stacks 
+            (user_id, tech_stack_id, proficiency_level, years_experience) 
+            VALUES (:user_id, :tech_stack_id, :proficiency_level, :years_experience)
+            """),
+            {
+                "user_id": uts_data["user_id"],
+                "tech_stack_id": uts_data["tech_stack_id"],
+                "proficiency_level": uts_data.get("proficiency_level"),
+                "years_experience": uts_data.get("years_experience")
+            }
+        )
+        logger.info(f"사용자 기술 스택 관계 추가: user_id={uts_data['user_id']}, tech_stack_id={uts_data['tech_stack_id']}")
+    
+    db.commit()
+    logger.info(f"사용자 기술 스택 관계 데이터 추가 완료: {len(user_tech_stacks_data)}개")
+
 def seed_projects(db, projects_data):
     """프로젝트 데이터 추가"""
     logger.info("프로젝트 데이터 추가 중...")
@@ -126,15 +216,22 @@ def seed_projects(db, projects_data):
             "id": project_data["id"],
             "title": project_data["title"],
             "description": project_data["description"],
-            "short_description": project_data.get("short_description"),
-            "cover_image": project_data.get("cover_image"),
             "status": project_data.get("status", "planning"),
             "visibility": project_data.get("visibility", "public"),
             "owner_id": project_data["owner_id"],
             "tags": project_data.get("tags"),
+            "project_type": project_data.get("project_type"),
+            "location": project_data.get("location"),
+            "github_url": project_data.get("github_url"),
+            "created_at": project_data.get("created_at"),
+            "updated_at": project_data.get("updated_at")
         }
         
         # 날짜 필드 처리
+        if "created_at" in project_data:
+            project_dict["created_at"] = datetime.fromisoformat(project_data["created_at"].replace("Z", "+00:00"))
+        if "updated_at" in project_data:
+            project_dict["updated_at"] = datetime.fromisoformat(project_data["updated_at"].replace("Z", "+00:00"))
         if "start_date" in project_data:
             project_dict["start_date"] = datetime.fromisoformat(project_data["start_date"].replace("Z", "+00:00"))
         if "end_date" in project_data:
@@ -286,9 +383,10 @@ def seed_database():
         # 데이터베이스 테이블 생성
         create_database_tables()
         
-        # 데이터 추가
+        # 데이터 추가 (순서 중요: 외래키 의존성 고려)
         seed_users(db, data.get("users", []))
         seed_tech_stacks(db, data.get("tech_stacks", []))
+        seed_user_tech_stacks(db, data.get("user_tech_stacks", []))
         seed_projects(db, data.get("projects", []))
         seed_milestones(db, data.get("milestones", []))
         seed_tasks(db, data.get("tasks", []))
