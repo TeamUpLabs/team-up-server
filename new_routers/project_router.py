@@ -12,6 +12,8 @@ from new_schemas.user import UserBrief
 from new_schemas.milestone import MilestoneDetail
 from new_schemas.task import TaskBrief, SubTaskDetail
 from new_schemas.schedule import ScheduleResponse
+from new_schemas.channel import ChannelResponse, ChannelMemberResponse
+from new_schemas.chat import ChatResponse
 from utils.sse_manager import project_sse_manager
 import json
 
@@ -196,6 +198,48 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
         for schedule in db_project.schedules:
             schedules.append(ScheduleResponse.model_validate(schedule, from_attributes=True))
     project_detail.schedules = schedules
+    
+    # 채널 정보 추가
+    channels = []
+    if db_project.channels:
+        for channel in db_project.channels:
+            members = []  
+            if channel.members:
+                for member in channel.members:
+                    members.append(ChannelMemberResponse(
+                        user_id=member.id,
+                        name=member.name,
+                        email=member.email,
+                        profile_image=member.profile_image,
+                        role="member",  # 기본값, 실제 역할 정보가 있다면 사용
+                        joined_at=channel.created_at  # 기본값, 실제 가입 시간이 있다면 사용
+                    ))
+            
+            # ChannelWithMembers 객체 생성
+            channel_with_members = ChannelResponse(
+                id=channel.id,
+                name=channel.name,
+                description=channel.description,
+                is_public=channel.is_public,
+                project_id=channel.project_id,
+                channel_id=channel.channel_id,
+                created_at=channel.created_at,
+                updated_at=channel.updated_at,
+                created_by=channel.created_by,
+                updated_by=channel.updated_by,
+                member_count=len(members),
+                chats=[],  # 채팅 정보가 필요하다면 추가
+                members=members
+            )
+            channels.append(channel_with_members)
+            
+            chats = []
+            if channel.chats:
+                for chat in channel.chats:
+                    chats.append(ChatResponse.model_validate(chat, from_attributes=True))
+            channel_with_members.chats = chats
+            channel_with_members.chats_count = len(chats)
+    project_detail.channels = channels
     
     # 통계 정보 추가
     project_detail.task_count = len(db_project.tasks)

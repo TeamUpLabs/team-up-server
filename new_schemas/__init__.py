@@ -30,6 +30,15 @@ from new_schemas.notification import (
     NotificationBase, NotificationCreate, NotificationUpdate,
     NotificationResponse, NotificationListResponse
 )
+from new_schemas.channel import (
+    ChannelBase, ChannelCreate, ChannelUpdate, ChannelResponse,
+    ChannelListResponse, ChannelMemberCreate,
+    ChannelMemberResponse
+)
+from new_schemas.chat import (
+    ChatBase, ChatCreate, ChatUpdate, ChatResponse, ChatListResponse,
+    ChatSearchRequest, ChatDateRangeRequest, UserInfo
+)
 
 # 순환 참조 해결을 위한 forward refs 업데이트
 ProjectDetail.update_forward_refs()

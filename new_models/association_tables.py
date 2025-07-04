@@ -102,4 +102,15 @@ user_social_links = Table(
     Column('created_at', DateTime, nullable=False, server_default=func.now()),
     Column('updated_at', DateTime, nullable=False, server_default=func.now(), onupdate=func.now()),
     Index('idx_user_social_links', 'user_id')
+)
+
+# 채널-멤버 관계 테이블
+channel_members = Table(
+    'channel_members',
+    Base.metadata,
+    Column('channel_id', Integer, ForeignKey('channels.id', ondelete='CASCADE'), primary_key=True),
+    Column('user_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    Column('joined_at', DateTime, nullable=False, server_default=func.now()),
+    Column('role', String(50), default='member'),  # member, admin, moderator 등
+    Index('idx_channel_members', 'channel_id', 'user_id')
 ) 

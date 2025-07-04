@@ -6,3 +6,5 @@ from new_routers.tech_stack_router import router as tech_stack_router
 from new_routers.participation_request_router import router as participation_request_router 
 from new_routers.schedule_router import router as schedule_router
 from new_routers.notification_router import router as notification_router
+from new_routers.channel_router import router as channel_router
+from new_routers.chat_router import router as chat_router

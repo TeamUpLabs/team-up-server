@@ -6,7 +6,7 @@ from new_models.base import BaseModel
 from new_models.association_tables import (
     project_members, task_assignees, milestone_assignees,
     user_tech_stacks, user_collaboration_preferences,
-    user_interests, user_social_links
+    user_interests, user_social_links, channel_members
 )
 
 class User(Base, BaseModel):
@@ -145,6 +145,13 @@ class User(Base, BaseModel):
         "Notification",
         back_populates="sender",
         foreign_keys="[Notification.sender_id]"
+    )
+    
+    # 채널 관계
+    joined_channels = relationship(
+        "Channel",
+        secondary="channel_members",
+        back_populates="members"
     )
     
     def __repr__(self):

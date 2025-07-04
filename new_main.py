@@ -10,7 +10,9 @@ from new_routers import (
     tech_stack_router,
     participation_request_router,
     schedule_router,
-    notification_router
+    notification_router,
+    channel_router,
+    chat_router
 )
 
 # 모든 모델이 정의된 후 테이블 생성
@@ -41,6 +43,8 @@ app.include_router(tech_stack_router)
 app.include_router(participation_request_router)
 app.include_router(schedule_router)
 app.include_router(notification_router)
+app.include_router(channel_router)
+app.include_router(chat_router)
 
 @app.get("/")
 async def root():

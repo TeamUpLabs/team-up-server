@@ -36,6 +36,9 @@ from new_models.task import Task, SubTask, Comment
 from new_models.milestone import Milestone
 from new_models.tech_stack import TechStack
 from auth import get_password_hash
+from new_models.channel import Channel
+from new_models.chat import Chat
+from new_models.association_tables import channel_members
 
 def load_sample_data() -> Dict[str, List[Dict[str, Any]]]:
     """sample_data.json에서 샘플 데이터 로드"""
@@ -463,6 +466,64 @@ def seed_notifications(db, notifications_data):
     db.commit()
     logger.info(f"알림 데이터 추가 완료: {len(notifications_data)}개")
 
+def seed_channels(db, channels_data):
+    """채널 데이터 추가"""
+    logger.info("채널 데이터 추가 중...")
+    for channel_data in channels_data:
+        # 이미 존재하는 채널 확인 (project_id + channel_id)
+        existing_channel = db.query(Channel).filter(
+            Channel.project_id == channel_data["project_id"],
+            Channel.channel_id == channel_data["channel_id"]
+        ).first()
+        if existing_channel:
+            logger.info(f"채널 이미 존재: {channel_data['channel_id']}")
+            continue
+        channel = Channel(
+            project_id=channel_data["project_id"],
+            channel_id=channel_data["channel_id"],
+            name=channel_data["name"],
+            description=channel_data.get("description"),
+            is_public=channel_data.get("is_public", True),
+            created_by=channel_data.get("created_by"),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        db.add(channel)
+        db.flush()  # channel.id를 얻기 위해 flush
+        # 멤버 추가
+        for member_id in channel_data.get("member_ids", []):
+            from new_crud.channel import ChannelCRUD
+            ChannelCRUD.add_member_to_channel(db, channel.id, member_id)
+        logger.info(f"채널 추가: {channel_data['channel_id']}")
+    db.commit()
+    logger.info(f"채널 데이터 추가 완료: {len(channels_data)}개")
+
+def seed_chats(db, chats_data):
+    """채팅 데이터 추가"""
+    logger.info("채팅 데이터 추가 중...")
+    for chat_data in chats_data:
+        # 이미 존재하는지 확인 (중복 방지: project_id, channel_id, user_id, message, timestamp)
+        existing = db.query(Chat).filter(
+            Chat.project_id == chat_data["project_id"],
+            Chat.channel_id == chat_data["channel_id"],
+            Chat.user_id == chat_data["user_id"],
+            Chat.message == chat_data["message"]
+        ).first()
+        if existing:
+            logger.info(f"채팅 이미 존재: {chat_data['message'][:20]}...")
+            continue
+        chat = Chat(
+            project_id=chat_data["project_id"],
+            channel_id=chat_data["channel_id"],
+            user_id=chat_data["user_id"],
+            message=chat_data["message"],
+            timestamp=datetime.fromisoformat(chat_data["timestamp"].replace("Z", "+00:00")) if chat_data.get("timestamp") else datetime.utcnow()
+        )
+        db.add(chat)
+        logger.info(f"채팅 추가: {chat_data['message'][:20]}...")
+    db.commit()
+    logger.info(f"채팅 데이터 추가 완료: {len(chats_data)}개")
+
 def seed_database():
     """데이터베이스에 샘플 데이터 추가"""
     logger.info("데이터베이스 시드 작업 시작")
@@ -486,6 +547,8 @@ def seed_database():
         seed_tasks(db, data.get("tasks", []))
         seed_comments(db, data.get("tasks", []))
         seed_notifications(db, data.get("notifications", []))
+        seed_channels(db, data.get("channels", []))
+        seed_chats(db, data.get("chats", []))
         
         logger.info("데이터베이스 시드 작업 완료")
     except Exception as e:

@@ -6,9 +6,12 @@ from new_models.tech_stack import TechStack
 from new_models.participation_request import ParticipationRequest
 from new_models.schedule import Schedule
 from new_models.notification import Notification
+from new_models.channel import Channel
+from new_models.chat import Chat
 from new_models.association_tables import (
     project_members,
     task_assignees,
     milestone_assignees,
-    project_tech_stacks
+    project_tech_stacks,
+    channel_members
 ) 

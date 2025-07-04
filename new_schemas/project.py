@@ -7,7 +7,7 @@ from .task import TaskDetail
 from .milestone import MilestoneDetail
 from .participation_request import ParticipationRequestResponse
 from .schedule import ScheduleResponse
-
+from .channel import ChannelResponse
 # 기술 스택 스키마
 class TechStackBase(BaseModel):
     name: str
@@ -86,6 +86,7 @@ class ProjectDetail(ProjectBase):
     milestones: List[MilestoneDetail] = []
     participation_requests: List[ParticipationRequestResponse] = []
     schedules: List[ScheduleResponse] = []
+    channels: List[ChannelResponse] = []
     
     # 통계
     task_count: Optional[int] = len(tasks)
