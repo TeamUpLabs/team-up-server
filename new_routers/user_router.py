@@ -15,6 +15,7 @@ from new_schemas.user import (
     UserProjectResponse, UserInterestResponse,
     UserSocialLinkResponse
 )
+from new_schemas.notification import NotificationResponse
 from new_models.user import User
 from new_routers.project_router import convert_project_to_project_detail
 from utils.sse_manager import project_sse_manager
@@ -338,4 +339,39 @@ def update_user_social_link(
     db_link.url = link_in.url
     db.commit()
     db.refresh(db_link)
-    return UserSocialLinkResponse.model_validate(db_link, from_attributes=True) 
+    return UserSocialLinkResponse.model_validate(db_link, from_attributes=True)
+
+# 알림 관련 엔드포인트
+@router.get("/{user_id}/notifications", response_model=List[NotificationResponse])
+def get_user_notifications(
+    user_id: int, 
+    skip: int = 0, 
+    limit: int = 50,
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    """사용자의 알림 목록 조회"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    notifications = user.get_notifications(db=db, user_id=user_id, skip=skip, limit=limit)
+    return [NotificationResponse.model_validate(n, from_attributes=True) for n in notifications]
+
+@router.get("/{user_id}/notifications/unread-count")
+def get_user_unread_notification_count(
+    user_id: int,
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    """사용자의 읽지 않은 알림 개수 조회"""
+    if current_user.id != user_id and not current_user.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="접근 권한이 없습니다."
+        )
+    
+    count = user.get_unread_notification_count(db=db, user_id=user_id)
+    return {"unread_count": count} 

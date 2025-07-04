@@ -1,6 +1,7 @@
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field, EmailStr, validator, AnyUrl
 from datetime import datetime
+from new_schemas.notification import NotificationResponse
 
 # 기본 사용자 스키마
 class UserBase(BaseModel):
@@ -200,6 +201,7 @@ class UserDetail(UserBase):
     interests: Optional[List[UserInterestResponse]] = None
     notification_settings: Optional[Dict[str, int]] = None
     social_links: Optional[List[UserSocialLinkResponse]] = None
+    received_notifications: Optional[List[NotificationResponse]] = None
     
     class Config:
         from_attributes = True

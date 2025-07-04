@@ -30,6 +30,7 @@ from new_models.user import (
     User, CollaborationPreference, UserInterest, 
     UserSocialLink
 )
+from new_models.notification import Notification
 from new_models.project import Project
 from new_models.task import Task, SubTask, Comment
 from new_models.milestone import Milestone
@@ -430,6 +431,38 @@ def seed_comments(db, tasks_data):
     db.commit()
     logger.info("댓글 데이터 추가 완료")
 
+def seed_notifications(db, notifications_data):
+    """알림 데이터 추가"""
+    logger.info("알림 데이터 추가 중...")
+    
+    for notification_data in notifications_data:
+        # 기본 데이터 준비
+        notification_dict = {
+            "title": notification_data["title"],
+            "message": notification_data["message"],
+            "type": notification_data["type"],
+            "is_read": notification_data.get("is_read", False),
+            "sender_id": notification_data.get("sender_id"),
+            "receiver_id": notification_data["receiver_id"],
+            "project_id": notification_data.get("project_id"),
+            "result": notification_data.get("result"),
+        }
+        
+        # 날짜 필드 처리
+        if "timestamp" in notification_data:
+            notification_dict["timestamp"] = datetime.fromisoformat(notification_data["timestamp"].replace("Z", "+00:00"))
+        else:
+            notification_dict["timestamp"] = datetime.utcnow()
+        
+        # 알림 생성
+        notification = Notification(**notification_dict)
+        
+        db.add(notification)
+        logger.info(f"알림 추가: {notification_data['title']}")
+    
+    db.commit()
+    logger.info(f"알림 데이터 추가 완료: {len(notifications_data)}개")
+
 def seed_database():
     """데이터베이스에 샘플 데이터 추가"""
     logger.info("데이터베이스 시드 작업 시작")
@@ -452,6 +485,7 @@ def seed_database():
         seed_milestones(db, data.get("milestones", []))
         seed_tasks(db, data.get("tasks", []))
         seed_comments(db, data.get("tasks", []))
+        seed_notifications(db, data.get("notifications", []))
         
         logger.info("데이터베이스 시드 작업 완료")
     except Exception as e:

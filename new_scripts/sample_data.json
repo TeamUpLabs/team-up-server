@@ -899,5 +899,72 @@
           }
         ]
     }
+  ],
+  "notifications": [
+    {
+      "title": "프로젝트 초대",
+      "message": "김개발님이 'TeamUp 서버 개발' 프로젝트에 초대했습니다.",
+      "type": "project_invitation",
+      "timestamp": "2023-07-15T10:30:00Z",
+      "is_read": false,
+      "sender_id": 1,
+      "receiver_id": 2,
+      "project_id": "PRJ001",
+      "result": "pending"
+    },
+    {
+      "title": "업무 할당",
+      "message": "새로운 업무 '사용자 인증 API 구현'이 할당되었습니다.",
+      "type": "task_assignment",
+      "timestamp": "2023-07-16T14:20:00Z",
+      "is_read": false,
+      "sender_id": 3,
+      "receiver_id": 1,
+      "project_id": "PRJ001",
+      "result": "assigned"
+    },
+    {
+      "title": "마일스톤 완료",
+      "message": "마일스톤 '데이터베이스 모델링 완료'가 완료되었습니다.",
+      "type": "milestone_completed",
+      "timestamp": "2023-08-10T16:45:00Z",
+      "is_read": true,
+      "sender_id": null,
+      "receiver_id": 1,
+      "project_id": "PRJ001",
+      "result": "completed"
+    },
+    {
+      "title": "시스템 알림",
+      "message": "새로운 기능이 추가되었습니다. 확인해보세요!",
+      "type": "system_notification",
+      "timestamp": "2023-07-20T09:15:00Z",
+      "is_read": false,
+      "sender_id": null,
+      "receiver_id": 1,
+      "result": "info"
+    },
+    {
+      "title": "댓글 알림",
+      "message": "이디자인님이 업무 '로그인 화면 디자인'에 댓글을 남겼습니다.",
+      "type": "comment_notification",
+      "timestamp": "2023-07-25T11:30:00Z",
+      "is_read": false,
+      "sender_id": 2,
+      "receiver_id": 4,
+      "project_id": "PRJ002",
+      "result": "new_comment"
+    },
+    {
+      "title": "마감일 알림",
+      "message": "업무 '프로젝트 CRUD API 구현'의 마감일이 3일 남았습니다.",
+      "type": "deadline_reminder",
+      "timestamp": "2023-07-27T08:00:00Z",
+      "is_read": false,
+      "sender_id": null,
+      "receiver_id": 1,
+      "project_id": "PRJ001",
+      "result": "warning"
+    }
   ]
 } 

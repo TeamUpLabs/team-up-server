@@ -26,6 +26,10 @@ from new_schemas.participation_request import (
 from new_schemas.schedule import (
     ScheduleBase, ScheduleCreate, ScheduleUpdate, ScheduleResponse
 )
+from new_schemas.notification import (
+    NotificationBase, NotificationCreate, NotificationUpdate,
+    NotificationResponse, NotificationListResponse
+)
 
 # 순환 참조 해결을 위한 forward refs 업데이트
 ProjectDetail.update_forward_refs()

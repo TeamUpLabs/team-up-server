@@ -5,6 +5,7 @@ from new_models.user import (
     User, CollaborationPreference, 
     UserInterest, UserSocialLink
 )
+from new_models.notification import Notification
 from new_models.tech_stack import TechStack
 from new_models.project import Project
 from new_schemas.user import (
@@ -510,6 +511,34 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         db.commit()
         
         return {"status": "success", "message": "소셜 링크가 삭제되었습니다."}
+    
+    # 알림 관련 CRUD 메서드
+    def get_notifications(self, db: Session, *, user_id: int, skip: int = 0, limit: int = 50) -> List[Notification]:
+        """사용자의 알림 목록 조회"""
+        user = self.get(db, id=user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="사용자를 찾을 수 없습니다."
+            )
+        
+        return db.query(Notification).filter(
+            Notification.receiver_id == user_id
+        ).order_by(Notification.timestamp.desc()).offset(skip).limit(limit).all()
+    
+    def get_unread_notification_count(self, db: Session, *, user_id: int) -> int:
+        """사용자의 읽지 않은 알림 개수 조회"""
+        user = self.get(db, id=user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="사용자를 찾을 수 없습니다."
+            )
+        
+        return db.query(Notification).filter(
+            Notification.receiver_id == user_id,
+            Notification.is_read == False
+        ).count()
 
 # CRUDUser 클래스 인스턴스 생성
 user = CRUDUser(User) 

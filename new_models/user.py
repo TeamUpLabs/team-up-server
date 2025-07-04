@@ -134,6 +134,19 @@ class User(Base, BaseModel):
         cascade="all, delete-orphan"
     )
     
+    # 알림 관계
+    received_notifications = relationship(
+        "Notification",
+        back_populates="receiver",
+        foreign_keys="[Notification.receiver_id]"
+    )
+    
+    sent_notifications = relationship(
+        "Notification",
+        back_populates="sender",
+        foreign_keys="[Notification.sender_id]"
+    )
+    
     def __repr__(self):
         return f"<User(id={self.id}, name='{self.name}', email='{self.email}')>" 
 
