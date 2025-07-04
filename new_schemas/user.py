@@ -9,6 +9,9 @@ class UserBase(BaseModel):
     profile_image: Optional[str] = None
     bio: Optional[str] = None
     role: Optional[str] = None
+    languages: Optional[List[str]] = None
+    phone: Optional[str] = None
+    birth_date: Optional[str] = None
 
 # 사용자 생성 스키마
 class UserCreate(UserBase):
@@ -31,6 +34,9 @@ class UserUpdate(BaseModel):
     profile_image: Optional[str] = None
     bio: Optional[str] = None
     role: Optional[str] = None
+    languages: Optional[List[str]] = None
+    phone: Optional[str] = None
+    birth_date: Optional[str] = None
     notification_settings: Optional[Dict[str, int]] = None
 
 # 사용자 응답 스키마
@@ -40,6 +46,7 @@ class UserBrief(BaseModel):
     name: str
     profile_image: Optional[str] = None
     role: Optional[str] = None
+    status: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -48,9 +55,8 @@ class UserBrief(BaseModel):
 class ProjectBrief(BaseModel):
     id: str
     title: str
-    short_description: Optional[str] = None
     status: str
-    cover_image: Optional[str] = None
+    project_type: Optional[str] = None
     
     class Config:
         from_attributes = True
@@ -179,6 +185,8 @@ class UserDetail(UserBase):
     created_at: datetime
     updated_at: datetime
     last_login: Optional[datetime] = None
+    auth_provider: str
+    auth_provider_id: Optional[str] = None
     
     owned_projects: Optional[List[ProjectBrief]] = None
     projects: Optional[List[ProjectBrief]] = None

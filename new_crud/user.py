@@ -15,6 +15,7 @@ from new_schemas.user import (
 )
 from new_crud.base import CRUDBase
 import bcrypt
+from datetime import datetime
 
 # 패스워드 해싱 함수를 로컬에 정의
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -75,6 +76,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             profile_image=obj_in.profile_image,
             bio=obj_in.bio,
             role=obj_in.role,
+            languages=obj_in.languages,
+            phone=obj_in.phone,
+            birth_date=obj_in.birth_date,
             notification_settings=default_notification_settings,
         )
         db.add(db_obj)
@@ -120,6 +124,20 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             
         return super().update(db, db_obj=db_obj, obj_in=update_data)
     
+    def update_last_login(self, db: Session, *, user_id: int) -> User:
+        """사용자 마지막 로그인 시간 업데이트"""
+        user = self.get(db, id=user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="사용자를 찾을 수 없습니다."
+            )
+        
+        user.last_login = datetime.utcnow()
+        db.commit()
+        db.refresh(user)
+        return user
+    
     def authenticate(self, db: Session, *, email: str, password: str) -> Optional[User]:
         """
         사용자 인증
@@ -130,6 +148,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             return None
         if not verify_password(password, user.hashed_password):
             return None
+        
+        # 로그인 성공 시 last_login 업데이트
+        self.update_last_login(db, user_id=user.id)
         return user
     
     def get_projects(self, db: Session, *, user_id: int) -> List:

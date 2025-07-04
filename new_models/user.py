@@ -21,11 +21,16 @@ class User(Base, BaseModel):
     bio = Column(Text, nullable=True)
     role = Column(String(50), nullable=True)  # developer, designer, PM 등
     status = Column(String(20), default="active")  # active, inactive
+    languages = Column(JSON, nullable=True)
+    phone = Column(String(20), nullable=True)
+    birth_date = Column(String(20), nullable=True)
     last_login = Column(DateTime, nullable=True)
+
     
     # OAuth 관련 필드
     auth_provider = Column(String(20), default="local")  # local, github, google 등
     auth_provider_id = Column(String(100), nullable=True)
+    auth_provider_access_token = Column(String(255), nullable=True)
     
     # 알림 설정 (JSON 형태)
     notification_settings = Column(JSON, default={

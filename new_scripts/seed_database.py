@@ -98,6 +98,11 @@ def seed_users(db, users_data):
             bio=user_data.get("bio"),
             role=user_data.get("role"),
             status=user_data.get("status", "active"),
+            languages=user_data.get("languages"),
+            phone=user_data.get("phone"),
+            birth_date=user_data.get("birth_date"),
+            auth_provider=user_data.get("auth_provider", "local"),
+            auth_provider_id=user_data.get("auth_provider_id"),
             notification_settings=default_notification_settings,
         )
         
