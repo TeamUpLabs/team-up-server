@@ -31,7 +31,7 @@ from new_models.user import (
     UserSocialLink
 )
 from new_models.project import Project
-from new_models.task import Task
+from new_models.task import Task, SubTask
 from new_models.milestone import Milestone
 from new_models.tech_stack import TechStack
 from auth import get_password_hash
@@ -348,7 +348,6 @@ def seed_tasks(db, tasks_data):
             "actual_hours": task_data.get("actual_hours"),
             "project_id": task_data["project_id"],
             "milestone_id": task_data.get("milestone_id"),
-            "parent_task_id": task_data.get("parent_task_id"),
             "created_by": task_data.get("created_by"),
         }
         
@@ -367,8 +366,23 @@ def seed_tasks(db, tasks_data):
         if "assignee_ids" in task_data:
             assignees = db.query(User).filter(User.id.in_(task_data["assignee_ids"])).all()
             task.assignees = assignees
-            
+        
         db.add(task)
+        db.flush()  # ID를 생성하기 위해 flush
+        
+        # 하위 업무 추가
+        if "subtasks" in task_data:
+            for subtask_data in task_data["subtasks"]:
+                subtask = SubTask(
+                    title=subtask_data["title"],
+                    task_id=task.id,
+                    is_completed=subtask_data.get("is_completed", False),
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow()
+                )
+                db.add(subtask)
+                logger.info(f"하위 업무 추가: {subtask_data['title']}")
+            
         logger.info(f"업무 추가: {task_data['title']}")
     
     db.commit()

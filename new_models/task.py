@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Float, Boolean
 from sqlalchemy.orm import relationship
 from database import Base
 from new_models.base import BaseModel
@@ -28,19 +28,12 @@ class Task(Base, BaseModel):
     # 외래 키
     project_id = Column(String(6), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     milestone_id = Column(Integer, ForeignKey("milestones.id", ondelete="SET NULL"), nullable=True)
-    parent_task_id = Column(Integer, ForeignKey("tasks.id", ondelete="SET NULL"), nullable=True)
     created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     
     # 관계 정의
     project = relationship("Project", back_populates="tasks")
     milestone = relationship("Milestone", back_populates="tasks")
-    
-    # 하위 업무 관계
-    parent_task = relationship(
-        "Task",
-        remote_side=[id],
-        backref="subtasks"
-    )
+    subtasks = relationship("SubTask", back_populates="task", cascade="all, delete-orphan")
     
     # 담당자 관계 (many-to-many)
     assignees = relationship(
@@ -58,3 +51,21 @@ class Task(Base, BaseModel):
     
     def __repr__(self):
         return f"<Task(id={self.id}, title='{self.title}')>" 
+    
+class SubTask(Base, BaseModel):
+    """하위 업무 모델"""
+    __tablename__ = "sub_tasks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(100), nullable=False)
+    is_completed = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=False)
+    
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
+    
+    task = relationship("Task", back_populates="subtasks")
+    
+    def __repr__(self):
+        return f"<SubTask(id={self.id}, title='{self.title}')>" 
+    

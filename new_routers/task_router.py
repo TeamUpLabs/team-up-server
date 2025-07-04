@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 from database import get_db
 from auth import get_current_user
 from new_crud import task, project
-from new_schemas.task import TaskCreate, TaskUpdate, TaskBrief, TaskDetail
+from new_schemas.task import TaskCreate, TaskUpdate, TaskBrief, TaskDetail, SubTaskCreate, SubTaskUpdate, SubTaskDetail
 from new_models.user import User
+from new_models.task import SubTask
 from new_routers.project_router import convert_project_to_project_detail
 from utils.sse_manager import project_sse_manager
 import json
@@ -110,6 +112,108 @@ async def delete_task(task_id: int, db: Session = Depends(get_db), current_user:
         db_task.project_id,
         json.dumps(project_sse_manager.convert_to_dict(project_data))
     )
+    return None
+
+# 하위 업무 관련 엔드포인트
+@router.post("/{task_id}/subtasks", response_model=SubTaskDetail, status_code=status.HTTP_201_CREATED)
+async def create_subtask(
+    task_id: int,
+    subtask_in: SubTaskCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """하위 업무 생성"""
+    db_task = task.get(db=db, id=task_id)
+    if db_task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="업무를 찾을 수 없습니다.")
+    
+    # 생성자, 담당자 또는 프로젝트 관리자만 하위 업무 생성 가능
+    if (db_task.created_by != current_user.id and 
+        current_user.id not in [a.id for a in db_task.assignees] and 
+        not task.is_project_manager(db=db, task_id=task_id, user_id=current_user.id)):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 업무에 하위 업무를 추가할 권한이 없습니다."
+        )
+    
+    subtask = SubTask(
+        title=subtask_in.title,
+        task_id=task_id,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow()
+    )
+    db.add(subtask)
+    db.commit()
+    db.refresh(subtask)
+    
+    return SubTaskDetail.model_validate(subtask, from_attributes=True)
+
+@router.put("/{task_id}/subtasks/{subtask_id}", response_model=SubTaskDetail)
+async def update_subtask(
+    task_id: int,
+    subtask_id: int,
+    subtask_in: SubTaskUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """하위 업무 수정"""
+    db_task = task.get(db=db, id=task_id)
+    if db_task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="업무를 찾을 수 없습니다.")
+    
+    subtask = db.query(SubTask).filter(SubTask.id == subtask_id, SubTask.task_id == task_id).first()
+    if subtask is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="하위 업무를 찾을 수 없습니다.")
+    
+    # 생성자, 담당자 또는 프로젝트 관리자만 수정 가능
+    if (db_task.created_by != current_user.id and 
+        current_user.id not in [a.id for a in db_task.assignees] and 
+        not task.is_project_manager(db=db, task_id=task_id, user_id=current_user.id)):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 하위 업무를 수정할 권한이 없습니다."
+        )
+    
+    update_data = subtask_in.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(subtask, field, value)
+    
+    # updated_at 필드를 현재 시간으로 업데이트
+    subtask.updated_at = datetime.utcnow()
+    
+    db.add(subtask)
+    db.commit()
+    db.refresh(subtask)
+    
+    return SubTaskDetail.model_validate(subtask, from_attributes=True)
+
+@router.delete("/{task_id}/subtasks/{subtask_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_subtask(
+    task_id: int,
+    subtask_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """하위 업무 삭제"""
+    db_task = task.get(db=db, id=task_id)
+    if db_task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="업무를 찾을 수 없습니다.")
+    
+    subtask = db.query(SubTask).filter(SubTask.id == subtask_id, SubTask.task_id == task_id).first()
+    if subtask is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="하위 업무를 찾을 수 없습니다.")
+    
+    # 생성자, 담당자 또는 프로젝트 관리자만 삭제 가능
+    if (db_task.created_by != current_user.id and 
+        current_user.id not in [a.id for a in db_task.assignees] and 
+        not task.is_project_manager(db=db, task_id=task_id, user_id=current_user.id)):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 하위 업무를 삭제할 권한이 없습니다."
+        )
+    
+    db.delete(subtask)
+    db.commit()
     return None
 
 @router.get("/{task_id}/assignees", response_model=List)

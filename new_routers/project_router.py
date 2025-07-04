@@ -10,7 +10,7 @@ from new_models.project import Project
 from new_schemas.project import ProjectCreate, ProjectUpdate, ProjectDetail, ProjectBrief, ProjectMember
 from new_schemas.user import UserBrief
 from new_schemas.milestone import MilestoneDetail
-from new_schemas.task import TaskBrief
+from new_schemas.task import TaskBrief, SubTaskDetail
 from new_schemas.schedule import ScheduleResponse
 from utils.sse_manager import project_sse_manager
 import json
@@ -90,7 +90,7 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
                 "updated_at": task.updated_at,
                 "project_id": task.project_id,
                 "milestone_id": task.milestone_id,
-                "parent_task_id": task.parent_task_id
+                "subtasks": []
             }
             
             # 마일스톤 정보 추가
@@ -109,8 +109,10 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
             if task.creator:
                 task_data["creator"] = UserBrief.model_validate(task.creator, from_attributes=True)
             
-            # 하위 업무 정보는 상세 조회에서만 제공
-            task_data["subtasks"] = []
+            # 하위 업무 정보 추가
+            if task.subtasks:
+                for subtask in task.subtasks:
+                    task_data["subtasks"].append(SubTaskDetail.model_validate(subtask, from_attributes=True))
             
             tasks.append(TaskDetail(**task_data))
             

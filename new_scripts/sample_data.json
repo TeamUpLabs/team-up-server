@@ -640,7 +640,21 @@
       "project_id": "PRJ001",
       "milestone_id": 1,
       "created_by": 1,
-      "assignee_ids": [1]
+      "assignee_ids": [1],
+      "subtasks": [
+        {
+          "title": "JWT 토큰 생성 및 검증 로직 구현",
+          "is_completed": false
+        },
+        {
+          "title": "로그인 API 엔드포인트 개발",
+          "is_completed": false
+        },
+        {
+          "title": "회원가입 API 엔드포인트 개발",
+          "is_completed": false
+        }
+      ]
     },
     {
       "title": "프로젝트 CRUD API 구현",
@@ -654,7 +668,25 @@
       "project_id": "PRJ001",
       "milestone_id": 1,
       "created_by": 1,
-      "assignee_ids": [1]
+      "assignee_ids": [1],
+      "subtasks": [
+        {
+          "title": "프로젝트 생성 API 구현",
+          "is_completed": false
+        },
+        {
+          "title": "프로젝트 조회 API 구현",
+          "is_completed": false
+        },
+        {
+          "title": "프로젝트 수정 API 구현",
+          "is_completed": false
+        },
+        {
+          "title": "프로젝트 삭제 API 구현",
+          "is_completed": false
+        }
+      ]
     },
     {
       "title": "업무 및 마일스톤 API 구현",
@@ -683,7 +715,21 @@
       "project_id": "PRJ002",
       "milestone_id": 3,
       "created_by": 2,
-      "assignee_ids": [2]
+      "assignee_ids": [2],
+      "subtasks": [
+        {
+          "title": "로그인 폼 디자인",
+          "is_completed": false
+        },
+        {
+          "title": "회원가입 폼 디자인",
+          "is_completed": false
+        },
+        {
+          "title": "비밀번호 찾기 화면 디자인",
+          "is_completed": false
+        }
+      ]
     },
     {
       "title": "마일스톤 및 업무 화면 디자인",
@@ -725,7 +771,25 @@
       "project_id": "PRJ002",
       "milestone_id": 4,
       "created_by": 4,
-      "assignee_ids": [4]
+      "assignee_ids": [4],
+      "subtasks": [
+        {
+          "title": "기본 UI 컴포넌트 개발 (Button, Input, Card)",
+          "is_completed": false
+        },
+        {
+          "title": "복합 컴포넌트 개발 (Modal, Dropdown, Table)",
+          "is_completed": false
+        },
+        {
+          "title": "레이아웃 컴포넌트 개발 (Header, Sidebar, Footer)",
+          "is_completed": false
+        },
+        {
+          "title": "컴포넌트 문서화 및 스토리북 구축",
+          "is_completed": false
+        }
+      ]
     },
     {
       "title": "AWS VPC 구성",
@@ -767,7 +831,21 @@
       "project_id": "PRJ003",
       "milestone_id": 6,
       "created_by": 5,
-      "assignee_ids": [1, 5]
+      "assignee_ids": [1, 5],
+      "subtasks": [
+        {
+          "title": "테스트 자동화 워크플로우 구성",
+          "is_completed": false
+        },
+        {
+          "title": "빌드 및 배포 워크플로우 구성",
+          "is_completed": false
+        },
+        {
+          "title": "코드 품질 검사 워크플로우 구성",
+          "is_completed": false
+        }
+      ]
     }
   ]
 } 

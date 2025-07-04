@@ -2,11 +2,11 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from new_models.task import Task
+from new_models.task import Task, SubTask
 from new_models.project import Project
 from new_models.milestone import Milestone
 from new_models.user import User
-from new_schemas.task import TaskCreate, TaskUpdate
+from new_schemas.task import TaskCreate, TaskUpdate, SubTaskCreate
 from new_crud.base import CRUDBase
 
 class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
@@ -18,7 +18,7 @@ class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
         관계 검증 및 처리
         """
         # 기본 데이터 준비
-        obj_in_data = obj_in.model_dump(exclude={"assignee_ids"})
+        obj_in_data = obj_in.model_dump(exclude={"assignee_ids", "subtasks"})
         
         # 프로젝트 존재 확인
         project = db.query(Project).filter(Project.id == obj_in.project_id).first()
@@ -43,21 +43,6 @@ class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
                     detail="마일스톤이 지정된 프로젝트에 속하지 않습니다."
                 )
         
-        # 부모 업무 검증
-        if obj_in.parent_task_id:
-            parent_task = db.query(Task).filter(Task.id == obj_in.parent_task_id).first()
-            if not parent_task:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"부모 업무 ID {obj_in.parent_task_id}를 찾을 수 없습니다."
-                )
-            # 부모 업무가 동일한 프로젝트에 속하는지 확인
-            if parent_task.project_id != obj_in.project_id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="부모 업무가 지정된 프로젝트에 속하지 않습니다."
-                )
-        
         # 업무 생성
         db_obj = Task(**obj_in_data)
         
@@ -72,6 +57,20 @@ class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
             db_obj.assignees = assignees
         
         db.add(db_obj)
+        db.flush()  # ID를 생성하기 위해 flush
+        
+        # 하위 업무 추가
+        if obj_in.subtasks:
+            for subtask_data in obj_in.subtasks:
+                subtask = SubTask(
+                    title=subtask_data.title,
+                    is_completed=subtask_data.is_completed,
+                    task_id=db_obj.id,
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow()
+                )
+                db.add(subtask)
+        
         db.commit()
         db.refresh(db_obj)
         
@@ -102,27 +101,6 @@ class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="마일스톤이 업무의 프로젝트에 속하지 않습니다."
-                )
-        
-        # 부모 업무 검증
-        if "parent_task_id" in update_data and update_data["parent_task_id"] is not None:
-            if update_data["parent_task_id"] == db_obj.id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="업무는 자기 자신을 부모로 가질 수 없습니다."
-                )
-                
-            parent_task = db.query(Task).filter(Task.id == update_data["parent_task_id"]).first()
-            if not parent_task:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"부모 업무 ID {update_data['parent_task_id']}를 찾을 수 없습니다."
-                )
-            # 부모 업무가 동일한 프로젝트에 속하는지 확인
-            if parent_task.project_id != db_obj.project_id:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="부모 업무가 업무의 프로젝트에 속하지 않습니다."
                 )
         
         # 담당자 업데이트
@@ -185,6 +163,96 @@ class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
                 detail=f"사용자 ID {user_id}를 찾을 수 없습니다."
             )
         return user.assigned_tasks[skip:skip+limit]
+    
+    def get_assignees(self, db: Session, *, task_id: int) -> List[User]:
+        """업무 담당자 목록 조회"""
+        task = db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"업무 ID {task_id}를 찾을 수 없습니다."
+            )
+        return task.assignees
+    
+    def add_assignee(self, db: Session, *, task_id: int, user_id: int) -> Task:
+        """업무에 담당자 추가"""
+        task = db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"업무 ID {task_id}를 찾을 수 없습니다."
+            )
+        
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"사용자 ID {user_id}를 찾을 수 없습니다."
+            )
+        
+        if user not in task.assignees:
+            task.assignees.append(user)
+            db.add(task)
+            db.commit()
+            db.refresh(task)
+        
+        return task
+    
+    def remove_assignee(self, db: Session, *, task_id: int, user_id: int) -> Task:
+        """업무에서 담당자 제거"""
+        task = db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"업무 ID {task_id}를 찾을 수 없습니다."
+            )
+        
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"사용자 ID {user_id}를 찾을 수 없습니다."
+            )
+        
+        if user in task.assignees:
+            task.assignees.remove(user)
+            db.add(task)
+            db.commit()
+            db.refresh(task)
+        
+        return task
+    
+    def is_project_manager(self, db: Session, *, task_id: int, user_id: int) -> bool:
+        """사용자가 해당 업무의 프로젝트 관리자인지 확인"""
+        task = db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            return False
+        
+        # 프로젝트 멤버 테이블에서 관리자 권한 확인
+        from new_models.association_tables import project_members
+        member = db.query(project_members).filter(
+            project_members.c.project_id == task.project_id,
+            project_members.c.user_id == user_id
+        ).first()
+        
+        return member and (member.is_manager or member.is_leader)
+    
+    def get_multi_filtered(self, db: Session, *, skip: int = 0, limit: int = 100, 
+                          project_id: Optional[str] = None, milestone_id: Optional[int] = None,
+                          status: Optional[str] = None, priority: Optional[str] = None) -> List[Task]:
+        """필터링된 업무 목록 조회"""
+        query = db.query(Task)
+        
+        if project_id:
+            query = query.filter(Task.project_id == project_id)
+        if milestone_id:
+            query = query.filter(Task.milestone_id == milestone_id)
+        if status:
+            query = query.filter(Task.status == status)
+        if priority:
+            query = query.filter(Task.priority == priority)
+        
+        return query.offset(skip).limit(limit).all()
 
 # CRUDTask 클래스 인스턴스 생성
 task = CRUDTask(Task) 

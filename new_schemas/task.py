@@ -13,6 +13,26 @@ class MilestoneBrief(BaseModel):
     class Config:
         from_attributes = True
 
+# 하위 업무 스키마
+class SubTaskBase(BaseModel):
+    title: str = Field(..., min_length=2, max_length=100)
+
+class SubTaskCreate(SubTaskBase):
+    pass
+
+class SubTaskUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=2, max_length=100)
+    is_completed: Optional[bool] = None
+
+class SubTaskDetail(SubTaskBase):
+    id: int
+    is_completed: bool
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 # 업무 기본 스키마
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=2, max_length=100)
@@ -26,12 +46,12 @@ class TaskBase(BaseModel):
     
     project_id: str
     milestone_id: Optional[int] = None
-    parent_task_id: Optional[int] = None
 
 # 업무 생성 스키마
 class TaskCreate(TaskBase):
     assignee_ids: Optional[List[int]] = None
     created_by: Optional[int] = None
+    subtasks: Optional[List[SubTaskCreate]] = None
 
 # 업무 업데이트 스키마
 class TaskUpdate(BaseModel):
@@ -46,7 +66,6 @@ class TaskUpdate(BaseModel):
     due_date: Optional[datetime] = None
     
     milestone_id: Optional[int] = None
-    parent_task_id: Optional[int] = None
     assignee_ids: Optional[List[int]] = None
 
 # 업무 간략 정보
@@ -75,7 +94,7 @@ class TaskDetail(TaskBase):
     creator: Optional[UserBrief] = None
     
     # 하위 업무
-    subtasks: List[TaskBrief] = []
+    subtasks: List[SubTaskDetail] = []
     
     class Config:
         from_attributes = True 
