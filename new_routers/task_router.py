@@ -6,9 +6,9 @@ from datetime import datetime
 from database import get_db
 from auth import get_current_user
 from new_crud import task, project
-from new_schemas.task import TaskCreate, TaskUpdate, TaskBrief, TaskDetail, SubTaskCreate, SubTaskUpdate, SubTaskDetail
+from new_schemas.task import TaskCreate, TaskUpdate, TaskBrief, TaskDetail, SubTaskCreate, SubTaskUpdate, SubTaskDetail, CommentCreate, CommentUpdate, CommentDetail
 from new_models.user import User
-from new_models.task import SubTask
+from new_models.task import SubTask, Comment
 from new_routers.project_router import convert_project_to_project_detail
 from utils.sse_manager import project_sse_manager
 import json
@@ -309,4 +309,96 @@ def read_tasks_by_user(
     db: Session = Depends(get_db)
 ):
     """담당자별 업무 목록 조회"""
-    return task.get_by_assignee(db=db, user_id=user_id, skip=skip, limit=limit) 
+    return task.get_by_assignee(db=db, user_id=user_id, skip=skip, limit=limit)
+
+# 댓글 관련 엔드포인트
+@router.post("/{task_id}/comments", response_model=CommentDetail, status_code=status.HTTP_201_CREATED)
+async def create_comment(
+    task_id: int,
+    comment_in: CommentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """댓글 생성"""
+    db_task = task.get(db=db, id=task_id)
+    if db_task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="업무를 찾을 수 없습니다.")
+    
+    comment = task.create_comment(
+        db=db, 
+        task_id=task_id, 
+        content=comment_in.content, 
+        created_by=current_user.id
+    )
+    
+    return CommentDetail.model_validate(comment, from_attributes=True)
+
+@router.get("/{task_id}/comments", response_model=List[CommentDetail])
+def read_task_comments(
+    task_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    """업무 댓글 목록 조회"""
+    db_task = task.get(db=db, id=task_id)
+    if db_task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="업무를 찾을 수 없습니다.")
+    
+    comments = task.get_comments(db=db, task_id=task_id, skip=skip, limit=limit)
+    return [CommentDetail.model_validate(c, from_attributes=True) for c in comments]
+
+@router.put("/{task_id}/comments/{comment_id}", response_model=CommentDetail)
+async def update_comment(
+    task_id: int,
+    comment_id: int,
+    comment_in: CommentUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """댓글 수정"""
+    db_task = task.get(db=db, id=task_id)
+    if db_task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="업무를 찾을 수 없습니다.")
+    
+    comment = db.query(Comment).filter(Comment.id == comment_id, Comment.task_id == task_id).first()
+    if comment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="댓글을 찾을 수 없습니다.")
+    
+    # 작성자만 수정 가능
+    if comment.created_by != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 댓글을 수정할 권한이 없습니다."
+        )
+    
+    comment = task.update_comment(db=db, comment_id=comment_id, content=comment_in.content)
+    
+    return CommentDetail.model_validate(comment, from_attributes=True)
+
+@router.delete("/{task_id}/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_comment(
+    task_id: int,
+    comment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """댓글 삭제"""
+    db_task = task.get(db=db, id=task_id)
+    if db_task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="업무를 찾을 수 없습니다.")
+    
+    comment = db.query(Comment).filter(Comment.id == comment_id, Comment.task_id == task_id).first()
+    if comment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="댓글을 찾을 수 없습니다.")
+    
+    # 작성자 또는 프로젝트 관리자만 삭제 가능
+    if (comment.created_by != current_user.id and 
+        not task.is_project_manager(db=db, task_id=task_id, user_id=current_user.id)):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 댓글을 삭제할 권한이 없습니다."
+        )
+    
+    task.delete_comment(db=db, comment_id=comment_id)
+    return None 

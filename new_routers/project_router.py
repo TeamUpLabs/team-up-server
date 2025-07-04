@@ -114,6 +114,14 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
                 for subtask in task.subtasks:
                     task_data["subtasks"].append(SubTaskDetail.model_validate(subtask, from_attributes=True))
             
+            # 댓글 정보 추가
+            comments = []
+            if task.comments:
+                from new_schemas.task import CommentDetail
+                for comment in task.comments:
+                    comments.append(CommentDetail.model_validate(comment, from_attributes=True))
+            task_data["comments"] = comments
+            
             tasks.append(TaskDetail(**task_data))
             
     project_detail.tasks = tasks
@@ -125,13 +133,15 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
             milestone_data = {
                 "id": milestone.id,
                 "title": milestone.title,
+                "description": milestone.description,
                 "status": milestone.status,
                 "priority": milestone.priority,
-                "progress": milestone.progress,
+                "start_date": milestone.start_date,
                 "due_date": milestone.due_date,
+                "completed_at": milestone.completed_at,
+                "progress": milestone.progress,
                 "created_at": milestone.created_at,
                 "updated_at": milestone.updated_at,
-                "completed_at": milestone.completed_at,
                 "project_id": milestone.project_id
             }
             

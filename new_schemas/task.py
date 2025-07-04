@@ -13,6 +13,26 @@ class MilestoneBrief(BaseModel):
     class Config:
         from_attributes = True
 
+# 댓글 스키마
+class CommentBase(BaseModel):
+    content: str = Field(..., min_length=1, max_length=1000)
+
+class CommentCreate(CommentBase):
+    pass
+
+class CommentUpdate(BaseModel):
+    content: str = Field(..., min_length=1, max_length=1000)
+
+class CommentDetail(CommentBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    created_by: Optional[int] = None
+    creator: Optional[UserBrief] = None
+    
+    class Config:
+        from_attributes = True
+
 # 하위 업무 스키마
 class SubTaskBase(BaseModel):
     title: str = Field(..., min_length=2, max_length=100)
@@ -95,6 +115,9 @@ class TaskDetail(TaskBase):
     
     # 하위 업무
     subtasks: List[SubTaskDetail] = []
+    
+    # 댓글
+    comments: List[CommentDetail] = []
     
     class Config:
         from_attributes = True 

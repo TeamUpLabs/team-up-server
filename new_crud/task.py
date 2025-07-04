@@ -2,7 +2,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from new_models.task import Task, SubTask
+from new_models.task import Task, SubTask, Comment
 from new_models.project import Project
 from new_models.milestone import Milestone
 from new_models.user import User
@@ -253,6 +253,53 @@ class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
             query = query.filter(Task.priority == priority)
         
         return query.offset(skip).limit(limit).all()
+    
+    def get_comments(self, db: Session, *, task_id: int, skip: int = 0, limit: int = 100) -> List[Comment]:
+        """업무의 댓글 목록 조회"""
+        return db.query(Comment).filter(Comment.task_id == task_id).offset(skip).limit(limit).all()
+    
+    def create_comment(self, db: Session, *, task_id: int, content: str, created_by: int) -> Comment:
+        """댓글 생성"""
+        comment = Comment(
+            content=content,
+            task_id=task_id,
+            created_by=created_by,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        db.add(comment)
+        db.commit()
+        db.refresh(comment)
+        return comment
+    
+    def update_comment(self, db: Session, *, comment_id: int, content: str) -> Comment:
+        """댓글 수정"""
+        comment = db.query(Comment).filter(Comment.id == comment_id).first()
+        if not comment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"댓글 ID {comment_id}를 찾을 수 없습니다."
+            )
+        
+        comment.content = content
+        comment.updated_at = datetime.utcnow()
+        db.add(comment)
+        db.commit()
+        db.refresh(comment)
+        return comment
+    
+    def delete_comment(self, db: Session, *, comment_id: int) -> bool:
+        """댓글 삭제"""
+        comment = db.query(Comment).filter(Comment.id == comment_id).first()
+        if not comment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"댓글 ID {comment_id}를 찾을 수 없습니다."
+            )
+        
+        db.delete(comment)
+        db.commit()
+        return True
 
 # CRUDTask 클래스 인스턴스 생성
 task = CRUDTask(Task) 

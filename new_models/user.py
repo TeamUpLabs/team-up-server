@@ -69,6 +69,12 @@ class User(Base, BaseModel):
         foreign_keys="[Task.created_by]"
     )
     
+    created_comments = relationship(
+        "Comment",
+        back_populates="creator",
+        foreign_keys="[Comment.created_by]"
+    )
+    
     assigned_milestones = relationship(
         "Milestone",
         secondary=milestone_assignees,

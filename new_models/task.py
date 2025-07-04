@@ -34,6 +34,7 @@ class Task(Base, BaseModel):
     project = relationship("Project", back_populates="tasks")
     milestone = relationship("Milestone", back_populates="tasks")
     subtasks = relationship("SubTask", back_populates="task", cascade="all, delete-orphan")
+    comments = relationship("Comment", back_populates="task", cascade="all, delete-orphan")
     
     # 담당자 관계 (many-to-many)
     assignees = relationship(
@@ -69,3 +70,26 @@ class SubTask(Base, BaseModel):
     def __repr__(self):
         return f"<SubTask(id={self.id}, title='{self.title}')>" 
     
+class Comment(Base, BaseModel):
+    """댓글 모델"""
+    __tablename__ = "comments"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=False)
+    
+    # 외래 키
+    task_id = Column(Integer, ForeignKey("tasks.id", ondelete="CASCADE"), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    
+    # 관계 정의
+    task = relationship("Task", back_populates="comments")
+    creator = relationship(
+        "User",
+        foreign_keys=[created_by],
+        back_populates="created_comments"
+    )
+    
+    def __repr__(self):
+        return f"<Comment(id={self.id}, content='{self.content}')>" 

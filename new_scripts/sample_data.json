@@ -641,20 +641,30 @@
       "milestone_id": 1,
       "created_by": 1,
       "assignee_ids": [1],
-      "subtasks": [
-        {
-          "title": "JWT 토큰 생성 및 검증 로직 구현",
-          "is_completed": false
-        },
-        {
-          "title": "로그인 API 엔드포인트 개발",
-          "is_completed": false
-        },
-        {
-          "title": "회원가입 API 엔드포인트 개발",
-          "is_completed": false
-        }
-      ]
+              "subtasks": [
+          {
+            "title": "JWT 토큰 생성 및 검증 로직 구현",
+            "is_completed": false
+          },
+          {
+            "title": "로그인 API 엔드포인트 개발",
+            "is_completed": false
+          },
+          {
+            "title": "회원가입 API 엔드포인트 개발",
+            "is_completed": false
+          }
+        ],
+        "comments": [
+          {
+            "content": "JWT 토큰 구현 시 보안을 위해 적절한 만료 시간을 설정해야 합니다.",
+            "created_by": 1
+          },
+          {
+            "content": "소셜 로그인 연동도 고려해보면 좋을 것 같습니다.",
+            "created_by": 3
+          }
+        ]
     },
     {
       "title": "프로젝트 CRUD API 구현",
@@ -669,24 +679,30 @@
       "milestone_id": 1,
       "created_by": 1,
       "assignee_ids": [1],
-      "subtasks": [
-        {
-          "title": "프로젝트 생성 API 구현",
-          "is_completed": false
-        },
-        {
-          "title": "프로젝트 조회 API 구현",
-          "is_completed": false
-        },
-        {
-          "title": "프로젝트 수정 API 구현",
-          "is_completed": false
-        },
-        {
-          "title": "프로젝트 삭제 API 구현",
-          "is_completed": false
-        }
-      ]
+              "subtasks": [
+          {
+            "title": "프로젝트 생성 API 구현",
+            "is_completed": false
+          },
+          {
+            "title": "프로젝트 조회 API 구현",
+            "is_completed": false
+          },
+          {
+            "title": "프로젝트 수정 API 구현",
+            "is_completed": false
+          },
+          {
+            "title": "프로젝트 삭제 API 구현",
+            "is_completed": false
+          }
+        ],
+        "comments": [
+          {
+            "content": "프로젝트 권한 관리 로직을 먼저 설계해야겠습니다.",
+            "created_by": 1
+          }
+        ]
     },
     {
       "title": "업무 및 마일스톤 API 구현",
@@ -716,20 +732,30 @@
       "milestone_id": 3,
       "created_by": 2,
       "assignee_ids": [2],
-      "subtasks": [
-        {
-          "title": "로그인 폼 디자인",
-          "is_completed": false
-        },
-        {
-          "title": "회원가입 폼 디자인",
-          "is_completed": false
-        },
-        {
-          "title": "비밀번호 찾기 화면 디자인",
-          "is_completed": false
-        }
-      ]
+              "subtasks": [
+          {
+            "title": "로그인 폼 디자인",
+            "is_completed": false
+          },
+          {
+            "title": "회원가입 폼 디자인",
+            "is_completed": false
+          },
+          {
+            "title": "비밀번호 찾기 화면 디자인",
+            "is_completed": false
+          }
+        ],
+        "comments": [
+          {
+            "content": "접근성 가이드라인을 준수하여 디자인하겠습니다.",
+            "created_by": 2
+          },
+          {
+            "content": "모바일 반응형도 고려해서 디자인해주세요.",
+            "created_by": 4
+          }
+        ]
     },
     {
       "title": "마일스톤 및 업무 화면 디자인",
@@ -772,24 +798,34 @@
       "milestone_id": 4,
       "created_by": 4,
       "assignee_ids": [4],
-      "subtasks": [
-        {
-          "title": "기본 UI 컴포넌트 개발 (Button, Input, Card)",
-          "is_completed": false
-        },
-        {
-          "title": "복합 컴포넌트 개발 (Modal, Dropdown, Table)",
-          "is_completed": false
-        },
-        {
-          "title": "레이아웃 컴포넌트 개발 (Header, Sidebar, Footer)",
-          "is_completed": false
-        },
-        {
-          "title": "컴포넌트 문서화 및 스토리북 구축",
-          "is_completed": false
-        }
-      ]
+              "subtasks": [
+          {
+            "title": "기본 UI 컴포넌트 개발 (Button, Input, Card)",
+            "is_completed": false
+          },
+          {
+            "title": "복합 컴포넌트 개발 (Modal, Dropdown, Table)",
+            "is_completed": false
+          },
+          {
+            "title": "레이아웃 컴포넌트 개발 (Header, Sidebar, Footer)",
+            "is_completed": false
+          },
+          {
+            "title": "컴포넌트 문서화 및 스토리북 구축",
+            "is_completed": false
+          }
+        ],
+        "comments": [
+          {
+            "content": "TypeScript로 타입 안전성을 보장하겠습니다.",
+            "created_by": 4
+          },
+          {
+            "content": "재사용성을 고려한 컴포넌트 설계가 중요합니다.",
+            "created_by": 2
+          }
+        ]
     },
     {
       "title": "AWS VPC 구성",
@@ -832,20 +868,30 @@
       "milestone_id": 6,
       "created_by": 5,
       "assignee_ids": [1, 5],
-      "subtasks": [
-        {
-          "title": "테스트 자동화 워크플로우 구성",
-          "is_completed": false
-        },
-        {
-          "title": "빌드 및 배포 워크플로우 구성",
-          "is_completed": false
-        },
-        {
-          "title": "코드 품질 검사 워크플로우 구성",
-          "is_completed": false
-        }
-      ]
+              "subtasks": [
+          {
+            "title": "테스트 자동화 워크플로우 구성",
+            "is_completed": false
+          },
+          {
+            "title": "빌드 및 배포 워크플로우 구성",
+            "is_completed": false
+          },
+          {
+            "title": "코드 품질 검사 워크플로우 구성",
+            "is_completed": false
+          }
+        ],
+        "comments": [
+          {
+            "content": "보안 스캔도 워크플로우에 포함시켜야겠습니다.",
+            "created_by": 5
+          },
+          {
+            "content": "배포 전 스테이징 환경 테스트도 고려해보세요.",
+            "created_by": 6
+          }
+        ]
     }
   ]
 } 

@@ -31,7 +31,7 @@ from new_models.user import (
     UserSocialLink
 )
 from new_models.project import Project
-from new_models.task import Task, SubTask
+from new_models.task import Task, SubTask, Comment
 from new_models.milestone import Milestone
 from new_models.tech_stack import TechStack
 from auth import get_password_hash
@@ -388,6 +388,47 @@ def seed_tasks(db, tasks_data):
     db.commit()
     logger.info(f"업무 데이터 추가 완료: {len(tasks_data)}개")
 
+def seed_comments(db, tasks_data):
+    """댓글 데이터 추가"""
+    logger.info("댓글 데이터 추가 중...")
+    
+    for task_data in tasks_data:
+        if "comments" not in task_data:
+            continue
+            
+        # 해당 업무 찾기
+        task = db.query(Task).filter(Task.title == task_data["title"]).first()
+        if not task:
+            logger.warning(f"업무를 찾을 수 없음: {task_data['title']}")
+            continue
+        
+        for comment_data in task_data["comments"]:
+            # 이미 존재하는 댓글 확인 (내용과 작성자로)
+            existing_comment = db.query(Comment).filter(
+                Comment.content == comment_data["content"],
+                Comment.created_by == comment_data["created_by"],
+                Comment.task_id == task.id
+            ).first()
+            
+            if existing_comment:
+                logger.info(f"댓글 이미 존재: {comment_data['content'][:20]}...")
+                continue
+            
+            # 댓글 생성
+            comment = Comment(
+                content=comment_data["content"],
+                task_id=task.id,
+                created_by=comment_data["created_by"],
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
+            )
+            
+            db.add(comment)
+            logger.info(f"댓글 추가: {comment_data['content'][:20]}...")
+    
+    db.commit()
+    logger.info("댓글 데이터 추가 완료")
+
 def seed_database():
     """데이터베이스에 샘플 데이터 추가"""
     logger.info("데이터베이스 시드 작업 시작")
@@ -409,6 +450,7 @@ def seed_database():
         seed_projects(db, data.get("projects", []))
         seed_milestones(db, data.get("milestones", []))
         seed_tasks(db, data.get("tasks", []))
+        seed_comments(db, data.get("tasks", []))
         
         logger.info("데이터베이스 시드 작업 완료")
     except Exception as e:
