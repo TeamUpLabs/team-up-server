@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 from new_models.base import BaseModel
 from new_routers import (
+    auth_router,
     user_router,
     project_router,
     task_router,
@@ -28,13 +29,14 @@ app = FastAPI(
 # CORS 미들웨어 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 실제 배포 환경에서는 특정 출처로 제한
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*", "Authorization"],
 )
 
 # 라우터 등록
+app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(project_router)
 app.include_router(task_router)

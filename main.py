@@ -17,11 +17,7 @@ from database import engine, Base
 #     channel_routes,
 #     github_routes
 # )
-<<<<<<< HEAD
 from new_routers import user_router, project_router, task_router, milestone_router, schedule_router, participation_request_router
-=======
-from router import user_router, project_router, task_router, milestone_router
->>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
 
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -37,11 +33,8 @@ app.include_router(user_router.router)
 app.include_router(project_router.router)
 app.include_router(task_router.router)
 app.include_router(milestone_router.router)
-<<<<<<< HEAD
 app.include_router(participation_request_router.router)
 app.include_router(schedule_router.router)
-=======
->>>>>>> e34fcb6 (Refactor authentication and database interaction for user management)
 
 @app.get("/")
 async def root():

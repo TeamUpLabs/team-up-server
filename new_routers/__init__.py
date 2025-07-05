@@ -1,3 +1,4 @@
+from new_routers.auth_router import router as auth_router
 from new_routers.user_router import router as user_router
 from new_routers.project_router import router as project_router
 from new_routers.task_router import router as task_router

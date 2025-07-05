@@ -35,10 +35,13 @@ class UserUpdate(BaseModel):
     profile_image: Optional[str] = None
     bio: Optional[str] = None
     role: Optional[str] = None
+    status: Optional[str] = None
     languages: Optional[List[str]] = None
     phone: Optional[str] = None
     birth_date: Optional[str] = None
     notification_settings: Optional[Dict[str, int]] = None
+    auth_provider_access_token: Optional[str] = None
+    last_login: Optional[datetime] = None
 
 # 사용자 응답 스키마
 class UserBrief(BaseModel):
