@@ -47,14 +47,6 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
     if db_project.owner:
         project_data["owner"] = UserBrief.model_validate(db_project.owner, from_attributes=True)
     
-    # 기술 스택 정보 추가
-    tech_stacks = []
-    if db_project.tech_stacks:
-        from new_schemas.tech_stack import TechStackBase
-        for ts in db_project.tech_stacks:
-            tech_stacks.append(TechStackBase.model_validate(ts, from_attributes=True))
-    project_data["tech_stacks"] = tech_stacks
-    
     # 프로젝트 상세 정보 생성
     project_detail = ProjectDetail(**project_data)
     
@@ -352,13 +344,6 @@ def read_project_members(project_id: str, db: Session = Depends(get_db)):
         )
         for m in member_info
     ]
-
-@router.get("/{project_id}/tech-stacks", response_model=List)
-def read_project_tech_stacks(project_id: str, db: Session = Depends(get_db)):
-    """프로젝트 기술 스택 목록 조회"""
-    from new_schemas.tech_stack import TechStackDetail
-    tech_stacks = project.get_tech_stacks(db=db, project_id=project_id)
-    return [TechStackDetail.model_validate(ts, from_attributes=True) for ts in tech_stacks]
 
 @router.get("/{project_id}/milestones", response_model=List)
 def read_project_milestones(project_id: str, db: Session = Depends(get_db)):

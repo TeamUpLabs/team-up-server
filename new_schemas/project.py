@@ -2,19 +2,11 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from datetime import datetime
 from .user import UserBrief
-from .tech_stack import TechStackBase
 from .task import TaskDetail
 from .milestone import MilestoneDetail
 from .participation_request import ParticipationRequestResponse
 from .schedule import ScheduleResponse
 from .channel import ChannelResponse
-# 기술 스택 스키마
-class TechStackBase(BaseModel):
-    name: str
-    category: Optional[str] = None
-    
-    class Config:
-        from_attributes = True
 
 # 프로젝트 기본 스키마
 class ProjectBase(BaseModel):
@@ -35,7 +27,6 @@ class ProjectBase(BaseModel):
 class ProjectCreate(ProjectBase):
     id: str = Field(..., min_length=6, max_length=6)
     owner_id: int
-    tech_stack_ids: Optional[List[int]] = None
     member_ids: Optional[List[int]] = None
 
 # 프로젝트 업데이트 스키마
@@ -49,7 +40,6 @@ class ProjectUpdate(BaseModel):
     end_date: Optional[datetime] = None
     tags: Optional[List[str]] = None
     location: Optional[str] = None
-    tech_stack_ids: Optional[List[int]] = None
     github_url: Optional[str] = None
     updated_at: datetime
 
@@ -81,7 +71,6 @@ class ProjectDetail(ProjectBase):
     # 관계
     owner: Optional[UserBrief] = None
     members: Optional[List[ProjectMember]] = []
-    tech_stacks: List[TechStackBase] = []
     tasks: List[TaskDetail] = []
     milestones: List[MilestoneDetail] = []
     participation_requests: List[ParticipationRequestResponse] = []

@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from database import Base
 from new_models.base import BaseModel
-from new_models.association_tables import project_members, project_tech_stacks
+from new_models.association_tables import project_members
 
 class Project(Base, BaseModel):
     """프로젝트 모델"""
@@ -59,12 +59,6 @@ class Project(Base, BaseModel):
         "Schedule",
         back_populates="project",
         cascade="all, delete-orphan"
-    )
-    
-    tech_stacks = relationship(
-        "TechStack",
-        secondary=project_tech_stacks,
-        back_populates="projects"
     )
     
     # 프로젝트 참여 요청 관계

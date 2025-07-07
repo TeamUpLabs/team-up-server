@@ -45,37 +45,18 @@ schedule_assignees = Table(
     Index('idx_schedule_assignees', 'schedule_id', 'user_id')
 )
 
-# 프로젝트-기술 스택 관계 테이블
-project_tech_stacks = Table(
-    'project_tech_stacks',
-    Base.metadata,
-    Column('project_id', String(6), ForeignKey('projects.id', ondelete='CASCADE'), primary_key=True),
-    Column('tech_stack_id', Integer, ForeignKey('tech_stacks.id', ondelete='CASCADE'), primary_key=True),
-    Index('idx_project_tech_stacks', 'project_id', 'tech_stack_id')
-)
-
-# 사용자-기술 스택 관계 테이블
-user_tech_stacks = Table(
-    'user_tech_stacks',
-    Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
-    Column('tech_stack_id', Integer, ForeignKey('tech_stacks.id', ondelete='CASCADE'), primary_key=True),
-    Column('proficiency_level', Integer, nullable=True),  # 1-5 숙련도 레벨
-    Column('years_experience', Integer, nullable=True),
-    Column('created_at', DateTime, nullable=False, server_default=func.now()),
-    Index('idx_user_tech_stacks', 'user_id', 'tech_stack_id')
-)
-
 # 사용자-협업 선호도 관계 테이블
 user_collaboration_preferences = Table(
     'user_collaboration_preferences',
     Base.metadata,
-    Column('id', Integer, primary_key=True),
-    Column('user_id', Integer, ForeignKey('users.id', ondelete='CASCADE')),
-    Column('preference_type', String(50), nullable=False),  # remote, in-person, hybrid, timezone
-    Column('preference_value', String(100), nullable=False),
+    Column('user_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    Column('collaboration_style', String(50), nullable=True),
+    Column('preferred_project_type', String(100), nullable=True),
+    Column('preferred_role', String(50), nullable=True),
+    Column('available_time_zone', String(50), nullable=True),
+    Column('work_hours_start', Integer, nullable=True),
+    Column('work_hours_end', Integer, nullable=True),
     Column('created_at', DateTime, nullable=False, server_default=func.now()),
-    Column('updated_at', DateTime, nullable=False, server_default=func.now(), onupdate=func.now()),
     Index('idx_user_collab_prefs', 'user_id')
 )
 

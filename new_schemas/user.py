@@ -86,30 +86,6 @@ class MilestoneBrief(BaseModel):
     class Config:
         from_attributes = True
 
-# 기술 스택 스키마
-class TechStackBrief(BaseModel):
-    id: int
-    name: str
-    category: Optional[str] = None
-    icon_url: Optional[str] = None
-    
-    class Config:
-        from_attributes = True
-
-# 사용자 기술 스택 스키마
-class UserTechStackCreate(BaseModel):
-    tech_stack_id: int
-    proficiency_level: Optional[int] = None
-    years_experience: Optional[int] = None
-
-class UserTechStackResponse(BaseModel):
-    tech_stack: TechStackBrief
-    proficiency_level: Optional[int] = None
-    years_experience: Optional[int] = None
-    
-    class Config:
-        from_attributes = True
-
 # 협업 선호도 스키마
 class CollaborationPreferenceCreate(BaseModel):
     preference_type: str
@@ -141,6 +117,19 @@ class UserProjectResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+# 사용자 기술 스택 스키마
+class UserTechStackCreate(BaseModel):
+    user_id: int
+    tech: str
+    level: int
+    
+class UserTechStackResponse(BaseModel):
+    id: int
+    user_id: int
+    tech: str
+    level: int
+    created_at: datetime
 
 # 사용자 관심분야 스키마
 class UserInterestCreate(BaseModel):
@@ -199,8 +188,8 @@ class UserDetail(UserBase):
     assigned_milestones: Optional[List[MilestoneBrief]] = None
     created_milestones: Optional[List[MilestoneBrief]] = None
     
-    tech_stacks: Optional[List[TechStackBrief]] = None
     collaboration_preferences: Optional[List[CollaborationPreferenceResponse]] = None
+    tech_stacks: Optional[List[UserTechStackResponse]] = None
     interests: Optional[List[UserInterestResponse]] = None
     notification_settings: Optional[Dict[str, int]] = None
     social_links: Optional[List[UserSocialLinkResponse]] = None

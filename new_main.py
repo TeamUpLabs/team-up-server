@@ -8,7 +8,6 @@ from new_routers import (
     project_router,
     task_router,
     milestone_router,
-    tech_stack_router,
     participation_request_router,
     schedule_router,
     notification_router,
@@ -29,10 +28,10 @@ app = FastAPI(
 # CORS 미들웨어 설정
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # 정확한 origin 명시
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*", "Authorization"],
+    allow_headers=["*"],  # Authorization 포함됨
 )
 
 # 라우터 등록
@@ -41,7 +40,6 @@ app.include_router(user_router)
 app.include_router(project_router)
 app.include_router(task_router)
 app.include_router(milestone_router)
-app.include_router(tech_stack_router)
 app.include_router(participation_request_router)
 app.include_router(schedule_router)
 app.include_router(notification_router)

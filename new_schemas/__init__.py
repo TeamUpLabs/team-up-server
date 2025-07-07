@@ -4,7 +4,7 @@
 from new_schemas.user import UserBase, UserCreate, UserUpdate, UserBrief, UserDetail, Token
 from new_schemas.project import (
     ProjectBase, ProjectCreate, ProjectUpdate, ProjectMember, 
-    ProjectBrief, ProjectDetail, TechStackBase
+    ProjectBrief, ProjectDetail
 )
 from new_schemas.task import (
     TaskBase, TaskCreate, TaskUpdate, TaskBrief, TaskDetail, 
@@ -14,10 +14,7 @@ from new_schemas.milestone import (
     MilestoneBase, MilestoneCreate, MilestoneUpdate, 
     MilestoneBrief, MilestoneDetail
 )
-from new_schemas.tech_stack import (
-    TechStackBase as TechStackBaseSchema, TechStackCreate, 
-    TechStackUpdate, TechStackDetail
-)
+
 from new_schemas.participation_request import (
     ParticipationRequestBase, ParticipationRequestCreate,
     ParticipationRequestUpdate, ParticipationRequestResponse,

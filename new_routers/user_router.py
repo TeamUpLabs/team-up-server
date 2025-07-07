@@ -7,13 +7,11 @@ from database import get_db
 from auth import create_access_token, get_current_user
 from new_crud import user
 from new_schemas.user import (
-    UserCreate, UserUpdate, UserDetail, UserBrief, Token,
-    UserTechStackCreate, CollaborationPreferenceCreate,
+    UserCreate, UserUpdate, UserDetail, UserBrief, Token, 
     UserProjectCreate, UserInterestCreate,
     NotificationSettingsUpdate, UserSocialLinkCreate,
-    UserTechStackResponse, CollaborationPreferenceResponse,
     UserProjectResponse, UserInterestResponse,
-    UserSocialLinkResponse
+    UserSocialLinkResponse, CollaborationPreferenceResponse, CollaborationPreferenceCreate
 )
 from new_schemas.notification import NotificationResponse
 from new_models.user import User
@@ -127,42 +125,6 @@ def update_user_notification_settings(
         )
     
     return user.update_notification_settings(db=db, user_id=user_id, settings_in=settings_in)
-
-# 기술 스택 관련 엔드포인트
-@router.post("/{user_id}/tech-stacks", response_model=UserTechStackResponse)
-def add_user_tech_stack(
-    user_id: int, tech_stack_in: UserTechStackCreate, 
-    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
-):
-    """사용자 기술 스택 추가"""
-    if current_user.id != user_id and not current_user.role == "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="접근 권한이 없습니다."
-        )
-    
-    result = user.add_tech_stack(db=db, user_id=user_id, tech_stack_in=tech_stack_in)
-    return UserTechStackResponse.model_validate(result, from_attributes=True)
-
-@router.get("/{user_id}/tech-stacks", response_model=List[UserTechStackResponse])
-def get_user_tech_stacks(user_id: int, db: Session = Depends(get_db)):
-    """사용자 기술 스택 목록 조회"""
-    tech_stacks = user.get_tech_stacks(db=db, user_id=user_id)
-    return [UserTechStackResponse.model_validate(ts, from_attributes=True) for ts in tech_stacks]
-
-@router.delete("/{user_id}/tech-stacks/{tech_stack_id}", response_model=Dict)
-def remove_user_tech_stack(
-    user_id: int, tech_stack_id: int, 
-    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
-):
-    """사용자 기술 스택 제거"""
-    if current_user.id != user_id and not current_user.role == "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="접근 권한이 없습니다."
-        )
-    
-    return user.remove_tech_stack(db=db, user_id=user_id, tech_stack_id=tech_stack_id)
 
 # 협업 선호도 관련 엔드포인트
 @router.post("/{user_id}/collaboration-preferences", response_model=CollaborationPreferenceResponse)

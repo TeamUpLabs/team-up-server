@@ -6,10 +6,9 @@ from new_models.user import (
     UserInterest, UserSocialLink
 )
 from new_models.notification import Notification
-from new_models.tech_stack import TechStack
 from new_models.project import Project
 from new_schemas.user import (
-    UserCreate, UserUpdate, UserTechStackCreate, 
+    UserCreate, UserUpdate, 
     CollaborationPreferenceCreate, UserProjectCreate,
     UserInterestCreate, NotificationSettingsUpdate,
     UserSocialLinkCreate
@@ -217,142 +216,6 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             "pushNotification": 1,
             "securityNotification": 1
         }
-    
-    # 기술 스택 관련 CRUD 메서드
-    def add_tech_stack(self, db: Session, *, user_id: int, tech_stack_in: UserTechStackCreate) -> Dict:
-        """사용자에게 기술 스택 추가"""
-        user = self.get(db, id=user_id)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="사용자를 찾을 수 없습니다."
-            )
-        
-        tech_stack = db.query(TechStack).filter(TechStack.id == tech_stack_in.tech_stack_id).first()
-        if not tech_stack:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="기술 스택을 찾을 수 없습니다."
-            )
-        
-        # 이미 연결되어 있는지 확인
-        existing = db.execute(
-            """
-            SELECT * FROM user_tech_stacks 
-            WHERE user_id = :user_id AND tech_stack_id = :tech_stack_id
-            """,
-            {"user_id": user_id, "tech_stack_id": tech_stack_in.tech_stack_id}
-        ).fetchone()
-        
-        if existing:
-            # 이미 있으면 업데이트
-            db.execute(
-                """
-                UPDATE user_tech_stacks 
-                SET proficiency_level = :proficiency_level, 
-                    years_experience = :years_experience
-                WHERE user_id = :user_id AND tech_stack_id = :tech_stack_id
-                """,
-                {
-                    "user_id": user_id, 
-                    "tech_stack_id": tech_stack_in.tech_stack_id,
-                    "proficiency_level": tech_stack_in.proficiency_level,
-                    "years_experience": tech_stack_in.years_experience
-                }
-            )
-        else:
-            # 없으면 새로 추가
-            db.execute(
-                """
-                INSERT INTO user_tech_stacks 
-                (user_id, tech_stack_id, proficiency_level, years_experience) 
-                VALUES (:user_id, :tech_stack_id, :proficiency_level, :years_experience)
-                """,
-                {
-                    "user_id": user_id, 
-                    "tech_stack_id": tech_stack_in.tech_stack_id,
-                    "proficiency_level": tech_stack_in.proficiency_level,
-                    "years_experience": tech_stack_in.years_experience
-                }
-            )
-        
-        db.commit()
-        
-        # 응답 데이터 구성
-        result = {
-            "tech_stack": tech_stack,
-            "proficiency_level": tech_stack_in.proficiency_level,
-            "years_experience": tech_stack_in.years_experience
-        }
-        
-        return result
-    
-    def remove_tech_stack(self, db: Session, *, user_id: int, tech_stack_id: int) -> Dict:
-        """사용자에서 기술 스택 제거"""
-        user = self.get(db, id=user_id)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="사용자를 찾을 수 없습니다."
-            )
-        
-        # 연결 삭제
-        result = db.execute(
-            """
-            DELETE FROM user_tech_stacks 
-            WHERE user_id = :user_id AND tech_stack_id = :tech_stack_id
-            RETURNING user_id
-            """,
-            {"user_id": user_id, "tech_stack_id": tech_stack_id}
-        ).fetchone()
-        
-        if not result:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="사용자에게 해당 기술 스택이 없습니다."
-            )
-        
-        db.commit()
-        
-        return {"status": "success", "message": "기술 스택이 삭제되었습니다."}
-    
-    def get_tech_stacks(self, db: Session, *, user_id: int) -> List[Dict]:
-        """사용자의 기술 스택 목록 조회"""
-        user = self.get(db, id=user_id)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="사용자를 찾을 수 없습니다."
-            )
-        
-        # 사용자의 기술 스택과 추가 정보 조회
-        tech_stacks_with_info = db.execute(
-            """
-            SELECT ts.*, uts.proficiency_level, uts.years_experience 
-            FROM tech_stacks ts
-            JOIN user_tech_stacks uts ON ts.id = uts.tech_stack_id
-            WHERE uts.user_id = :user_id
-            """,
-            {"user_id": user_id}
-        ).fetchall()
-        
-        result = []
-        for row in tech_stacks_with_info:
-            tech_stack = TechStack(
-                id=row.id,
-                name=row.name,
-                category=row.category,
-                icon_url=row.icon_url
-            )
-            
-            result.append({
-                "tech_stack": tech_stack,
-                "proficiency_level": row.proficiency_level,
-                "years_experience": row.years_experience
-            })
-        
-        return result
-    
     # 협업 선호도 관련 CRUD 메서드
     def create_collaboration_preference(self, db: Session, *, user_id: int, pref_in: CollaborationPreferenceCreate) -> CollaborationPreference:
         """사용자의 협업 선호도 생성"""

@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from new_models.project import Project
 from new_models.user import User
-from new_models.tech_stack import TechStack
 from new_models.participation_request import ParticipationRequest
 from new_schemas.project import ProjectCreate, ProjectUpdate
 from new_crud.base import CRUDBase
@@ -30,16 +29,6 @@ class CRUDProject(CRUDBase[Project, ProjectCreate, ProjectUpdate]):
         
         # 프로젝트 생성
         db_obj = Project(**obj_in_data)
-        
-        # 기술 스택 연결
-        if obj_in.tech_stack_ids:
-            tech_stacks = db.query(TechStack).filter(TechStack.id.in_(obj_in.tech_stack_ids)).all()
-            if len(tech_stacks) != len(set(obj_in.tech_stack_ids)):
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="일부 기술 스택을 찾을 수 없습니다."
-                )
-            db_obj.tech_stacks = tech_stacks
         
         # 멤버 추가
         if obj_in.member_ids:
@@ -69,18 +58,6 @@ class CRUDProject(CRUDBase[Project, ProjectCreate, ProjectUpdate]):
         기술 스택 관계 처리
         """
         update_data = obj_in.model_dump(exclude_unset=True)
-        
-        # 기술 스택 업데이트
-        if "tech_stack_ids" in update_data:
-            tech_stack_ids = update_data.pop("tech_stack_ids")
-            if tech_stack_ids is not None:
-                tech_stacks = db.query(TechStack).filter(TechStack.id.in_(tech_stack_ids)).all()
-                if len(tech_stacks) != len(set(tech_stack_ids)):
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail="일부 기술 스택을 찾을 수 없습니다."
-                    )
-                db_obj.tech_stacks = tech_stacks
         
         return super().update(db, db_obj=db_obj, obj_in=update_data)
     
@@ -192,16 +169,6 @@ class CRUDProject(CRUDBase[Project, ProjectCreate, ProjectUpdate]):
         ).first()
         
         return stmt is not None
-    
-    def get_tech_stacks(self, db: Session, *, project_id: str) -> List[TechStack]:
-        """프로젝트 기술 스택 목록 조회"""
-        project = self.get(db, id=project_id)
-        if not project:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="프로젝트를 찾을 수 없습니다."
-            )
-        return project.tech_stacks
     
     def get_milestones(self, db: Session, *, project_id: str) -> List:
         """프로젝트 마일스톤 목록 조회"""

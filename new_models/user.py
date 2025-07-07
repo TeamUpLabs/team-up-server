@@ -5,7 +5,7 @@ from database import Base
 from new_models.base import BaseModel
 from new_models.association_tables import (
     project_members, task_assignees, milestone_assignees,
-    user_tech_stacks, user_collaboration_preferences,
+    user_collaboration_preferences,
     user_interests, user_social_links, channel_members
 )
 
@@ -106,16 +106,16 @@ class User(Base, BaseModel):
         back_populates="assignees"
     )
     
-    # 사용자-기술 스택 관계
-    tech_stacks = relationship(
-        "TechStack",
-        secondary=user_tech_stacks,
-        backref="users"
-    )
-    
     # 사용자-협업 선호도 관계 (일대다)
     collaboration_preferences = relationship(
         "CollaborationPreference",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    
+    # 사용자-기술 스택 관계 (일대다)
+    tech_stacks = relationship(
+        "UserTechStack",
         back_populates="user",
         cascade="all, delete-orphan"
     )
@@ -163,15 +163,36 @@ class CollaborationPreference(Base, BaseModel):
     __tablename__ = "collaboration_preferences"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    preference_type = Column(String(50), nullable=False)  # remote, in-person, hybrid, timezone
-    preference_value = Column(String(100), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    collaboration_style = Column(String(50), nullable=True)  # ex. 적극적, 소극적, 주도적, 지원형
+    preferred_project_type = Column(String(100), nullable=True)  # 웹, 모바일, AI 등 프로젝트 유형
+    preferred_role = Column(String(50), nullable=True)  # 프론트엔드, 백엔드, 데이터 분석가, 디자이너, 프로젝트 매니저 등
+    available_time_zone = Column(String(50), nullable=True)  # Asia/Seoul, UTC, America/New_York, America/Los_Angeles
+    work_hours_start = Column(Integer, nullable=True)  # 주간 가능 시간 (시간) 0~24
+    work_hours_end = Column(Integer, nullable=True)  # 주간 가능 시간 (시간) 0~24
+    preferred_project_length = Column(String(20), nullable=True)  # 짧음, 중간, 김 등
     
     # 관계 정의
     user = relationship("User", back_populates="collaboration_preferences")
     
     def __repr__(self):
-        return f"<CollaborationPreference(id={self.id}, user_id={self.user_id}, type='{self.preference_type}')>"
+        return f"<CollaborationPreference(id={self.id}, user_id={self.user_id}, type='{self.collaboration_style}')>"
+
+# 사용자 기술 스택 모델
+class UserTechStack(Base, BaseModel):
+    """사용자 기술 스택 모델"""
+    __tablename__ = "user_tech_stacks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    tech = Column(String(100), nullable=False)
+    level = Column(Integer, nullable=True)  # 숙련도 (초급: 0, 중급: 1, 고급: 2)
+    
+    # 관계 정의
+    user = relationship("User", back_populates="tech_stacks")
+    
+    def __repr__(self):
+        return f"<UserTechStack(id={self.id}, user_id={self.user_id}, tech={self.tech})>"
 
 # 사용자 관심분야 모델
 class UserInterest(Base, BaseModel):
