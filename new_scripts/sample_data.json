@@ -23,20 +23,15 @@
         "pushNotification": 1,
         "securityNotification": 1
       },
-      "collaboration_preferences": [
-        {
-          "preference_type": "remote",
-          "preference_value": "hybrid"
-        },
-        {
-          "preference_type": "timezone",
-          "preference_value": "KST"
-        },
-        {
-          "preference_type": "communication",
-          "preference_value": "slack"
-        }
-      ],
+      "collaboration_preference": {
+        "collaboration_style": "적극적",
+        "preferred_project_type": "웹 개발",
+        "preferred_role": "백엔드 개발자",
+        "available_time_zone": "Asia/Seoul",
+        "work_hours_start": 9,
+        "work_hours_end": 18,
+        "preferred_project_length": "중간"
+      },
       "interests": [
         {
           "interest_category": "technology",
@@ -85,20 +80,15 @@
         "pushNotification": 1,
         "securityNotification": 1
       },
-      "collaboration_preferences": [
-        {
-          "preference_type": "remote",
-          "preference_value": "remote"
-        },
-        {
-          "preference_type": "timezone",
-          "preference_value": "KST"
-        },
-        {
-          "preference_type": "communication",
-          "preference_value": "figma"
-        }
-      ],
+      "collaboration_preference": {
+        "collaboration_style": "중립적",
+        "preferred_project_type": "모바일 앱 개발",
+        "preferred_role": "UI/UX 디자이너",
+        "available_time_zone": "UTC+0",
+        "work_hours_start": 10,
+        "work_hours_end": 19,
+        "preferred_project_length": "긴 프로젝트"
+      },
       "interests": [
         {
           "interest_category": "design",
@@ -147,20 +137,15 @@
         "pushNotification": 1,
         "securityNotification": 1
       },
-      "collaboration_preferences": [
-        {
-          "preference_type": "remote",
-          "preference_value": "in-person"
-        },
-        {
-          "preference_type": "timezone",
-          "preference_value": "KST"
-        },
-        {
-          "preference_type": "communication",
-          "preference_value": "meeting"
-        }
-      ],
+      "collaboration_preference": {
+        "collaboration_style": "적극적",
+        "preferred_project_type": "웹 개발",
+        "preferred_role": "프로젝트 매니저",
+        "available_time_zone": "Asia/Seoul",
+        "work_hours_start": 9,
+        "work_hours_end": 18,
+        "preferred_project_length": "중간"
+      },
       "interests": [
         {
           "interest_category": "management",
@@ -205,20 +190,15 @@
         "pushNotification": 1,
         "securityNotification": 1
       },
-      "collaboration_preferences": [
-        {
-          "preference_type": "remote",
-          "preference_value": "hybrid"
-        },
-        {
-          "preference_type": "timezone",
-          "preference_value": "KST"
-        },
-        {
-          "preference_type": "communication",
-          "preference_value": "slack"
-        }
-      ],
+      "collaboration_preference": {
+        "collaboration_style": "적극적",
+        "preferred_project_type": "웹 개발",
+        "preferred_role": "프론트엔드 개발자",
+        "available_time_zone": "Asia/Seoul",
+        "work_hours_start": 10,
+        "work_hours_end": 19,
+        "preferred_project_length": "중간"
+      },
       "interests": [
         {
           "interest_category": "technology",
@@ -267,20 +247,15 @@
         "pushNotification": 1,
         "securityNotification": 1
       },
-      "collaboration_preferences": [
-        {
-          "preference_type": "remote",
-          "preference_value": "remote"
-        },
-        {
-          "preference_type": "timezone",
-          "preference_value": "KST"
-        },
-        {
-          "preference_type": "communication",
-          "preference_value": "slack"
-        }
-      ],
+      "collaboration_preference": {
+        "collaboration_style": "중립적",
+        "preferred_project_type": "데이터베이스 및 인프라",
+        "preferred_role": "DevOps 엔지니어",
+        "available_time_zone": "UTC+0",
+        "work_hours_start": 11,
+        "work_hours_end": 20,
+        "preferred_project_length": "긴 프로젝트"
+      },
       "interests": [
         {
           "interest_category": "technology",
@@ -329,20 +304,15 @@
         "pushNotification": 1,
         "securityNotification": 1
       },
-      "collaboration_preferences": [
-        {
-          "preference_type": "remote",
-          "preference_value": "hybrid"
-        },
-        {
-          "preference_type": "timezone",
-          "preference_value": "KST"
-        },
-        {
-          "preference_type": "communication",
-          "preference_value": "jira"
-        }
-      ],
+      "collaboration_preference": {
+        "collaboration_style": "적극적",
+        "preferred_project_type": "웹 개발",
+        "preferred_role": "QA 엔지니어",
+        "available_time_zone": "Asia/Seoul",
+        "work_hours_start": 10,
+        "work_hours_end": 19,
+        "preferred_project_length": "중간"
+      },
       "interests": [
         {
           "interest_category": "technology",
@@ -508,6 +478,7 @@
       "description": "팀 협업 프로젝트 관리 시스템 서버 개발 프로젝트입니다. RESTful API를 제공하여 클라이언트와 통신하며, 사용자 인증, 프로젝트 관리, 업무 할당, 일정 관리 등의 기능을 구현합니다. FastAPI 프레임워크와 PostgreSQL 데이터베이스를 사용하여 개발하고, Docker 컨테이너로 배포합니다.",
       "status": "in_progress",
       "visibility": "public",
+      "team_size": 3,
       "start_date": "2023-07-01T00:00:00Z",
       "end_date": "2024-01-01T00:00:00Z",
       "owner_id": 1,

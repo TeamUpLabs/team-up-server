@@ -22,7 +22,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     title="TeamUp API",
     description="프로젝트 관리를 위한 RESTful API",
-    version="2.0.0"
+    version="1.0.0"
 )
 
 # CORS 미들웨어 설정

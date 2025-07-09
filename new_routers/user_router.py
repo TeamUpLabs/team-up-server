@@ -11,9 +11,11 @@ from new_schemas.user import (
     UserProjectCreate, UserInterestCreate,
     NotificationSettingsUpdate, UserSocialLinkCreate,
     UserProjectResponse, UserInterestResponse,
-    UserSocialLinkResponse, CollaborationPreferenceResponse, CollaborationPreferenceCreate
+    UserSocialLinkResponse, CollaborationPreferenceResponse, CollaborationPreferenceCreate,
+    OAuthLoginRequest
 )
 from new_schemas.notification import NotificationResponse
+from new_schemas.project import ProjectDetail
 from new_models.user import User
 from new_routers.project_router import convert_project_to_project_detail
 from utils.sse_manager import project_sse_manager
@@ -45,8 +47,26 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     return {
         "access_token": access_token, 
         "token_type": "bearer",
-        "user": UserBrief.model_validate(db_user, from_attributes=True)
+        "user_info": UserBrief.model_validate(db_user, from_attributes=True)
     }
+
+@router.post("/oauth", response_model=Token)
+def oauth_login(user_data: OAuthLoginRequest, db: Session = Depends(get_db)):
+    """OAuth 로그인 및 토큰 발급"""
+    try:
+        # OAuth 사용자 조회 또는 생성
+        db_user = user.get_or_create_oauth_user(db, user_data=user_data.model_dump())
+        access_token = create_access_token(data={"sub": db_user.email})
+        return {
+            "status": "logged_in",
+            "access_token": access_token,
+            "user_info": UserBrief.model_validate(db_user, from_attributes=True)
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"OAuth 로그인 중 오류가 발생했습니다: {str(e)}"
+        )
 
 @router.get("/me", response_model=UserDetail)
 def read_current_user(current_user: User = Depends(get_current_user)):
@@ -66,6 +86,11 @@ async def update_current_user(user_in: UserUpdate, current_user: User = Depends(
             )
     return UserDetail.model_validate(db_user, from_attributes=True)
 
+@router.post("/{user_id}/logout")
+def logout_user(user_id: int, db: Session = Depends(get_db)):
+    """사용자 로그아웃"""
+    return user.logout(db=db, user_id=user_id)
+
 @router.get("/{user_id}", response_model=UserDetail)
 def read_user(user_id: int, db: Session = Depends(get_db)):
     """특정 사용자 정보 조회"""
@@ -80,19 +105,13 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = user.get_multi(db=db, skip=skip, limit=limit)
     return [UserBrief.model_validate(u, from_attributes=True) for u in users]
 
-@router.get("/{user_id}/projects", response_model=List)
+@router.get("/{user_id}/projects", response_model=List[ProjectDetail])
 def read_user_projects(user_id: int, db: Session = Depends(get_db)):
     """특정 사용자의 프로젝트 목록 조회"""
-    from new_schemas.project import ProjectBrief
     projects = user.get_projects(db=db, user_id=user_id)
-    return [ProjectBrief.model_validate(p, from_attributes=True) for p in projects]
+    return [convert_project_to_project_detail(p, db) for p in projects]
 
-@router.get("/{user_id}/tasks", response_model=List)
-def read_user_tasks(user_id: int, db: Session = Depends(get_db)):
-    """특정 사용자의 업무 목록 조회"""
-    from new_schemas.task import TaskBrief
-    tasks = user.get_tasks(db=db, user_id=user_id)
-    return [TaskBrief.model_validate(t, from_attributes=True) for t in tasks]
+
 
 # 알림 설정 관련 엔드포인트
 @router.get("/{user_id}/notification-settings", response_model=Dict[str, int])
@@ -127,12 +146,12 @@ def update_user_notification_settings(
     return user.update_notification_settings(db=db, user_id=user_id, settings_in=settings_in)
 
 # 협업 선호도 관련 엔드포인트
-@router.post("/{user_id}/collaboration-preferences", response_model=CollaborationPreferenceResponse)
+@router.post("/{user_id}/collaboration-preference", response_model=CollaborationPreferenceResponse)
 def create_user_collaboration_preference(
     user_id: int, pref_in: CollaborationPreferenceCreate, 
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
-    """사용자 협업 선호도 생성"""
+    """사용자 협업 선호도 생성 또는 업데이트"""
     if current_user.id != user_id and not current_user.role == "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -142,9 +161,9 @@ def create_user_collaboration_preference(
     db_pref = user.create_collaboration_preference(db=db, user_id=user_id, pref_in=pref_in)
     return CollaborationPreferenceResponse.model_validate(db_pref, from_attributes=True)
 
-@router.delete("/{user_id}/collaboration-preferences/{pref_id}", response_model=Dict)
+@router.delete("/{user_id}/collaboration-preference", response_model=Dict)
 def delete_user_collaboration_preference(
-    user_id: int, pref_id: int, 
+    user_id: int, 
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """사용자 협업 선호도 삭제"""
@@ -154,25 +173,18 @@ def delete_user_collaboration_preference(
             detail="접근 권한이 없습니다."
         )
     
-    return user.delete_collaboration_preference(db=db, user_id=user_id, pref_id=pref_id)
+    return user.delete_collaboration_preference(db=db, user_id=user_id)
 
-@router.put("/{user_id}/collaboration-preferences/{pref_id}", response_model=CollaborationPreferenceResponse)
+@router.put("/{user_id}/collaboration-preference", response_model=CollaborationPreferenceResponse)
 def update_user_collaboration_preference(
-    user_id: int, pref_id: int, pref_in: CollaborationPreferenceCreate,
+    user_id: int, pref_in: CollaborationPreferenceCreate,
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
+    """사용자 협업 선호도 업데이트"""
     if current_user.id != user_id and not current_user.role == "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="접근 권한이 없습니다.")
-    db_pref = db.query(user.CollaborationPreference).filter(
-        user.CollaborationPreference.id == pref_id,
-        user.CollaborationPreference.user_id == user_id
-    ).first()
-    if not db_pref:
-        raise HTTPException(status_code=404, detail="해당 협업 선호도를 찾을 수 없습니다.")
-    db_pref.preference_type = pref_in.preference_type
-    db_pref.preference_value = pref_in.preference_value
-    db.commit()
-    db.refresh(db_pref)
+    
+    db_pref = user.create_collaboration_preference(db=db, user_id=user_id, pref_in=pref_in)
     return CollaborationPreferenceResponse.model_validate(db_pref, from_attributes=True)
 
 # 사용자 프로젝트 관련 엔드포인트

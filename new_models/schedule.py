@@ -25,12 +25,11 @@ class Schedule(Base, BaseModel):
     updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     
     project = relationship("Project", back_populates="schedules")
-    creator = relationship("User", back_populates="created_schedules", foreign_keys=[created_by])
+    creator = relationship("User", foreign_keys=[created_by])
     updater = relationship("User", foreign_keys=[updated_by])
     
     assignees = relationship(
         "User",
-        secondary=schedule_assignees,
-        back_populates="assigned_schedules"
+        secondary=schedule_assignees
     )
     

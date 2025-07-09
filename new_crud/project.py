@@ -50,6 +50,19 @@ class CRUDProject(CRUDBase[Project, ProjectCreate, ProjectUpdate]):
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)
+        
+        # 소유자를 리더로 설정
+        db.query(project_members).filter(
+            project_members.c.project_id == db_obj.id,
+            project_members.c.user_id == obj_in.owner_id
+        ).update({
+            "role": "leader",
+            "is_leader": 1,
+            "is_manager": 0
+        })
+        
+        db.commit()
+        db.refresh(db_obj)
         return db_obj
     
     def update(self, db: Session, *, db_obj: Project, obj_in: ProjectUpdate) -> Project:

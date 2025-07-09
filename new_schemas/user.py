@@ -16,18 +16,26 @@ class UserBase(BaseModel):
 
 # 사용자 생성 스키마
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=8)
+    password: Optional[str] = Field(None, min_length=8)  # OAuth의 경우 비밀번호가 없을 수 있음
     
     @validator('password')
     def validate_password(cls, v):
-        if len(v) < 8:
+        if v is not None and len(v) < 8:
             raise ValueError('비밀번호는 8자 이상이어야 합니다.')
         return v
+    
+    # OAuth 관련 필드
+    auth_provider: Optional[str] = "local"  # local, github, google 등
+    auth_provider_id: Optional[str] = None
+    auth_provider_access_token: Optional[str] = None
+    status: Optional[str] = "active"
+    
     # 추가: 생성 시 함께 받을 수 있는 필드들
-    collaboration_preferences: Optional[List["CollaborationPreferenceCreate"]] = None
+    collaboration_preference: Optional["CollaborationPreferenceCreate"] = None
     interests: Optional[List["UserInterestCreate"]] = None
     notification_settings: Optional[Dict[str, int]] = None
     social_links: Optional[List["UserSocialLinkCreate"]] = None
+    tech_stacks: Optional[List["UserTechStackCreateForUser"]] = None
 
 # 사용자 업데이트 스키마
 class UserUpdate(BaseModel):
@@ -59,7 +67,11 @@ class UserBrief(BaseModel):
 class ProjectBrief(BaseModel):
     id: str
     title: str
+    description: Optional[str] = None
     status: str
+    team_size: int
+    tags: Optional[List[str]] = None
+    members: Optional[List[UserBrief]] = None
     project_type: Optional[str] = None
     
     class Config:
@@ -88,13 +100,23 @@ class MilestoneBrief(BaseModel):
 
 # 협업 선호도 스키마
 class CollaborationPreferenceCreate(BaseModel):
-    preference_type: str
-    preference_value: str
+    collaboration_style: Optional[str] = None
+    preferred_project_type: Optional[str] = None
+    preferred_role: Optional[str] = None
+    available_time_zone: Optional[str] = None
+    work_hours_start: Optional[int] = None
+    work_hours_end: Optional[int] = None
+    preferred_project_length: Optional[str] = None
 
 class CollaborationPreferenceResponse(BaseModel):
     id: int
-    preference_type: str
-    preference_value: str
+    collaboration_style: Optional[str] = None
+    preferred_project_type: Optional[str] = None
+    preferred_role: Optional[str] = None
+    available_time_zone: Optional[str] = None
+    work_hours_start: Optional[int] = None
+    work_hours_end: Optional[int] = None
+    preferred_project_length: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     
@@ -121,6 +143,10 @@ class UserProjectResponse(BaseModel):
 # 사용자 기술 스택 스키마
 class UserTechStackCreate(BaseModel):
     user_id: int
+    tech: str
+    level: int
+
+class UserTechStackCreateForUser(BaseModel):
     tech: str
     level: int
     
@@ -181,14 +207,9 @@ class UserDetail(UserBase):
     auth_provider: str
     auth_provider_id: Optional[str] = None
     
-    owned_projects: Optional[List[ProjectBrief]] = None
     projects: Optional[List[ProjectBrief]] = None
-    assigned_tasks: Optional[List[TaskBrief]] = None
-    created_tasks: Optional[List[TaskBrief]] = None
-    assigned_milestones: Optional[List[MilestoneBrief]] = None
-    created_milestones: Optional[List[MilestoneBrief]] = None
     
-    collaboration_preferences: Optional[List[CollaborationPreferenceResponse]] = None
+    collaboration_preference: Optional[CollaborationPreferenceResponse] = None
     tech_stacks: Optional[List[UserTechStackResponse]] = None
     interests: Optional[List[UserInterestResponse]] = None
     notification_settings: Optional[Dict[str, int]] = None
@@ -202,6 +223,27 @@ class UserDetail(UserBase):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    user: UserBrief 
+    user: UserBrief
 
-UserCreate.update_forward_refs() 
+class OAuthLoginRequest(BaseModel):
+    """OAuth 로그인 요청 스키마"""
+    email: str
+    name: str
+    auth_provider: str = "github"
+    auth_provider_id: str
+    auth_provider_access_token: Optional[str] = None
+    profile_image: Optional[str] = None
+    bio: Optional[str] = None
+    role: Optional[str] = None
+    status: Optional[str] = "active"
+    languages: Optional[List[str]] = None
+    phone: Optional[str] = None
+    birth_date: Optional[str] = None
+    collaboration_preference: Optional[CollaborationPreferenceCreate] = None
+    interests: Optional[List[UserInterestCreate]] = None
+    notification_settings: Optional[Dict[str, int]] = None
+    social_links: Optional[List[UserSocialLinkCreate]] = None
+    tech_stacks: Optional[List[UserTechStackCreateForUser]] = None 
+
+UserCreate.update_forward_refs()
+OAuthLoginRequest.update_forward_refs() 

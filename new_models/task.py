@@ -39,15 +39,13 @@ class Task(Base, BaseModel):
     # 담당자 관계 (many-to-many)
     assignees = relationship(
         "User",
-        secondary=task_assignees,
-        back_populates="assigned_tasks"
+        secondary=task_assignees
     )
     
     # 생성자 관계
     creator = relationship(
         "User",
-        foreign_keys=[created_by],
-        back_populates="created_tasks"
+        foreign_keys=[created_by]
     )
     
     def __repr__(self):
@@ -87,8 +85,7 @@ class Comment(Base, BaseModel):
     task = relationship("Task", back_populates="comments")
     creator = relationship(
         "User",
-        foreign_keys=[created_by],
-        back_populates="created_comments"
+        foreign_keys=[created_by]
     )
     
     def __repr__(self):

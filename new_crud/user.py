@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from new_models.user import (
     User, CollaborationPreference, 
-    UserInterest, UserSocialLink
+    UserInterest, UserSocialLink, UserTechStack
 )
 from new_models.notification import Notification
 from new_models.project import Project
@@ -69,29 +69,52 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         if obj_in.notification_settings:
             default_notification_settings.update(obj_in.notification_settings)
         
+        # OAuth 사용자의 경우 비밀번호가 없을 수 있음
+        hashed_password = None
+        if obj_in.password:
+            hashed_password = get_password_hash(obj_in.password)
+        
         db_obj = User(
             email=obj_in.email,
             name=obj_in.name,
-            hashed_password=get_password_hash(obj_in.password),
+            hashed_password=hashed_password,
             profile_image=obj_in.profile_image,
             bio=obj_in.bio,
             role=obj_in.role,
+            status=obj_in.status,
             languages=obj_in.languages,
             phone=obj_in.phone,
             birth_date=obj_in.birth_date,
+            auth_provider=obj_in.auth_provider,
+            auth_provider_id=obj_in.auth_provider_id,
+            auth_provider_access_token=obj_in.auth_provider_access_token,
             notification_settings=default_notification_settings,
         )
         db.add(db_obj)
         db.flush()  # db_obj.id 확보
         
         # 협업 선호도
-        if obj_in.collaboration_preferences:
-            for pref in obj_in.collaboration_preferences:
-                db.add(CollaborationPreference(
+        if obj_in.collaboration_preference:
+            db.add(CollaborationPreference(
+                user_id=db_obj.id,
+                collaboration_style=obj_in.collaboration_preference.collaboration_style,
+                preferred_project_type=obj_in.collaboration_preference.preferred_project_type,
+                preferred_role=obj_in.collaboration_preference.preferred_role,
+                available_time_zone=obj_in.collaboration_preference.available_time_zone,
+                work_hours_start=obj_in.collaboration_preference.work_hours_start,
+                work_hours_end=obj_in.collaboration_preference.work_hours_end,
+                preferred_project_length=obj_in.collaboration_preference.preferred_project_length
+            ))
+                
+        # 기술 스택
+        if obj_in.tech_stacks:
+            for tech_stack in obj_in.tech_stacks:
+                db.add(UserTechStack(
                     user_id=db_obj.id,
-                    preference_type=pref.preference_type,
-                    preference_value=pref.preference_value
+                    tech=tech_stack.tech,
+                    level=tech_stack.level
                 ))
+                
         # 관심분야
         if obj_in.interests:
             for interest in obj_in.interests:
@@ -138,6 +161,19 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         db.refresh(user)
         return user
     
+    def logout(self, db: Session, *, user_id: int) -> Dict:
+        """사용자 로그아웃"""
+        user = self.get(db, id=user_id)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="사용자를 찾을 수 없습니다."
+            )
+        user.status = "inactive"
+        db.commit()
+        db.refresh(user)
+        return {"status": "success", "message": "로그아웃되었습니다."}
+    
     def authenticate(self, db: Session, *, email: str, password: str) -> Optional[User]:
         """
         사용자 인증
@@ -153,6 +189,62 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         self.update_last_login(db, user_id=user.id)
         return user
     
+    def authenticate_oauth(self, db: Session, *, email: str, auth_provider: str, auth_provider_id: str) -> Optional[User]:
+        """
+        OAuth 사용자 인증
+        이메일과 OAuth 제공자 정보로 사용자를 인증하고, 성공 시 사용자 객체 반환
+        """
+        user = self.get_by_email(db, email=email)
+        if not user:
+            return None
+        if user.auth_provider != auth_provider or user.auth_provider_id != auth_provider_id:
+            return None
+        
+        # 로그인 성공 시 last_login 업데이트
+        self.update_last_login(db, user_id=user.id)
+        return user
+    
+    def get_or_create_oauth_user(self, db: Session, *, user_data: dict) -> User:
+        """
+        OAuth 사용자 조회 또는 생성
+        기존 사용자가 있으면 반환하고, 없으면 새로 생성
+        """
+        # 기존 사용자 조회
+        user = self.get_by_email(db, email=user_data["email"])
+        if user:
+            # 기존 사용자의 OAuth 정보 업데이트
+            user.auth_provider = user_data.get("auth_provider", user.auth_provider)
+            user.auth_provider_id = user_data.get("auth_provider_id", user.auth_provider_id)
+            user.auth_provider_access_token = user_data.get("auth_provider_access_token", user.auth_provider_access_token)
+            user.last_login = datetime.utcnow()
+            db.commit()
+            db.refresh(user)
+            return user
+        
+        # 새 사용자 생성
+        user_create_data = UserCreate(
+            email=user_data["email"],
+            name=user_data["name"],
+            password=None,  # OAuth 사용자는 비밀번호 없음
+            profile_image=user_data.get("profile_image"),
+            bio=user_data.get("bio"),
+            role=user_data.get("role"),
+            status=user_data.get("status", "active"),
+            languages=user_data.get("languages"),
+            phone=user_data.get("phone"),
+            birth_date=user_data.get("birth_date"),
+            auth_provider=user_data.get("auth_provider", "github"),
+            auth_provider_id=user_data.get("auth_provider_id"),
+            auth_provider_access_token=user_data.get("auth_provider_access_token"),
+            collaboration_preference=user_data.get("collaboration_preference"),
+            interests=user_data.get("interests"),
+            notification_settings=user_data.get("notification_settings"),
+            social_links=user_data.get("social_links"),
+            tech_stacks=user_data.get("tech_stacks")
+        )
+        
+        return self.create(db, obj_in=user_create_data)
+    
     def get_projects(self, db: Session, *, user_id: int) -> List:
         """사용자의 프로젝트 목록 조회"""
         user = self.get(db, id=user_id)
@@ -163,15 +255,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             )
         return user.projects
     
-    def get_tasks(self, db: Session, *, user_id: int) -> List:
-        """사용자의 업무 목록 조회"""
-        user = self.get(db, id=user_id)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="사용자를 찾을 수 없습니다."
-            )
-        return user.assigned_tasks
+
     
     # 알림 설정 관련 CRUD 메서드
     def update_notification_settings(self, db: Session, *, user_id: int, settings_in: NotificationSettingsUpdate) -> Dict[str, int]:
@@ -218,7 +302,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         }
     # 협업 선호도 관련 CRUD 메서드
     def create_collaboration_preference(self, db: Session, *, user_id: int, pref_in: CollaborationPreferenceCreate) -> CollaborationPreference:
-        """사용자의 협업 선호도 생성"""
+        """사용자의 협업 선호도 생성 또는 업데이트"""
         user = self.get(db, id=user_id)
         if not user:
             raise HTTPException(
@@ -226,15 +310,15 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
                 detail="사용자를 찾을 수 없습니다."
             )
         
-        # 이미 같은 타입의 선호도가 있는지 확인
+        # 이미 협업 선호도가 있는지 확인
         existing = db.query(CollaborationPreference).filter(
-            CollaborationPreference.user_id == user_id,
-            CollaborationPreference.preference_type == pref_in.preference_type
+            CollaborationPreference.user_id == user_id
         ).first()
         
         if existing:
             # 업데이트
-            existing.preference_value = pref_in.preference_value
+            for field, value in pref_in.model_dump(exclude_unset=True).items():
+                setattr(existing, field, value)
             db.commit()
             db.refresh(existing)
             return existing
@@ -242,8 +326,13 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         # 새로 생성
         db_obj = CollaborationPreference(
             user_id=user_id,
-            preference_type=pref_in.preference_type,
-            preference_value=pref_in.preference_value
+            collaboration_style=pref_in.collaboration_style,
+            preferred_project_type=pref_in.preferred_project_type,
+            preferred_role=pref_in.preferred_role,
+            available_time_zone=pref_in.available_time_zone,
+            work_hours_start=pref_in.work_hours_start,
+            work_hours_end=pref_in.work_hours_end,
+            preferred_project_length=pref_in.preferred_project_length
         )
         
         db.add(db_obj)
@@ -252,10 +341,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         
         return db_obj
     
-    def delete_collaboration_preference(self, db: Session, *, user_id: int, pref_id: int) -> Dict:
+    def delete_collaboration_preference(self, db: Session, *, user_id: int) -> Dict:
         """사용자의 협업 선호도 삭제"""
         pref = db.query(CollaborationPreference).filter(
-            CollaborationPreference.id == pref_id,
             CollaborationPreference.user_id == user_id
         ).first()
         

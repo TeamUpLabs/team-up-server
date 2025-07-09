@@ -4,9 +4,7 @@ from sqlalchemy.sql import func
 from database import Base
 from new_models.base import BaseModel
 from new_models.association_tables import (
-    project_members, task_assignees, milestone_assignees,
-    user_collaboration_preferences,
-    user_interests, user_social_links, channel_members
+    project_members, user_interests, user_social_links
 )
 
 class User(Base, BaseModel):
@@ -44,47 +42,11 @@ class User(Base, BaseModel):
         "securityNotification": 1
     })
     
-    # 관계 정의
-    owned_projects = relationship(
-        "Project", 
-        back_populates="owner", 
-        foreign_keys="[Project.owner_id]"
-    )
-    
+    # 관계 정의    
     projects = relationship(
         "Project",
         secondary=project_members,
         back_populates="members"
-    )
-    
-    assigned_tasks = relationship(
-        "Task",
-        secondary=task_assignees,
-        back_populates="assignees"
-    )
-    
-    created_tasks = relationship(
-        "Task",
-        back_populates="creator",
-        foreign_keys="[Task.created_by]"
-    )
-    
-    created_comments = relationship(
-        "Comment",
-        back_populates="creator",
-        foreign_keys="[Comment.created_by]"
-    )
-    
-    assigned_milestones = relationship(
-        "Milestone",
-        secondary=milestone_assignees,
-        back_populates="assignees"
-    )
-    
-    created_milestones = relationship(
-        "Milestone",
-        back_populates="creator",
-        foreign_keys="[Milestone.created_by]"
     )
     
     # 참여 요청/초대 관계
@@ -93,23 +55,11 @@ class User(Base, BaseModel):
         back_populates="user"
     )
     
-    # 스케줄 관계
-    created_schedules = relationship(
-        "Schedule",
-        back_populates="creator",
-        foreign_keys="[Schedule.created_by]"
-    )
-    
-    assigned_schedules = relationship(
-        "Schedule",
-        secondary="schedule_assignees",
-        back_populates="assignees"
-    )
-    
-    # 사용자-협업 선호도 관계 (일대다)
-    collaboration_preferences = relationship(
+    # 사용자-협업 선호도 관계 (일대일)
+    collaboration_preference = relationship(
         "CollaborationPreference",
         back_populates="user",
+        uselist=False,
         cascade="all, delete-orphan"
     )
     
@@ -147,13 +97,6 @@ class User(Base, BaseModel):
         foreign_keys="[Notification.sender_id]"
     )
     
-    # 채널 관계
-    joined_channels = relationship(
-        "Channel",
-        secondary="channel_members",
-        back_populates="members"
-    )
-    
     def __repr__(self):
         return f"<User(id={self.id}, name='{self.name}', email='{self.email}')>" 
 
@@ -164,7 +107,7 @@ class CollaborationPreference(Base, BaseModel):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
-    collaboration_style = Column(String(50), nullable=True)  # ex. 적극적, 소극적, 주도적, 지원형
+    collaboration_style = Column(String(50), nullable=True)  # ex. 적극적, 소극적
     preferred_project_type = Column(String(100), nullable=True)  # 웹, 모바일, AI 등 프로젝트 유형
     preferred_role = Column(String(50), nullable=True)  # 프론트엔드, 백엔드, 데이터 분석가, 디자이너, 프로젝트 매니저 등
     available_time_zone = Column(String(50), nullable=True)  # Asia/Seoul, UTC, America/New_York, America/Los_Angeles
@@ -173,7 +116,7 @@ class CollaborationPreference(Base, BaseModel):
     preferred_project_length = Column(String(20), nullable=True)  # 짧음, 중간, 김 등
     
     # 관계 정의
-    user = relationship("User", back_populates="collaboration_preferences")
+    user = relationship("User", back_populates="collaboration_preference")
     
     def __repr__(self):
         return f"<CollaborationPreference(id={self.id}, user_id={self.user_id}, type='{self.collaboration_style}')>"

@@ -7,6 +7,7 @@ from .milestone import MilestoneDetail
 from .participation_request import ParticipationRequestResponse
 from .schedule import ScheduleResponse
 from .channel import ChannelResponse
+from .user import UserDetail
 
 # 프로젝트 기본 스키마
 class ProjectBase(BaseModel):
@@ -14,6 +15,7 @@ class ProjectBase(BaseModel):
     description: Optional[str] = None
     status: str = "planning"  # planning, in_progress, completed, on_hold
     visibility: str = "public"  # public, private
+    team_size: int
     project_type: Optional[str] = None
     created_at: datetime
     updated_at: datetime
@@ -34,6 +36,7 @@ class ProjectUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=2, max_length=100)
     description: Optional[str] = None
     status: Optional[str] = None
+    team_size: Optional[int] = None
     visibility: Optional[str] = None
     project_type: Optional[str] = None
     start_date: Optional[datetime] = None
@@ -45,7 +48,7 @@ class ProjectUpdate(BaseModel):
 
 # 프로젝트 멤버 스키마
 class ProjectMember(BaseModel):
-    user: UserBrief
+    user: UserDetail
     role: Optional[str] = None
     is_leader: bool
     is_manager: bool
@@ -59,6 +62,7 @@ class ProjectBrief(BaseModel):
     id: str
     title: str
     status: str
+    team_size: int
     
     class Config:
         from_attributes = True

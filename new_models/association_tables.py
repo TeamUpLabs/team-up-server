@@ -45,21 +45,6 @@ schedule_assignees = Table(
     Index('idx_schedule_assignees', 'schedule_id', 'user_id')
 )
 
-# 사용자-협업 선호도 관계 테이블
-user_collaboration_preferences = Table(
-    'user_collaboration_preferences',
-    Base.metadata,
-    Column('user_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
-    Column('collaboration_style', String(50), nullable=True),
-    Column('preferred_project_type', String(100), nullable=True),
-    Column('preferred_role', String(50), nullable=True),
-    Column('available_time_zone', String(50), nullable=True),
-    Column('work_hours_start', Integer, nullable=True),
-    Column('work_hours_end', Integer, nullable=True),
-    Column('created_at', DateTime, nullable=False, server_default=func.now()),
-    Index('idx_user_collab_prefs', 'user_id')
-)
-
 # 사용자-관심분야 관계 테이블
 user_interests = Table(
     'user_interests',

@@ -17,6 +17,7 @@ class Project(Base, BaseModel):
     visibility = Column(String(20), default="public")  # public, private
     
     # 프로젝트 메타데이터
+    team_size = Column(Integer, nullable=False)
     project_type = Column(String, nullable=True)
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
@@ -33,7 +34,6 @@ class Project(Base, BaseModel):
     # 관계 정의
     owner = relationship(
         "User", 
-        back_populates="owned_projects",
         foreign_keys=[owner_id]
     )
     

@@ -34,7 +34,6 @@ from new_models.notification import Notification
 from new_models.project import Project
 from new_models.task import Task, SubTask, Comment
 from new_models.milestone import Milestone
-from new_models.tech_stack import TechStack
 from auth import get_password_hash
 from new_models.channel import Channel
 from new_models.chat import Chat
@@ -114,14 +113,19 @@ def seed_users(db, users_data):
         db.flush()  # ID를 생성하기 위해 flush
         
         # 협업 선호도 추가
-        if "collaboration_preferences" in user_data:
-            for pref_data in user_data["collaboration_preferences"]:
-                pref = CollaborationPreference(
-                    user_id=user.id,
-                    preference_type=pref_data["preference_type"],
-                    preference_value=pref_data["preference_value"]
-                )
-                db.add(pref)
+        if "collaboration_preference" in user_data:
+            pref_data = user_data["collaboration_preference"]
+            pref = CollaborationPreference(
+                user_id=user.id,
+                collaboration_style=pref_data.get("collaboration_style"),
+                preferred_project_type=pref_data.get("preferred_project_type"),
+                preferred_role=pref_data.get("preferred_role"),
+                available_time_zone=pref_data.get("available_time_zone"),
+                work_hours_start=pref_data.get("work_hours_start"),
+                work_hours_end=pref_data.get("work_hours_end"),
+                preferred_project_length=pref_data.get("preferred_project_length")
+            )
+            db.add(pref)
         
         # 관심분야 추가
         if "interests" in user_data:
@@ -148,29 +152,6 @@ def seed_users(db, users_data):
     db.commit()
     logger.info(f"사용자 데이터 추가 완료: {len(users_data)}명")
 
-def seed_tech_stacks(db, tech_stacks_data):
-    """기술 스택 데이터 추가"""
-    logger.info("기술 스택 데이터 추가 중...")
-    
-    for tech_data in tech_stacks_data:
-        # 이미 존재하는 기술 스택 확인
-        existing_tech = db.query(TechStack).filter(TechStack.name == tech_data["name"]).first()
-        if existing_tech:
-            logger.info(f"기술 스택 이미 존재: {tech_data['name']}")
-            continue
-            
-        # 기술 스택 생성
-        tech = TechStack(
-            name=tech_data["name"],
-            category=tech_data.get("category"),
-            icon_url=tech_data.get("icon_url"),
-        )
-        
-        db.add(tech)
-        logger.info(f"기술 스택 추가: {tech_data['name']}")
-    
-    db.commit()
-    logger.info(f"기술 스택 데이터 추가 완료: {len(tech_stacks_data)}개")
 
 def seed_user_tech_stacks(db, user_tech_stacks_data):
     """사용자 기술 스택 관계 데이터 추가"""
@@ -227,6 +208,7 @@ def seed_projects(db, projects_data):
             "description": project_data["description"],
             "status": project_data.get("status", "planning"),
             "visibility": project_data.get("visibility", "public"),
+            "team_size": project_data.get("team_size", len(project_data.get("member_ids", [])) + 1),  # 기본값은 멤버 수 + 소유자
             "owner_id": project_data["owner_id"],
             "tags": project_data.get("tags"),
             "project_type": project_data.get("project_type"),
@@ -250,12 +232,6 @@ def seed_projects(db, projects_data):
         
         # 프로젝트 생성
         project = Project(**project_dict)
-        
-        # 기술 스택 연결
-        if "tech_stack_ids" in project_data:
-            tech_stacks = db.query(TechStack).filter(TechStack.id.in_(project_data["tech_stack_ids"])).all()
-            project.tech_stacks = tech_stacks
-            
         # 멤버 추가
         if "member_ids" in project_data:
             members = db.query(User).filter(User.id.in_(project_data["member_ids"])).all()
@@ -540,7 +516,6 @@ def seed_database():
         
         # 데이터 추가 (순서 중요: 외래키 의존성 고려)
         seed_users(db, data.get("users", []))
-        seed_tech_stacks(db, data.get("tech_stacks", []))
         seed_user_tech_stacks(db, data.get("user_tech_stacks", []))
         seed_projects(db, data.get("projects", []))
         seed_milestones(db, data.get("milestones", []))

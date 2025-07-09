@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 import logging
 from pydantic import BaseModel
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse
 from new_crud.user import user
 from new_schemas.user import UserCreate, UserDetail, Token, UserBrief, UserUpdate
 from auth import create_access_token, get_current_user, verify_token
@@ -231,14 +231,14 @@ async def social_callback(provider: str, code: str, db: Session = Depends(get_db
                 status=existing.status
             )
             
-            return JSONResponse(content={
+            return {
                 "status": "logged_in",
                 "access_token": access_token,
                 "user_info": user_brief
-            })
+            }
         else:
             # Create new user
-            return JSONResponse(content={
+            return {
                 "status": "need_additional_info",
                 "user_info": {
                     "name": github_user.get("name"),
@@ -250,7 +250,7 @@ async def social_callback(provider: str, code: str, db: Session = Depends(get_db
                     "auth_provider_id": github_user.get("login"),
                     "auth_provider_access_token": social_access_token
                 }
-            })
+            }
             
     except Exception as e:
         logging.error(f"Social login callback error: {str(e)}")

@@ -8,7 +8,7 @@ from new_crud import project
 from new_models.user import User
 from new_models.project import Project
 from new_schemas.project import ProjectCreate, ProjectUpdate, ProjectDetail, ProjectBrief, ProjectMember
-from new_schemas.user import UserBrief
+from new_schemas.user import UserBrief, UserDetail
 from new_schemas.milestone import MilestoneDetail
 from new_schemas.task import TaskBrief, SubTaskDetail
 from new_schemas.schedule import ScheduleResponse
@@ -34,6 +34,7 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
         "location": db_project.location,
         "status": db_project.status,
         "visibility": db_project.visibility,
+        "team_size": db_project.team_size,
         "start_date": db_project.start_date,
         "end_date": db_project.end_date,
         "tags": db_project.tags,
@@ -54,7 +55,7 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
     member_info = project.get_project_members(db=db, project_id=db_project.id)
     project_detail.members = [
         ProjectMember(
-            user=UserBrief.model_validate(m["user"], from_attributes=True),
+            user=UserDetail.model_validate(m["user"], from_attributes=True),
             role=m["role"],
             is_leader=m["is_leader"],
             is_manager=m["is_manager"],
@@ -336,7 +337,7 @@ def read_project_members(project_id: str, db: Session = Depends(get_db)):
     member_info = project.get_project_members(db=db, project_id=project_id)
     return [
         ProjectMember(
-            user=UserBrief.model_validate(m["user"], from_attributes=True),
+            user=UserDetail.model_validate(m["user"], from_attributes=True),
             role=m["role"],
             is_leader=m["is_leader"],
             is_manager=m["is_manager"],

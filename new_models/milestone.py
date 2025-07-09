@@ -40,15 +40,13 @@ class Milestone(Base, BaseModel):
     # 담당자 관계 (many-to-many)
     assignees = relationship(
         "User",
-        secondary=milestone_assignees,
-        back_populates="assigned_milestones"
+        secondary=milestone_assignees
     )
     
     # 생성자 관계
     creator = relationship(
         "User",
-        foreign_keys=[created_by],
-        back_populates="created_milestones"
+        foreign_keys=[created_by]
     )
     
     def __repr__(self):

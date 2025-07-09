@@ -26,8 +26,7 @@ class Channel(Base, BaseModel):
     
     members = relationship(
         "User",
-        secondary=channel_members,
-        back_populates="joined_channels"
+        secondary=channel_members
     )
     
     chats = relationship("Chat", back_populates="channel", cascade="all, delete-orphan")
