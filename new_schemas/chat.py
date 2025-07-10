@@ -19,7 +19,13 @@ class UserInfo(BaseModel):
     """사용자 정보 스키마"""
     id: int
     name: str
-    profile_image: Optional[str]
+    email: str
+    profile_image: Optional[str] = None
+    role: Optional[str] = None
+    status: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
 
 class ChatResponse(ChatBase):
     """채팅 응답 스키마"""

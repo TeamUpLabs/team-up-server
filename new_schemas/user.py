@@ -13,6 +13,7 @@ class UserBase(BaseModel):
     languages: Optional[List[str]] = None
     phone: Optional[str] = None
     birth_date: Optional[str] = None
+    status: Optional[str] = "inactive"
 
 # 사용자 생성 스키마
 class UserCreate(UserBase):
@@ -28,7 +29,6 @@ class UserCreate(UserBase):
     auth_provider: Optional[str] = "local"  # local, github, google 등
     auth_provider_id: Optional[str] = None
     auth_provider_access_token: Optional[str] = None
-    status: Optional[str] = "active"
     
     # 추가: 생성 시 함께 받을 수 있는 필드들
     collaboration_preference: Optional["CollaborationPreferenceCreate"] = None
@@ -56,6 +56,7 @@ class UserBrief(BaseModel):
     """간략한 사용자 정보"""
     id: int
     name: str
+    email: str
     profile_image: Optional[str] = None
     role: Optional[str] = None
     status: Optional[str] = None
@@ -200,7 +201,6 @@ class UserSocialLinkResponse(BaseModel):
 # 상세 사용자 응답 스키마
 class UserDetail(UserBase):
     id: int
-    status: str
     created_at: datetime
     updated_at: datetime
     last_login: Optional[datetime] = None
@@ -223,7 +223,7 @@ class UserDetail(UserBase):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
-    user: UserBrief
+    user_info: UserBrief
 
 class OAuthLoginRequest(BaseModel):
     """OAuth 로그인 요청 스키마"""

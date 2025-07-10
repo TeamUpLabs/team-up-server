@@ -25,11 +25,13 @@ class NotificationUpdate(BaseModel):
 class UserBrief(BaseModel):
     id: int
     name: str
+    email: str
     profile_image: Optional[str] = None
+    role: Optional[str] = None
+    status: Optional[str] = None
     
     class Config:
         from_attributes = True
-
 # 간략한 프로젝트 정보
 class ProjectBrief(BaseModel):
     id: str

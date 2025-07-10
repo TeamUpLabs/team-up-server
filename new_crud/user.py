@@ -216,7 +216,8 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             user.auth_provider = user_data.get("auth_provider", user.auth_provider)
             user.auth_provider_id = user_data.get("auth_provider_id", user.auth_provider_id)
             user.auth_provider_access_token = user_data.get("auth_provider_access_token", user.auth_provider_access_token)
-            user.last_login = datetime.utcnow()
+            user.last_login = datetime.now()
+            user.status = "active"
             db.commit()
             db.refresh(user)
             return user

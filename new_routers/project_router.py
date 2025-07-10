@@ -170,7 +170,6 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
     if db_project.participation_requests:
         from new_schemas.participation_request import ParticipationRequestResponse
         for req in db_project.participation_requests:
-            user_data = UserBrief.model_validate(req.user, from_attributes=True)
             participation_requests.append(
                 ParticipationRequestResponse(
                     id=req.id,
@@ -180,7 +179,8 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
                     request_type=req.request_type,
                     status=req.status,
                     created_at=req.created_at,
-                    processed_at=req.processed_at
+                    processed_at=req.processed_at,
+                    user=UserBrief.model_validate(req.user, from_attributes=True)
                 )
             )
     project_detail.participation_requests = participation_requests
@@ -360,11 +360,11 @@ def read_project_tasks(project_id: str, db: Session = Depends(get_db)):
     tasks = project.get_tasks(db=db, project_id=project_id)
     return [TaskBrief.model_validate(t, from_attributes=True) for t in tasks] 
 
-@router.get("/exclude/{member_id}", response_model=List[ProjectBrief])
+@router.get("/exclude/{member_id}", response_model=List[ProjectDetail])
 def get_projects_excluding_my_project(member_id: int, db: Session = Depends(get_db)):
     """내가 속한 프로젝트를 제외한 모든 프로젝트 조회"""
     other_projects = project.get_all_project_excluding_me(db=db, member_id=member_id)
-    return [ProjectBrief.model_validate(p, from_attributes=True) for p in other_projects]
+    return [convert_project_to_project_detail(p, db) for p in other_projects]
 
 @router.put("/{project_id}/member/{member_id}")
 async def update_project_member_permission(project_id: str, member_id: int, permission: str, db: Session = Depends(get_db)):

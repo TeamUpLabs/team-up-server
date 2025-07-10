@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
-
+from .user import UserBrief
 
 class ParticipationRequestBase(BaseModel):
     project_id: str
@@ -23,7 +23,7 @@ class ParticipationRequestResponse(ParticipationRequestBase):
     status: str
     created_at: datetime
     processed_at: Optional[datetime] = None
-    
+    user: UserBrief
     class Config:
         orm_mode = True
 

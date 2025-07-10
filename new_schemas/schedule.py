@@ -33,11 +33,16 @@ class ScheduleUpdate(BaseModel):
     memo: Optional[str] = None
     assignee_ids: Optional[List[int]] = None
 
-class UserBase(BaseModel):
+class UserBrief(BaseModel):
     id: int
     name: str
+    email: str
     profile_image: Optional[str] = None
     role: Optional[str] = None
+    status: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
     
     class Config:
         from_attributes = True
@@ -47,9 +52,9 @@ class ScheduleResponse(ScheduleBase):
     project_id: str
     created_at: datetime
     updated_at: datetime
-    assignees: Optional[List[UserBase]] = None
-    creator: Optional[UserBase] = None
-    updater: Optional[UserBase] = None
+    assignees: Optional[List[UserBrief]] = None
+    creator: Optional[UserBrief] = None
+    updater: Optional[UserBrief] = None
 
     class Config:
         from_attributes = True

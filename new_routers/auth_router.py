@@ -60,10 +60,17 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             data={"sub": authenticated_user.email}
         )
         
+        if authenticated_user.status == "inactive":
+            authenticated_user.status = "active"
+            authenticated_user.last_login = datetime.now()
+            db.commit()
+            db.refresh(authenticated_user)
+        
         # UserBrief 객체 생성
         user_brief = UserBrief(
             id=authenticated_user.id,
             name=authenticated_user.name,
+            email=authenticated_user.email,
             profile_image=authenticated_user.profile_image,
             role=authenticated_user.role,
             status=authenticated_user.status
@@ -72,7 +79,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         return {
             "access_token": access_token,
             "token_type": "bearer",
-            "user": user_brief
+            "user_info": user_brief
         }
         
     except HTTPException as e:
@@ -160,11 +167,12 @@ def refresh_access_token(current_user: dict = Depends(get_current_user)):
             detail="토큰 갱신 중 오류가 발생했습니다."
         )
 
-@router.post("/logout")
-def logout():
+@router.post("/{user_id}/logout")
+def logout(user_id: int, db: Session = Depends(get_db)):
     """
     로그아웃 (클라이언트에서 토큰을 삭제하도록 안내)
     """
+    user.logout(db, user_id=user_id)
     return {"message": "로그아웃되었습니다. 클라이언트에서 토큰을 삭제해주세요."}
 
 # 소셜 로그인 관련 엔드포인트 (향후 확장 가능)
@@ -226,6 +234,7 @@ async def social_callback(provider: str, code: str, db: Session = Depends(get_db
             user_brief = UserBrief(
                 id=existing.id,
                 name=existing.name,
+                email=existing.email,
                 profile_image=existing.profile_image,
                 role=existing.role,
                 status=existing.status

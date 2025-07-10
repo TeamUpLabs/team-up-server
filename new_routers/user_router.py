@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import List, Dict
 from sqlalchemy.orm import Session
@@ -20,7 +20,10 @@ from new_models.user import User
 from new_routers.project_router import convert_project_to_project_detail
 from utils.sse_manager import project_sse_manager
 from new_crud import project
+from supabase_client import supabase
 import json
+import httpx
+import uuid
 
 router = APIRouter(
     prefix="/api/users",
@@ -50,18 +53,13 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         "user_info": UserBrief.model_validate(db_user, from_attributes=True)
     }
 
-@router.post("/oauth", response_model=Token)
+@router.post("/oauth", response_model=UserDetail)
 def oauth_login(user_data: OAuthLoginRequest, db: Session = Depends(get_db)):
     """OAuth 로그인 및 토큰 발급"""
     try:
         # OAuth 사용자 조회 또는 생성
         db_user = user.get_or_create_oauth_user(db, user_data=user_data.model_dump())
-        access_token = create_access_token(data={"sub": db_user.email})
-        return {
-            "status": "logged_in",
-            "access_token": access_token,
-            "user_info": UserBrief.model_validate(db_user, from_attributes=True)
-        }
+        return UserDetail.model_validate(db_user, from_attributes=True)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -86,10 +84,19 @@ async def update_current_user(user_in: UserUpdate, current_user: User = Depends(
             )
     return UserDetail.model_validate(db_user, from_attributes=True)
 
-@router.post("/{user_id}/logout")
-def logout_user(user_id: int, db: Session = Depends(get_db)):
-    """사용자 로그아웃"""
-    return user.logout(db=db, user_id=user_id)
+@router.get("/check")
+def check_user(email: str, db: Session = Depends(get_db)):
+    db_user = user.get_by_email(db=db, email=email)
+    if db_user:
+        return {"status": "exists", "message": "User already exists"}
+    else:
+        return {"status": "not_exists", "message": "User does not exist"}
+
+@router.get("/", response_model=List[UserBrief])
+def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """사용자 목록 조회"""
+    users = user.get_multi(db=db, skip=skip, limit=limit)
+    return [UserBrief.model_validate(u, from_attributes=True) for u in users]
 
 @router.get("/{user_id}", response_model=UserDetail)
 def read_user(user_id: int, db: Session = Depends(get_db)):
@@ -98,20 +105,18 @@ def read_user(user_id: int, db: Session = Depends(get_db)):
     if db_user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사용자를 찾을 수 없습니다.")
     return UserDetail.model_validate(db_user, from_attributes=True)
-
-@router.get("/", response_model=List[UserBrief])
-def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """사용자 목록 조회"""
+  
+@router.get("/exclude/{user_id}", response_model=List[UserDetail])
+def read_users_exclude_me(user_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """나를 제외한 사용자 목록 조회"""
     users = user.get_multi(db=db, skip=skip, limit=limit)
-    return [UserBrief.model_validate(u, from_attributes=True) for u in users]
+    return [UserDetail.model_validate(u, from_attributes=True) for u in users if u.id != user_id]
 
 @router.get("/{user_id}/projects", response_model=List[ProjectDetail])
 def read_user_projects(user_id: int, db: Session = Depends(get_db)):
     """특정 사용자의 프로젝트 목록 조회"""
     projects = user.get_projects(db=db, user_id=user_id)
     return [convert_project_to_project_detail(p, db) for p in projects]
-
-
 
 # 알림 설정 관련 엔드포인트
 @router.get("/{user_id}/notification-settings", response_model=Dict[str, int])
@@ -146,21 +151,6 @@ def update_user_notification_settings(
     return user.update_notification_settings(db=db, user_id=user_id, settings_in=settings_in)
 
 # 협업 선호도 관련 엔드포인트
-@router.post("/{user_id}/collaboration-preference", response_model=CollaborationPreferenceResponse)
-def create_user_collaboration_preference(
-    user_id: int, pref_in: CollaborationPreferenceCreate, 
-    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
-):
-    """사용자 협업 선호도 생성 또는 업데이트"""
-    if current_user.id != user_id and not current_user.role == "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="접근 권한이 없습니다."
-        )
-    
-    db_pref = user.create_collaboration_preference(db=db, user_id=user_id, pref_in=pref_in)
-    return CollaborationPreferenceResponse.model_validate(db_pref, from_attributes=True)
-
 @router.delete("/{user_id}/collaboration-preference", response_model=Dict)
 def delete_user_collaboration_preference(
     user_id: int, 
@@ -349,3 +339,20 @@ def get_user_unread_notification_count(
     
     count = user.get_unread_notification_count(db=db, user_id=user_id)
     return {"unread_count": count} 
+
+@router.post("/profile-image/upload")
+async def upload_profile_image(file: UploadFile = File(...)):
+    
+    BUCKET_NAME = "profile-images"
+    file_content = await file.read()
+    file_name = "profile-image.jpg"
+
+    try:
+        # Supabase Storage에 파일 업로드
+        res = supabase.storage.from_(BUCKET_NAME).upload(file_name, file_content)
+        
+        # 퍼블릭 URL 생성
+        public_url = supabase.storage.from_(BUCKET_NAME).get_public_url(file_name)
+        return {"url": public_url}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"파일 업로드 중 오류가 발생했습니다: {str(e)}")

@@ -48,8 +48,8 @@ def serialize_data(data):
 def create_access_token(data: dict):
     to_encode = data.copy()
     # Convert expiration time to Unix timestamp (seconds since epoch)
-    expire = int((datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)).timestamp())
-    to_encode.update({"exp": expire})
+    # expire = int((datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)).timestamp())
+    # to_encode.update({"exp": expire})
     
     # Serialize the data to ensure all objects are JSON serializable
     to_encode = serialize_data(to_encode)
