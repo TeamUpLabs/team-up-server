@@ -231,7 +231,7 @@ class CRUDProject(CRUDBase[Project, ProjectCreate, ProjectUpdate]):
         projects = db.query(Project).all()
         return [project.id for project in projects]
     
-    def update_project_member_permission(self, db: Session, *, project_id: str, member_id: int, permission: str) -> Project:
+    def update_project_member_permission(self, db: Session, *, project_id: str, user_id: int, permission: str) -> Project:
         """프로젝트 멤버 권한 수정"""
         project = self.get(db, id=project_id)
         if not project:
@@ -239,7 +239,7 @@ class CRUDProject(CRUDBase[Project, ProjectCreate, ProjectUpdate]):
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="프로젝트를 찾을 수 없습니다."
             )
-        member = db.query(User).filter(User.id == member_id).first()
+        member = db.query(User).filter(User.id == user_id).first()
         if not member:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -269,7 +269,7 @@ class CRUDProject(CRUDBase[Project, ProjectCreate, ProjectUpdate]):
         # 프로젝트-멤버 관계 테이블 업데이트
         db.query(project_members).filter(
             project_members.c.project_id == project_id,
-            project_members.c.user_id == member_id
+            project_members.c.user_id == user_id
         ).update({
             "role": role,
             "is_leader": is_leader,

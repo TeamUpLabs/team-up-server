@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from new_models.milestone import Milestone
 from new_models.project import Project
 from new_models.user import User
-from new_schemas.milestone import MilestoneCreate, MilestoneUpdate
+from new_schemas.milestone import MilestoneCreate, MilestoneUpdate, MilestoneDetail
 from new_crud.base import CRUDBase
 
 class CRUDMilestone(CRUDBase[Milestone, MilestoneCreate, MilestoneUpdate]):
@@ -75,9 +75,10 @@ class CRUDMilestone(CRUDBase[Milestone, MilestoneCreate, MilestoneUpdate]):
         updated_obj = super().update(db, db_obj=db_obj, obj_in=update_data)
         return updated_obj
     
-    def get_by_project(self, db: Session, *, project_id: str, skip: int = 0, limit: int = 100) -> List[Milestone]:
+    def get_by_project(self, db: Session, *, project_id: str, skip: int = 0, limit: int = 100) -> List[MilestoneDetail]:
         """프로젝트별 마일스톤 목록 조회"""
-        return db.query(Milestone).filter(Milestone.project_id == project_id).offset(skip).limit(limit).all()
+        milestones = db.query(Milestone).filter(Milestone.project_id == project_id).offset(skip).limit(limit).all()
+        return [MilestoneDetail.model_validate(milestone, from_attributes=True) for milestone in milestones]
     
     def get_by_assignee(self, db: Session, *, user_id: int, skip: int = 0, limit: int = 100) -> List[Milestone]:
         """담당자별 마일스톤 목록 조회"""

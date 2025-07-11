@@ -281,7 +281,7 @@ async def remove_task_assignee(
         )
     return TaskDetail.model_validate(db_task, from_attributes=True)
 
-@router.get("/project/{project_id}", response_model=List[TaskBrief])
+@router.get("/project/{project_id}", response_model=List[TaskDetail])
 def read_tasks_by_project(
     project_id: str, 
     skip: int = 0, 

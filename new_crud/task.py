@@ -6,7 +6,7 @@ from new_models.task import Task, SubTask, Comment
 from new_models.project import Project
 from new_models.milestone import Milestone
 from new_models.user import User
-from new_schemas.task import TaskCreate, TaskUpdate, SubTaskCreate
+from new_schemas.task import TaskCreate, TaskUpdate, SubTaskCreate, TaskDetail
 from new_crud.base import CRUDBase
 
 class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
@@ -146,9 +146,10 @@ class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
         db.add(milestone)
         db.commit()
     
-    def get_by_project(self, db: Session, *, project_id: str, skip: int = 0, limit: int = 100) -> List[Task]:
+    def get_by_project(self, db: Session, *, project_id: str, skip: int = 0, limit: int = 100) -> List[TaskDetail]:
         """프로젝트별 업무 목록 조회"""
-        return db.query(Task).filter(Task.project_id == project_id).offset(skip).limit(limit).all()
+        tasks = db.query(Task).filter(Task.project_id == project_id).offset(skip).limit(limit).all()
+        return [TaskDetail.model_validate(task, from_attributes=True) for task in tasks]
     
     def get_by_milestone(self, db: Session, *, milestone_id: int, skip: int = 0, limit: int = 100) -> List[Task]:
         """마일스톤별 업무 목록 조회"""

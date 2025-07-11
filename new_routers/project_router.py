@@ -366,11 +366,11 @@ def get_projects_excluding_my_project(member_id: int, db: Session = Depends(get_
     other_projects = project.get_all_project_excluding_me(db=db, member_id=member_id)
     return [convert_project_to_project_detail(p, db) for p in other_projects]
 
-@router.put("/{project_id}/member/{member_id}")
-async def update_project_member_permission(project_id: str, member_id: int, permission: str, db: Session = Depends(get_db)):
+@router.put("/{project_id}/member/{user_id}")
+async def update_project_member_permission(project_id: str, user_id: int, permission: str, db: Session = Depends(get_db)):
     """프로젝트 멤버 권한 수정 (leader, manager, member)"""
-    """/api/projects/{project_id}/member/{member_id}?permission=manager"""
-    db_project = project.update_project_member_permission(db=db, project_id=project_id, member_id=member_id, permission=permission)
+    """/api/projects/{project_id}/member/{user_id}?permission=manager"""
+    db_project = project.update_project_member_permission(db=db, project_id=project_id, user_id=user_id, permission=permission)
     project_detail = convert_project_to_project_detail(db_project, db)
     await project_sse_manager.send_event(
         db_project.id,
@@ -378,10 +378,10 @@ async def update_project_member_permission(project_id: str, member_id: int, perm
     )
     return project_detail
 
-@router.post("/{project_id}/member/{member_id}")
-async def add_member_to_project(project_id: str, member_id: int, db: Session = Depends(get_db)):
+@router.post("/{project_id}/member/{user_id}")
+async def add_member_to_project(project_id: str, user_id: int, db: Session = Depends(get_db)):
     """프로젝트 멤버 추가"""
-    db_project = project.add_member(db=db, project_id=project_id, member_id=member_id)
+    db_project = project.add_member(db=db, project_id=project_id, user_id=user_id)
     project_detail = convert_project_to_project_detail(db_project, db)
     await project_sse_manager.send_event(
         db_project.id,
@@ -389,10 +389,10 @@ async def add_member_to_project(project_id: str, member_id: int, db: Session = D
     )
     return project_detail
 
-@router.put("/{project_id}/member/{member_id}/kick")
-async def kick_out_member_from_project(project_id: str, member_id: int, db: Session = Depends(get_db)):
+@router.put("/{project_id}/member/{user_id}/kick")
+async def kick_out_member_from_project(project_id: str, user_id: int, db: Session = Depends(get_db)):
     """프로젝트 멤버 추방"""
-    db_project = project.remove_member(db=db, project_id=project_id, member_id=member_id)
+    db_project = project.remove_member(db=db, project_id=project_id, user_id=user_id)
     project_detail = convert_project_to_project_detail(db_project, db)
     await project_sse_manager.send_event(
         db_project.id,

@@ -65,7 +65,8 @@ class Project(Base, BaseModel):
     participation_requests = relationship(
         "ParticipationRequest",
         primaryjoin="Project.id == ParticipationRequest.project_id",
-        back_populates="project"
+        back_populates="project",
+        cascade="all, delete-orphan"
     )
     
     channels = relationship(

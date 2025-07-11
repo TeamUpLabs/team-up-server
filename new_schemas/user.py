@@ -3,54 +3,6 @@ from pydantic import BaseModel, Field, EmailStr, validator, AnyUrl
 from datetime import datetime
 from new_schemas.notification import NotificationResponse
 
-# 기본 사용자 스키마
-class UserBase(BaseModel):
-    name: str = Field(..., min_length=2, max_length=100)
-    email: EmailStr = Field(...)
-    profile_image: Optional[str] = None
-    bio: Optional[str] = None
-    role: Optional[str] = None
-    languages: Optional[List[str]] = None
-    phone: Optional[str] = None
-    birth_date: Optional[str] = None
-    status: Optional[str] = "inactive"
-
-# 사용자 생성 스키마
-class UserCreate(UserBase):
-    password: Optional[str] = Field(None, min_length=8)  # OAuth의 경우 비밀번호가 없을 수 있음
-    
-    @validator('password')
-    def validate_password(cls, v):
-        if v is not None and len(v) < 8:
-            raise ValueError('비밀번호는 8자 이상이어야 합니다.')
-        return v
-    
-    # OAuth 관련 필드
-    auth_provider: Optional[str] = "local"  # local, github, google 등
-    auth_provider_id: Optional[str] = None
-    auth_provider_access_token: Optional[str] = None
-    
-    # 추가: 생성 시 함께 받을 수 있는 필드들
-    collaboration_preference: Optional["CollaborationPreferenceCreate"] = None
-    interests: Optional[List["UserInterestCreate"]] = None
-    notification_settings: Optional[Dict[str, int]] = None
-    social_links: Optional[List["UserSocialLinkCreate"]] = None
-    tech_stacks: Optional[List["UserTechStackCreateForUser"]] = None
-
-# 사용자 업데이트 스키마
-class UserUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=100)
-    profile_image: Optional[str] = None
-    bio: Optional[str] = None
-    role: Optional[str] = None
-    status: Optional[str] = None
-    languages: Optional[List[str]] = None
-    phone: Optional[str] = None
-    birth_date: Optional[str] = None
-    notification_settings: Optional[Dict[str, int]] = None
-    auth_provider_access_token: Optional[str] = None
-    last_login: Optional[datetime] = None
-
 # 사용자 응답 스키마
 class UserBrief(BaseModel):
     """간략한 사용자 정보"""
@@ -63,7 +15,8 @@ class UserBrief(BaseModel):
     
     class Config:
         from_attributes = True
-        
+
+
 # 간략한 프로젝트 정보
 class ProjectBrief(BaseModel):
     id: str
@@ -101,6 +54,15 @@ class MilestoneBrief(BaseModel):
 
 # 협업 선호도 스키마
 class CollaborationPreferenceCreate(BaseModel):
+    collaboration_style: Optional[str] = None
+    preferred_project_type: Optional[str] = None
+    preferred_role: Optional[str] = None
+    available_time_zone: Optional[str] = None
+    work_hours_start: Optional[int] = None
+    work_hours_end: Optional[int] = None
+    preferred_project_length: Optional[str] = None
+    
+class CollaborationPreferenceUpdate(BaseModel):
     collaboration_style: Optional[str] = None
     preferred_project_type: Optional[str] = None
     preferred_role: Optional[str] = None
@@ -197,6 +159,56 @@ class UserSocialLinkResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+# 기본 사용자 스키마
+class UserBase(BaseModel):
+    name: str = Field(..., min_length=2, max_length=100)
+    email: EmailStr = Field(...)
+    profile_image: Optional[str] = None
+    bio: Optional[str] = None
+    role: Optional[str] = None
+    languages: Optional[List[str]] = None
+    phone: Optional[str] = None
+    birth_date: Optional[str] = None
+    status: Optional[str] = "inactive"
+
+# 사용자 생성 스키마
+class UserCreate(UserBase):
+    password: Optional[str] = Field(None, min_length=8)  # OAuth의 경우 비밀번호가 없을 수 있음
+    
+    @validator('password')
+    def validate_password(cls, v):
+        if v is not None and len(v) < 8:
+            raise ValueError('비밀번호는 8자 이상이어야 합니다.')
+        return v
+    
+    # OAuth 관련 필드
+    auth_provider: Optional[str] = "local"  # local, github, google 등
+    auth_provider_id: Optional[str] = None
+    auth_provider_access_token: Optional[str] = None
+    
+    # 추가: 생성 시 함께 받을 수 있는 필드들
+    collaboration_preference: Optional["CollaborationPreferenceCreate"] = None
+    interests: Optional[List["UserInterestCreate"]] = None
+    notification_settings: Optional[Dict[str, int]] = None
+    social_links: Optional[List["UserSocialLinkCreate"]] = None
+    tech_stacks: Optional[List["UserTechStackCreateForUser"]] = None
+
+# 사용자 업데이트 스키마
+class UserUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=2, max_length=100)
+    profile_image: Optional[str] = None
+    bio: Optional[str] = None
+    role: Optional[str] = None
+    status: Optional[str] = None
+    languages: Optional[List[str]] = None
+    phone: Optional[str] = None
+    birth_date: Optional[str] = None
+    notification_settings: Optional[Dict[str, int]] = None
+    collaboration_preference: Optional[CollaborationPreferenceUpdate] = None
+    auth_provider_access_token: Optional[str] = None
+    last_login: Optional[datetime] = None
+
 
 # 상세 사용자 응답 스키마
 class UserDetail(UserBase):

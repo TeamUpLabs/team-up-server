@@ -139,7 +139,7 @@ async def delete_milestone(
     )
     return None
 
-@router.get("/project/{project_id}", response_model=List[MilestoneBrief])
+@router.get("/project/{project_id}", response_model=List[MilestoneDetail])
 def read_milestones_by_project(
     project_id: str, 
     skip: int = 0, 

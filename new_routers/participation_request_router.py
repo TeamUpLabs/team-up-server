@@ -1,7 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
 from sqlalchemy.orm import Session
-
+from new_crud import project
 from database import get_db
 from new_crud import participation_request as crud
 from new_schemas.participation_request import (
@@ -10,6 +10,9 @@ from new_schemas.participation_request import (
     ParticipationRequestUpdate,
     ParticipationRequestList
 )
+from utils.sse_manager import project_sse_manager
+from new_routers.project_router import convert_project_to_project_detail
+import json
 
 
 router = APIRouter(
@@ -19,7 +22,7 @@ router = APIRouter(
 
 
 @router.post("/", response_model=ParticipationRequestResponse)
-def create_participation_request(
+async def create_participation_request(
     request_data: ParticipationRequestCreate,
     db: Session = Depends(get_db)
 ):
@@ -40,12 +43,17 @@ def create_participation_request(
             status_code=400,
             detail="There is already a pending request for this user and project"
         )
-    
-    # TODO: Add authentication check to ensure:
-    # - For 'invitation': Only project leaders/managers can create invitations
-    # - For 'request': Users can only create requests for themselves
+  
     
     result = crud.create_participation_request_sync(db, request_data)
+    db_project = project.get(db=db, id=result.project_id)
+    
+    if db_project:
+      project_detail = convert_project_to_project_detail(db_project, db)
+      await project_sse_manager.send_event(
+          db_project.id,
+          json.dumps(project_sse_manager.convert_to_dict(project_detail))
+      )
     return result
 
 
@@ -109,13 +117,12 @@ def list_project_participation_requests(
 
 
 @router.put("/{request_id}", response_model=ParticipationRequestResponse)
-def update_participation_request_status(
+async def update_participation_request_status(
     request_data: ParticipationRequestUpdate,
     request_id: int = Path(...),
     db: Session = Depends(get_db)
 ):
     """Update a participation request (accept/reject)"""
-    # First, check if the request exists
     existing_request = crud.get_participation_request_sync(db, request_id)
     
     if not existing_request:
@@ -124,16 +131,18 @@ def update_participation_request_status(
             detail="Participation request not found"
         )
     
-    # TODO: Add authentication checks to ensure:
-    # - For 'invitation': Only the invited user can accept/reject
-    # - For 'request': Only project leaders/managers can accept/reject
-    
     result = crud.update_participation_request_sync(db, request_id, request_data)
     
-    # If the request is accepted, add the user to the project members
-    # This would be handled in a service layer in a more complex application
     if request_data.status == "accepted":
-        # TODO: Add logic to insert into project_members table
-        pass
+      project.add_member(db=db, project_id=existing_request.project_id, user_id=existing_request.user_id)
+      
+    db_project = project.get(db=db, id=existing_request.project_id)
+      
+    if db_project:
+        project_detail = convert_project_to_project_detail(db_project, db)
+        await project_sse_manager.send_event(
+            db_project.id,
+            json.dumps(project_sse_manager.convert_to_dict(project_detail))
+        )
     
     return result 

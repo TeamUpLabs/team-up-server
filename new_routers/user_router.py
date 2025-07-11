@@ -76,10 +76,10 @@ async def update_current_user(user_in: UserUpdate, current_user: User = Depends(
     """현재 로그인한 사용자 정보 수정"""
     db_user = user.update(db=db, db_obj=current_user, obj_in=user_in)
     if db_user.projects:
-        for project_id in db_user.projects:
-            project_data = convert_project_to_project_detail(project.get(db, project_id), db)
+        for project_obj in db_user.projects:
+            project_data = convert_project_to_project_detail(project_obj, db)
             await project_sse_manager.send_event(
-                project_id,
+                project_obj.id,
                 json.dumps(project_sse_manager.convert_to_dict(project_data))
             )
     return UserDetail.model_validate(db_user, from_attributes=True)
