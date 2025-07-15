@@ -4,6 +4,7 @@ from new_crud.base import CRUDBase
 from sqlalchemy.orm import Session
 from typing import List
 from new_models.association_tables import schedule_assignees
+from new_models.project import Project
 
 class CRUDSchedule(CRUDBase[Schedule, ScheduleCreate, ScheduleUpdate]):
     """스케줄 모델에 대한 CRUD 작업"""
@@ -69,5 +70,20 @@ class CRUDSchedule(CRUDBase[Schedule, ScheduleCreate, ScheduleUpdate]):
         db.delete(obj)
         db.commit()
         return obj
+    
+    def is_project_manager(self, db: Session, *, project_id: str, user_id: int) -> bool:
+        """사용자가 해당 프로젝트의 관리자인지 확인"""
+        project = db.query(Project).filter(Project.id == project_id).first()
+        if not project:
+            return False
+        
+        # 프로젝트 멤버 테이블에서 관리자 권한 확인
+        from new_models.association_tables import project_members
+        member = db.query(project_members).filter(
+            project_members.c.project_id == project_id,
+            project_members.c.user_id == user_id
+        ).first()
+        
+        return member and (member.is_manager or member.is_leader)
 
 schedule = CRUDSchedule(Schedule)

@@ -16,8 +16,6 @@ class Schedule(Base, BaseModel):
     start_time = Column(String, nullable=False)
     end_time = Column(String, nullable=False)
     status = Column(String, nullable=False) # not-started, in-progress, done
-    created_at = Column(DateTime, nullable=False)
-    updated_at = Column(DateTime, nullable=False)
     memo = Column(Text, nullable=True)
     
     project_id = Column(String(6), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)

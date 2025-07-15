@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, status
 
 from new_schemas.schedule import ScheduleResponse, ScheduleCreate, ScheduleUpdate
 from new_crud import schedule, project
@@ -9,6 +9,8 @@ from typing import List
 from new_routers.project_router import convert_project_to_project_detail
 from utils.sse_manager import project_sse_manager
 import json
+from new_models.user import User
+from new_routers.auth_router import get_current_user
 
 router = APIRouter(
     prefix="/api/projects",
@@ -16,7 +18,20 @@ router = APIRouter(
 )
 
 @router.post("/{project_id}/schedules", response_model=ScheduleResponse)
-async def create_schedule(project_id: str, schedule_in: ScheduleCreate, db: Session = Depends(get_db)):
+async def create_schedule(
+    project_id: str, 
+    schedule_in: ScheduleCreate, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # 생성자, 담당자 또는 프로젝트 관리자만 수정 가능
+    if (schedule_in.created_by != current_user.id and 
+        not schedule.is_project_manager(db=db, project_id=project_id, user_id=current_user.id)):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="이 일정을 생성할 권한이 없습니다."
+        )
+        
     db_schedule = schedule.create(db, project_id=project_id, obj_in=schedule_in)
     if db_schedule:
         project_data = convert_project_to_project_detail(project.get(db, db_schedule.project_id), db)
