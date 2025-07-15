@@ -1,5 +1,5 @@
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from datetime import datetime
 from .user import UserBrief
 # from .project import ProjectBrief
@@ -36,6 +36,7 @@ class CommentDetail(CommentBase):
 # 하위 업무 스키마
 class SubTaskBase(BaseModel):
     title: str = Field(..., min_length=2, max_length=100)
+    is_completed: bool = False
 
 class SubTaskCreate(SubTaskBase):
     pass
@@ -46,7 +47,6 @@ class SubTaskUpdate(BaseModel):
 
 class SubTaskDetail(SubTaskBase):
     id: int
-    is_completed: bool
     created_at: datetime
     updated_at: datetime
     
@@ -69,6 +69,11 @@ class TaskBase(BaseModel):
 
 # 업무 생성 스키마
 class TaskCreate(TaskBase):
+    @validator("milestone_id", pre=True)
+    def empty_str_to_none(cls, v):
+        if v == 0:
+            return None
+        return v
     assignee_ids: Optional[List[int]] = None
     created_by: Optional[int] = None
     subtasks: Optional[List[SubTaskCreate]] = None

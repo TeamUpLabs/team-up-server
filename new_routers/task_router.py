@@ -84,12 +84,11 @@ async def update_task(
         )
     
     db_task = task.update(db=db, db_obj=db_task, obj_in=task_in)
-    if db_task:
-        project_data = convert_project_to_project_detail(project.get(db, db_task.project_id), db)
-        await project_sse_manager.send_event(
-            db_task.project_id,
-            json.dumps(project_sse_manager.convert_to_dict(project_data))
-        )
+    project_data = convert_project_to_project_detail(project.get(db, db_task.project_id), db)
+    await project_sse_manager.send_event(
+        db_task.project_id,
+        json.dumps(project_sse_manager.convert_to_dict(project_data))
+    )
     return TaskDetail.model_validate(db_task, from_attributes=True)
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -145,6 +144,12 @@ async def create_subtask(
     db.add(subtask)
     db.commit()
     db.refresh(subtask)
+    
+    project_data = convert_project_to_project_detail(project.get(db, db_task.project_id), db)
+    await project_sse_manager.send_event(
+        db_task.project_id,
+        json.dumps(project_sse_manager.convert_to_dict(project_data))
+    )
     
     return SubTaskDetail.model_validate(subtask, from_attributes=True)
 
@@ -330,6 +335,14 @@ async def create_comment(
         content=comment_in.content, 
         created_by=current_user.id
     )
+    
+    if db_task.project_id:
+        project_obj = project.get(db, db_task.project_id)
+        project_data = convert_project_to_project_detail(project_obj, db)
+        await project_sse_manager.send_event(
+            project_obj.id,
+            json.dumps(project_sse_manager.convert_to_dict(project_data))
+        )
     
     return CommentDetail.model_validate(comment, from_attributes=True)
 

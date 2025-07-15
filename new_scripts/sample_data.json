@@ -618,7 +618,7 @@
       "milestone_id": 1,
       "created_by": 1,
       "assignee_ids": [1],
-              "subtasks": [
+      "subtasks": [
           {
             "title": "JWT 토큰 생성 및 검증 로직 구현",
             "is_completed": false
@@ -656,7 +656,7 @@
       "milestone_id": 1,
       "created_by": 1,
       "assignee_ids": [1],
-              "subtasks": [
+      "subtasks": [
           {
             "title": "프로젝트 생성 API 구현",
             "is_completed": false
