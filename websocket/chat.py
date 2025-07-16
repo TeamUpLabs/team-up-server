@@ -3,8 +3,8 @@ import asyncio
 import logging
 from typing import Dict, Set, Optional, Any
 from sqlalchemy.orm import Session
-from new_crud import ChannelCRUD
-from new_crud.chat import ChatCRUD
+from crud import ChannelCRUD
+from crud.chat import ChatCRUD
 from utils.send_notification import send_notification
 from datetime import datetime
 

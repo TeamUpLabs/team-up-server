@@ -1,10 +1,10 @@
 from datetime import datetime
-from schemas.member import NotificationInfo
-from crud.member import get_member_by_id
+from schemas.notification import NotificationCreate
+from crud import user
 from utils.sse_manager import notification_sse_manager
 import json
 from sqlalchemy.orm import Session
-from models.member import Member as MemberModel
+from models.user import User as UserModel
 import logging
 
 async def send_notification(
@@ -13,26 +13,25 @@ async def send_notification(
     title: str,
     message: str,
     type: str,
-    isRead: bool,
+    is_read: bool,
     sender_id: int,
     receiver_id: int,
     project_id: str,
 ):
-    notification_pydantic_model = NotificationInfo(
+    notification_pydantic_model = NotificationCreate(
         id=id,
         title=title,
         message=message,
         type=type,
-        timestamp=datetime.now().isoformat().split('.')[0],
-        isRead=isRead,
+        is_read=is_read,
         sender_id=sender_id,
         receiver_id=receiver_id,
         project_id=project_id,
     )
     
-    receiver = get_member_by_id(db, receiver_id)
+    receiver = user.get(db, id=receiver_id)
     
-    receiver_model_instance = db.query(MemberModel).filter(MemberModel.id == receiver_id).first()
+    receiver_model_instance = db.query(UserModel).filter(UserModel.id == receiver_id).first()
     if not receiver_model_instance:
         logging.error(f"Receiver with ID {receiver_id} not found in database for notification.")
         return [] # Or raise an error, depending on desired behavior
@@ -58,7 +57,7 @@ async def send_notification(
         json.dumps(notification_sse_manager.convert_to_dict(receiver_model_instance.notification))
     )
     
-    db.query(MemberModel).filter(MemberModel.id == receiver_id).update(
+    db.query(UserModel).filter(UserModel.id == receiver_id).update(
         {'notification': receiver_model_instance.notification}, 
         synchronize_session="fetch"
     )
