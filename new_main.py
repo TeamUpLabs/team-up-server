@@ -13,7 +13,8 @@ from new_routers import (
     notification_router,
     channel_router,
     chat_router,
-    video_call_router
+    video_call_router,
+    voice_call_router
 )
 
 # 모든 모델이 정의된 후 테이블 생성
@@ -47,6 +48,7 @@ app.include_router(notification_router)
 app.include_router(channel_router)
 app.include_router(chat_router)
 app.include_router(video_call_router)
+app.include_router(voice_call_router)
 
 @app.get("/")
 async def root():

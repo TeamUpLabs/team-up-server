@@ -9,3 +9,4 @@ from new_routers.notification_router import router as notification_router
 from new_routers.channel_router import router as channel_router
 from new_routers.chat_router import router as chat_router
 from new_routers.video_call_router import router as video_call_router
+from new_routers.voice_call_router import router as voice_call_router
