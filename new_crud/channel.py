@@ -17,7 +17,8 @@ class ChannelCRUD:
         name: str,
         description: Optional[str] = None,
         is_public: bool = True,
-        created_by: int = None
+        created_by: int = None,
+        updated_by: int = None
     ) -> Channel:
         """새로운 채널 생성"""
         channel = Channel(
@@ -27,18 +28,14 @@ class ChannelCRUD:
             description=description,
             is_public=is_public,
             created_by=created_by,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_by=updated_by,
+            created_at=datetime.now(),
+            updated_at=datetime.now()
         )
         db.add(channel)
         db.commit()
         db.refresh(channel)
         return channel
-    
-    @staticmethod
-    def get_channel_by_id(db: Session, channel_id: int) -> Optional[Channel]:
-        """ID로 채널 조회"""
-        return db.query(Channel).filter(Channel.id == channel_id).first()
     
     @staticmethod
     def get_channel_by_channel_id(db: Session, channel_id: str) -> Optional[Channel]:
@@ -75,7 +72,7 @@ class ChannelCRUD:
         ).all()
     
     @staticmethod
-    def add_member_to_channel(db: Session, channel_id: int, user_id: int, role: str = "member") -> bool:
+    def add_member_to_channel(db: Session, channel_id: str, user_id: int, role: str = "member") -> bool:
         """채널에 멤버 추가"""
         try:
             # 이미 멤버인지 확인
@@ -105,7 +102,7 @@ class ChannelCRUD:
             return False
     
     @staticmethod
-    def remove_member_from_channel(db: Session, channel_id: int, user_id: int) -> bool:
+    def remove_member_from_channel(db: Session, channel_id: str, user_id: int) -> bool:
         """채널에서 멤버 제거"""
         try:
             result = db.execute(
@@ -130,7 +127,7 @@ class ChannelCRUD:
         ).all()
     
     @staticmethod
-    def is_user_member_of_channel(db: Session, channel_id: int, user_id: int) -> bool:
+    def is_user_member_of_channel(db: Session, channel_id: str, user_id: int) -> bool:
         """사용자가 채널의 멤버인지 확인"""
         member = db.query(channel_members).filter(
             and_(
@@ -147,10 +144,11 @@ class ChannelCRUD:
         name: Optional[str] = None,
         description: Optional[str] = None,
         is_public: Optional[bool] = None,
-        updated_by: int = None
+        updated_by: int = None,
+        member_ids: Optional[List[int]] = None
     ) -> Optional[Channel]:
         """채널 정보 업데이트"""
-        channel = db.query(Channel).filter(Channel.id == channel_id).first()
+        channel = db.query(Channel).filter(Channel.channel_id == channel_id).first()
         if not channel:
             return None
         
@@ -162,17 +160,19 @@ class ChannelCRUD:
             channel.is_public = is_public
         if updated_by is not None:
             channel.updated_by = updated_by
+        if member_ids is not None:
+            channel.member_ids = member_ids
         
-        channel.updated_at = datetime.utcnow()
+        channel.updated_at = datetime.now()
         db.commit()
         db.refresh(channel)
         return channel
     
     @staticmethod
-    def delete_channel(db: Session, channel_id: int) -> bool:
+    def delete_channel(db: Session, channel_id: str) -> bool:
         """채널 삭제"""
         try:
-            channel = db.query(Channel).filter(Channel.id == channel_id).first()
+            channel = db.query(Channel).filter(Channel.channel_id == channel_id).first()
             if channel:
                 db.delete(channel)
                 db.commit()
@@ -181,3 +181,5 @@ class ChannelCRUD:
         except Exception:
             db.rollback()
             return False 
+          
+channel = ChannelCRUD()

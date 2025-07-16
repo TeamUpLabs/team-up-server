@@ -41,6 +41,10 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         """이메일로 사용자 조회"""
         return db.query(User).filter(User.email == email).first()
     
+    def get_user_by_id(self, db: Session, *, user_id: int) -> Optional[User]:
+        """ID로 사용자 조회"""
+        return db.query(User).filter(User.id == user_id).first()
+    
     def create(self, db: Session, *, obj_in: UserCreate) -> User:
         """
         새 사용자 생성

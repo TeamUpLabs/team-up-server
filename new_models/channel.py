@@ -7,9 +7,8 @@ from new_models.association_tables import channel_members
 class Channel(Base, BaseModel):
     __tablename__ = "channels"
     
-    id = Column(Integer, primary_key=True, index=True)
+    channel_id = Column(String(100), primary_key=True, index=True, nullable=False)
     project_id = Column(String(6), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    channel_id = Column(String(100), nullable=False)
     name = Column(String(100), nullable=False)
     description = Column(Text, nullable=True)
     is_public = Column(Boolean, nullable=False)

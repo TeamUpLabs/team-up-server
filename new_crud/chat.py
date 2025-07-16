@@ -13,7 +13,7 @@ class ChatCRUD:
     def create_chat(
         db: Session,
         project_id: str,
-        channel_id: int,
+        channel_id: str,
         user_id: int,
         message: str
     ) -> Chat:
@@ -38,7 +38,7 @@ class ChatCRUD:
     @staticmethod
     def get_channel_chats(
         db: Session,
-        channel_id: int,
+        channel_id: str,
         limit: int = 50,
         offset: int = 0
     ) -> List[Chat]:
@@ -74,7 +74,7 @@ class ChatCRUD:
     @staticmethod
     def get_chats_by_date_range(
         db: Session,
-        channel_id: int,
+        channel_id: str,
         start_date: datetime,
         end_date: datetime,
         limit: int = 100
@@ -91,7 +91,7 @@ class ChatCRUD:
     @staticmethod
     def search_chats(
         db: Session,
-        channel_id: int,
+        channel_id: str,
         search_term: str,
         limit: int = 50
     ) -> List[Chat]:
@@ -144,10 +144,12 @@ class ChatCRUD:
             "id": chat.id,
             "message": chat.message,
             "timestamp": chat.timestamp,
+            "user_id": chat.user_id,
             "user": {
                 "id": chat.user.id,
                 "name": chat.user.name,
-                "profile_image": chat.user.profile_image
+                "profile_image": chat.user.profile_image,
+                "email": chat.user.email
             },
             "channel_id": chat.channel_id,
             "project_id": chat.project_id
@@ -156,7 +158,7 @@ class ChatCRUD:
     @staticmethod
     def get_channel_chats_with_user_info(
         db: Session,
-        channel_id: int,
+        channel_id: str,
         limit: int = 50,
         offset: int = 0
     ) -> List[dict]:
@@ -170,10 +172,12 @@ class ChatCRUD:
                 "id": chat.id,
                 "message": chat.message,
                 "timestamp": chat.timestamp,
+                "user_id": chat.user_id,
                 "user": {
                     "id": chat.user.id,
                     "name": chat.user.name,
-                    "profile_image": chat.user.profile_image
+                    "profile_image": chat.user.profile_image,
+                    "email": chat.user.email
                 },
                 "channel_id": chat.channel_id,
                 "project_id": chat.project_id

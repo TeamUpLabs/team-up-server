@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from database import get_db
@@ -8,8 +8,10 @@ from new_schemas.chat import (
     ChatCreate, ChatUpdate, ChatResponse, ChatListResponse,
     ChatSearchRequest, ChatDateRangeRequest
 )
+from websocket.chat import websocket_handler
+import logging
 
-router = APIRouter(prefix="/chats", tags=["chats"])
+router = APIRouter(prefix="/api/chats", tags=["chats"])
 
 @router.post("/", response_model=ChatResponse)
 def create_chat(
@@ -51,14 +53,14 @@ def get_chat(chat_id: int, db: Session = Depends(get_db)):
 
 @router.get("/channel/{channel_id}", response_model=List[ChatResponse])
 def get_channel_chats(
-    channel_id: int,
+    channel_id: str,
     limit: int = Query(50, ge=1, le=100, description="조회할 메시지 수"),
     offset: int = Query(0, ge=0, description="건너뛸 메시지 수"),
     db: Session = Depends(get_db)
 ):
     """채널의 채팅 메시지 조회"""
     # 채널 존재 확인
-    channel = ChannelCRUD.get_channel_by_id(db, channel_id)
+    channel = ChannelCRUD.get_channel_by_channel_id(db, channel_id)
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
     
@@ -105,13 +107,13 @@ def get_user_chats(
 
 @router.post("/channel/{channel_id}/search", response_model=List[ChatResponse])
 def search_channel_chats(
-    channel_id: int,
+    channel_id: str,
     search_request: ChatSearchRequest,
     db: Session = Depends(get_db)
 ):
     """채널에서 메시지 검색"""
     # 채널 존재 확인
-    channel = ChannelCRUD.get_channel_by_id(db, channel_id)
+    channel = ChannelCRUD.get_channel_by_channel_id(db, channel_id)
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
     
@@ -133,13 +135,13 @@ def search_channel_chats(
 
 @router.post("/channel/{channel_id}/date-range", response_model=List[ChatResponse])
 def get_chats_by_date_range(
-    channel_id: int,
+    channel_id: str,
     date_request: ChatDateRangeRequest,
     db: Session = Depends(get_db)
 ):
     """특정 기간의 채팅 메시지 조회"""
     # 채널 존재 확인
-    channel = ChannelCRUD.get_channel_by_id(db, channel_id)
+    channel = ChannelCRUD.get_channel_by_channel_id(db, channel_id)
     if not channel:
         raise HTTPException(status_code=404, detail="Channel not found")
     
@@ -212,3 +214,27 @@ def delete_chat(
         raise HTTPException(status_code=404, detail="Chat not found")
     
     return {"message": "Chat deleted successfully"} 
+
+@router.websocket("/ws")
+async def chat_endpoint(
+    websocket: WebSocket,
+    project_id: str = Query(..., alias="project_id"),
+    channel_id: str = Query(..., alias="channel_id"),
+    user_id: int = Query(..., alias="user_id"),
+    db: Session = Depends(get_db)
+):
+    """
+    WebSocket 채팅 엔드포인트
+    - 쿼리 파라미터로 반드시 user_id를 전달해야 합니다.
+    예: ws://.../api/chats/ws?project_id=xxx&channel_id=yyy&user_id=zzz
+    """
+    try:
+        await websocket_handler(websocket, channel_id, project_id, user_id, db)
+    except WebSocketDisconnect:
+        logging.info(f"WebSocket disconnected for project: {project_id}, channel: {channel_id}")
+    except Exception as e:
+        logging.error(f"WebSocket error in project {project_id}, channel {channel_id}: {str(e)}")
+        try:
+            await websocket.close()
+        except Exception:
+            logging.error("WebSocket close failed")

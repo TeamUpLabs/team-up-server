@@ -8,7 +8,7 @@ class Chat(Base, BaseModel):
     
     id = Column(Integer, primary_key=True, index=True)
     project_id = Column(String(6), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    channel_id = Column(Integer, ForeignKey("channels.id", ondelete="CASCADE"), nullable=False)
+    channel_id = Column(String(100), ForeignKey("channels.channel_id", ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     message = Column(Text, nullable=False)
     timestamp = Column(DateTime, nullable=False)

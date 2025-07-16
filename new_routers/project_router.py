@@ -200,7 +200,7 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
             if channel.members:
                 for member in channel.members:
                     members.append(ChannelMemberResponse(
-                        user_id=member.id,
+                        id=member.id,
                         name=member.name,
                         email=member.email,
                         profile_image=member.profile_image,
@@ -210,7 +210,6 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
             
             # ChannelWithMembers 객체 생성
             channel_with_members = ChannelResponse(
-                id=channel.id,
                 name=channel.name,
                 description=channel.description,
                 is_public=channel.is_public,

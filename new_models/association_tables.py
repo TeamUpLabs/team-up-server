@@ -74,7 +74,7 @@ user_social_links = Table(
 channel_members = Table(
     'channel_members',
     Base.metadata,
-    Column('channel_id', Integer, ForeignKey('channels.id', ondelete='CASCADE'), primary_key=True),
+    Column('channel_id', String, ForeignKey('channels.channel_id', ondelete='CASCADE'), primary_key=True),
     Column('user_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
     Column('joined_at', DateTime, nullable=False, server_default=func.now()),
     Column('role', String(50), default='member'),  # member, admin, moderator 등

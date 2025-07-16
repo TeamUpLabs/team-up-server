@@ -9,7 +9,7 @@ class ChatBase(BaseModel):
 class ChatCreate(ChatBase):
     """채팅 생성 스키마"""
     project_id: str = Field(..., min_length=6, max_length=6, description="프로젝트 ID")
-    channel_id: int = Field(..., description="채널 ID")
+    channel_id: str = Field(..., description="채널 ID")
 
 class ChatUpdate(BaseModel):
     """채팅 수정 스키마"""
@@ -31,7 +31,7 @@ class ChatResponse(ChatBase):
     """채팅 응답 스키마"""
     id: int
     project_id: str
-    channel_id: int
+    channel_id: str
     user_id: int
     timestamp: datetime
     user: UserInfo
