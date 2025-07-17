@@ -197,6 +197,7 @@ class UserCreate(UserBase):
 # 사용자 업데이트 스키마
 class UserUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=100)
+    password: Optional[str] = Field(None, min_length=8)
     profile_image: Optional[str] = None
     bio: Optional[str] = None
     role: Optional[str] = None
