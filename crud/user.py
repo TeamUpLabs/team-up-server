@@ -265,37 +265,48 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
     # 알림 설정 관련 CRUD 메서드
     def update_notification_settings(self, db: Session, *, user_id: int, settings_in: NotificationSettingsUpdate) -> Dict[str, int]:
         """사용자 알림 설정 업데이트"""
-        user = self.get(db, id=user_id)
+        # 사용자 조회
+        user = db.query(self.model).filter(self.model.id == user_id).first()
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="사용자를 찾을 수 없습니다."
             )
         
-        # 현재 설정 가져오기
-        current_settings = user.notification_settings or {}
+        # 현재 설정 가져오기 (기본값이 있는 경우를 위해 getattr 사용)
+        current_settings = getattr(user, 'notification_settings', {})
+        if current_settings is None:
+            current_settings = {}
         
-        # 새 설정으로 업데이트
-        update_data = settings_in.model_dump(exclude_unset=True)
+        # 새 설정으로 업데이트 (None이 아닌 값만 업데이트)
+        update_data = {k: v for k, v in settings_in.model_dump(exclude_unset=True).items() if v is not None}
         current_settings.update(update_data)
         
-        # 데이터베이스 업데이트
-        user.notification_settings = current_settings
-        db.commit()
-        db.refresh(user)
-        
-        return current_settings
+        try:
+            # 데이터베이스 업데이트
+            user.notification_settings = current_settings
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+            return current_settings
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"알림 설정 업데이트 중 오류가 발생했습니다: {str(e)}"
+            )
     
     def get_notification_settings(self, db: Session, *, user_id: int) -> Dict[str, int]:
         """사용자 알림 설정 조회"""
-        user = self.get(db, id=user_id)
+        user = db.query(self.model).filter(self.model.id == user_id).first()
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="사용자를 찾을 수 없습니다."
             )
         
-        return user.notification_settings or {
+        # 기본값 반환 (None인 경우 기본값 사용)
+        default_settings = {
             "emailEnable": 1,
             "taskNotification": 1,
             "milestoneNotification": 1,
@@ -305,6 +316,13 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             "pushNotification": 1,
             "securityNotification": 1
         }
+        
+        current_settings = getattr(user, 'notification_settings', None)
+        if not current_settings:
+            return default_settings
+            
+        # 기존 설정에 기본값 병합 (누락된 키가 있으면 기본값으로 채움)
+        return {**default_settings, **current_settings}
     # 협업 선호도 관련 CRUD 메서드
     def create_collaboration_preference(self, db: Session, *, user_id: int, pref_in: CollaborationPreferenceCreate) -> CollaborationPreference:
         """사용자의 협업 선호도 생성 또는 업데이트"""
