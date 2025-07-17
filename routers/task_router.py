@@ -190,6 +190,12 @@ async def update_subtask(
     db.commit()
     db.refresh(subtask)
     
+    project_data = convert_project_to_project_detail(project.get(db, db_task.project_id), db)
+    await project_sse_manager.send_event(
+        db_task.project_id,
+        json.dumps(project_sse_manager.convert_to_dict(project_data))
+    )
+    
     return SubTaskDetail.model_validate(subtask, from_attributes=True)
 
 @router.delete("/{task_id}/subtasks/{subtask_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -219,6 +225,13 @@ async def delete_subtask(
     
     db.delete(subtask)
     db.commit()
+    
+    project_data = convert_project_to_project_detail(project.get(db, db_task.project_id), db)
+    await project_sse_manager.send_event(
+        db_task.project_id,
+        json.dumps(project_sse_manager.convert_to_dict(project_data))
+    )
+    
     return None
 
 @router.get("/{task_id}/assignees", response_model=List)
@@ -387,6 +400,12 @@ async def update_comment(
     
     comment = task.update_comment(db=db, comment_id=comment_id, content=comment_in.content)
     
+    project_data = convert_project_to_project_detail(project.get(db, db_task.project_id), db)
+    await project_sse_manager.send_event(
+        db_task.project_id,
+        json.dumps(project_sse_manager.convert_to_dict(project_data))
+    )
+    
     return CommentDetail.model_validate(comment, from_attributes=True)
 
 @router.delete("/{task_id}/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -414,4 +433,10 @@ async def delete_comment(
         )
     
     task.delete_comment(db=db, comment_id=comment_id)
+    
+    project_data = convert_project_to_project_detail(project.get(db, db_task.project_id), db)
+    await project_sse_manager.send_event(
+        db_task.project_id,
+        json.dumps(project_sse_manager.convert_to_dict(project_data))
+    )
     return None 
