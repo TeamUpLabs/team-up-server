@@ -16,6 +16,7 @@ from schemas.user import (
 from crud.base import CRUDBase
 import bcrypt
 from datetime import datetime
+from typing import Union
 
 # 패스워드 해싱 함수를 로컬에 정의
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -153,6 +154,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         social_links_data = update_data.pop("social_links", None)
         tech_stacks_data = update_data.pop("tech_stacks", None)
         interests_data = update_data.pop("interests", None)
+        collaboration_preference_data = update_data.pop("collaboration_preference", None)
         
         # First update the user object with non-relationship fields
         db_obj = super().update(db, db_obj=db_obj, obj_in=update_data)
@@ -166,6 +168,9 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             
         if interests_data is not None:
             self._update_interests(db, db_obj, interests_data)
+            
+        if collaboration_preference_data is not None:
+            self._update_collaboration_preference(db, db_obj, collaboration_preference_data)
             
         db.commit()
         db.refresh(db_obj)
@@ -255,6 +260,33 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         for interest_key, interest in existing_interests.items():
             if interest_key not in updated_interests:
                 db.delete(interest)
+    
+    def _update_collaboration_preference(self, db: Session, db_obj: User, preference_data: Union[Dict, Any]) -> None:
+        """Helper method to update user's collaboration preference"""
+        from models.user import CollaborationPreference
+        
+        # Get the existing preference or create a new one if it doesn't exist
+        preference = db_obj.collaboration_preference
+        
+        # If preference_data is a Pydantic model, convert to dict
+        if hasattr(preference_data, 'model_dump'):
+            preference_data = preference_data.model_dump(exclude_unset=True)
+        
+        if preference is None:
+            # Create new preference
+            preference = CollaborationPreference(
+                user_id=db_obj.id,
+                **preference_data
+            )
+            db.add(preference)
+        else:
+            # Update existing preference
+            for field, value in preference_data.items():
+                if hasattr(preference, field):
+                    setattr(preference, field, value)
+        
+        # No need to explicitly commit here as it's handled by the calling method
+                
     
     def update_last_login(self, db: Session, *, user_id: int) -> User:
         """사용자 마지막 로그인 시간 업데이트"""
