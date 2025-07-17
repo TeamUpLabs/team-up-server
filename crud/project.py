@@ -141,7 +141,12 @@ class CRUDProject(CRUDBase[Project, ProjectCreate, ProjectUpdate]):
         return project
     
     def remove_member(self, db: Session, *, project_id: str, user_id: int) -> Project:
-        """프로젝트에서 멤버 제거"""
+        """프로젝트에서 멤버 제거 및 관련 리소스에서 사용자 제거"""
+        from models.task import Task
+        from models.milestone import Milestone
+        from models.schedule import Schedule
+        from models.channel import Channel
+        
         project = self.get(db, id=project_id)
         if not project:
             raise HTTPException(
@@ -167,8 +172,54 @@ class CRUDProject(CRUDBase[Project, ProjectCreate, ProjectUpdate]):
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="프로젝트 소유자는 제거할 수 없습니다."
             )
-            
+        
+        # 1. 프로젝트의 모든 태스크 처리
+        tasks = db.query(Task).filter(Task.project_id == project_id).all()
+        for task in tasks:
+            if task.created_by == user_id:
+                # 태스크의 소유자인 경우 태스크 삭제
+                db.delete(task)
+            elif user in task.assignees:
+                # 담당자에서만 제거
+                task.assignees.remove(user)
+        
+        # 2. 프로젝트의 모든 마일스톤 처리
+        milestones = db.query(Milestone).filter(Milestone.project_id == project_id).all()
+        for milestone in milestones:
+            if milestone.created_by == user_id:
+                # 마일스톤의 소유자인 경우 마일스톤 삭제
+                db.delete(milestone)
+            elif user in milestone.assignees:
+                # 담당자에서만 제거
+                milestone.assignees.remove(user)
+        
+        # 3. 프로젝트의 모든 일정 처리
+        schedules = db.query(Schedule).filter(Schedule.project_id == project_id).all()
+        for schedule in schedules:
+            if schedule.created_by == user_id:
+                # 일정의 생성자인 경우 일정 삭제
+                db.delete(schedule)
+            else:
+                if user in schedule.assignees:
+                    schedule.assignees.remove(user)
+                if schedule.updated_by == user_id:
+                    schedule.updated_by = None
+        
+        # 4. 프로젝트의 모든 채널 처리
+        channels = db.query(Channel).filter(Channel.project_id == project_id).all()
+        for channel in channels:
+            if channel.created_by == user_id:
+                # 채널의 생성자인 경우 채널 삭제
+                db.delete(channel)
+            else:
+                if user in channel.members:
+                    channel.members.remove(user)
+                if channel.updated_by == user_id:
+                    channel.updated_by = None
+        
+        # 5. 프로젝트 멤버에서 사용자 제거
         project.members.remove(user)
+        
         db.commit()
         db.refresh(project)
         return project

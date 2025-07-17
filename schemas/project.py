@@ -44,7 +44,6 @@ class ProjectUpdate(BaseModel):
     tags: Optional[List[str]] = None
     location: Optional[str] = None
     github_url: Optional[str] = None
-    updated_at: datetime
 
 # 프로젝트 멤버 스키마
 class ProjectMember(BaseModel):
