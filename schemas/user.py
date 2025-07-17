@@ -219,6 +219,7 @@ class UserDetail(UserBase):
     last_login: Optional[datetime] = None
     auth_provider: str
     auth_provider_id: Optional[str] = None
+    auth_provider_access_token: Optional[str] = None
     
     projects: Optional[List[ProjectBrief]] = None
     
