@@ -209,6 +209,9 @@ class UserUpdate(BaseModel):
     collaboration_preference: Optional[CollaborationPreferenceUpdate] = None
     auth_provider_access_token: Optional[str] = None
     last_login: Optional[datetime] = None
+    social_links: Optional[List[UserSocialLinkCreate]] = None
+    tech_stacks: Optional[List[UserTechStackCreateForUser]] = None
+    interests: Optional[List[UserInterestCreate]] = None
 
 
 # 상세 사용자 응답 스키마

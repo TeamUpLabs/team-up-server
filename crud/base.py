@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import Base
+from datetime import datetime
 
 # 모델 타입 변수 정의 (SQLAlchemy 모델)
 ModelType = TypeVar("ModelType", bound=Base)
@@ -67,6 +68,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             if field in update_data:
                 setattr(db_obj, field, update_data[field])
                 
+        # Always update the updated_at field to current time
+        if hasattr(db_obj, 'updated_at'):
+            db_obj.updated_at = datetime.now()
+            
         db.add(db_obj)
         db.commit()
         db.refresh(db_obj)

@@ -149,7 +149,112 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
             update_data["hashed_password"] = hashed_password
             del update_data["password"]
             
-        return super().update(db, db_obj=db_obj, obj_in=update_data)
+        # Store relationship data and remove from update_data to prevent direct assignment
+        social_links_data = update_data.pop("social_links", None)
+        tech_stacks_data = update_data.pop("tech_stacks", None)
+        interests_data = update_data.pop("interests", None)
+        
+        # First update the user object with non-relationship fields
+        db_obj = super().update(db, db_obj=db_obj, obj_in=update_data)
+        
+        # Update relationships if they were provided
+        if social_links_data is not None:
+            self._update_social_links(db, db_obj, social_links_data)
+            
+        if tech_stacks_data is not None:
+            self._update_tech_stacks(db, db_obj, tech_stacks_data)
+            
+        if interests_data is not None:
+            self._update_interests(db, db_obj, interests_data)
+            
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
+        
+    def _update_social_links(self, db: Session, db_obj: User, social_links_data: List[Any]) -> None:
+        """Helper method to update social links"""
+        existing_links = {link.platform: link for link in db_obj.social_links}
+        
+        for link_data in social_links_data:
+            platform = link_data.get("platform") if isinstance(link_data, dict) else link_data.platform
+            url = link_data.get("url") if isinstance(link_data, dict) else link_data.url
+            
+            if platform in existing_links:
+                # Update existing link
+                existing_link = existing_links.pop(platform)
+                if existing_link.url != url:
+                    existing_link.url = url
+            else:
+                # Add new link
+                new_link = UserSocialLink(
+                    user_id=db_obj.id,
+                    platform=platform,
+                    url=url
+                )
+                db.add(new_link)
+        
+        # Remove links that are no longer in the update data
+        for link in existing_links.values():
+            db.delete(link)
+    
+    def _update_tech_stacks(self, db: Session, db_obj: User, tech_stacks_data: List[Any]) -> None:
+        """Helper method to update tech stacks"""
+        existing_stacks = {stack.tech: stack for stack in db_obj.tech_stacks}
+        
+        for stack_data in tech_stacks_data:
+            tech = stack_data.get("tech") if isinstance(stack_data, dict) else stack_data.tech
+            level = stack_data.get("level") if isinstance(stack_data, dict) else stack_data.level
+            
+            if tech in existing_stacks:
+                # Update existing stack
+                existing_stack = existing_stacks.pop(tech)
+                if existing_stack.level != level:
+                    existing_stack.level = level
+            else:
+                # Add new stack
+                new_stack = UserTechStack(
+                    user_id=db_obj.id,
+                    tech=tech,
+                    level=level
+                )
+                db.add(new_stack)
+        
+        # Remove stacks that are no longer in the update data
+        for stack in existing_stacks.values():
+            db.delete(stack)
+    
+    def _update_interests(self, db: Session, db_obj: User, interests_data: List[Any]) -> None:
+        """Helper method to update interests"""
+        existing_interests = {(i.interest_category, i.interest_name): i 
+                            for i in db_obj.interests}
+        
+        # Track which interests are being updated
+        updated_interests = set()
+        
+        for interest_data in interests_data:
+            category = (interest_data.get("interest_category") 
+                      if isinstance(interest_data, dict) 
+                      else interest_data.interest_category)
+            name = (interest_data.get("interest_name") 
+                   if isinstance(interest_data, dict) 
+                   else interest_data.interest_name)
+            
+            interest_key = (category, name)
+            updated_interests.add(interest_key)
+            
+            if interest_key not in existing_interests:
+                # Add new interest
+                new_interest = UserInterest(
+                    user_id=db_obj.id,
+                    interest_category=category,
+                    interest_name=name
+                )
+                db.add(new_interest)
+        
+        # Remove interests that are no longer in the update data
+        for interest_key, interest in existing_interests.items():
+            if interest_key not in updated_interests:
+                db.delete(interest)
     
     def update_last_login(self, db: Session, *, user_id: int) -> User:
         """사용자 마지막 로그인 시간 업데이트"""
