@@ -82,10 +82,10 @@ async def create_channel(
 
     # 6. 멤버 정보 변환
     member_responses = []
-    for member_id in channel.member_ids:
+    for member in channel.members:
         member_info = db.query(channel_members).filter(
             channel_members.c.channel_id == channel.channel_id,
-            channel_members.c.user_id == member_id
+            channel_members.c.user_id == member.id
         ).first()
         if not member_info or not member_info.joined_at:
             continue
