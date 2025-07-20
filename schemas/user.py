@@ -169,6 +169,10 @@ class UserSessionResponse(BaseModel):
     user_agent: Optional[str] = None
     geo_location: Optional[str] = None
     ip_address: Optional[str] = None
+    device: Optional[str] = None
+    device_type: Optional[str] = None
+    os: Optional[str] = None
+    browser: Optional[str] = None
     last_active_at: datetime
     is_current: bool
     created_at: datetime

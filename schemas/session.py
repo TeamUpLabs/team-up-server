@@ -8,6 +8,10 @@ class SessionBase(BaseModel):
     user_agent: Optional[str] = None
     ip_address: Optional[str] = None
     geo_location: Optional[str] = None
+    device: Optional[str] = None
+    device_type: Optional[str] = None
+    os: Optional[str] = None
+    browser: Optional[str] = None
     last_active_at: Optional[datetime] = None
     is_current: Optional[bool] = False
     device_id: str
@@ -20,6 +24,10 @@ class SessionUpdate(BaseModel):
     user_agent: Optional[str] = None
     ip_address: Optional[str] = None
     geo_location: Optional[str] = None
+    device: Optional[str] = None
+    device_type: Optional[str] = None
+    os: Optional[str] = None
+    browser: Optional[str] = None
     last_active_at: Optional[datetime] = None
     is_current: Optional[bool] = False
 

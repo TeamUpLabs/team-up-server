@@ -49,6 +49,10 @@ class CRUDSession(CRUDBase[UserSession, SessionCreate, SessionDetail]):
                 user_agent=obj_in.user_agent,
                 device_id=obj_in.device_id,
                 ip_address=obj_in.ip_address,
+                device=obj_in.device,
+                device_type=obj_in.device_type,
+                os=obj_in.os,
+                browser=obj_in.browser,
                 geo_location=geo_location,
                 last_active_at=datetime.now(),
                 is_current=True

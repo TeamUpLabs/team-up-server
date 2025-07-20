@@ -15,6 +15,7 @@ from datetime import datetime
 from crud.session import session as session_crud
 from schemas.session import SessionCreate
 from models.user import UserSession
+from ua_parser import user_agent_parser
 
 class TokenVerifyRequest(BaseModel):
     token: str
@@ -68,21 +69,35 @@ async def login(form_data: LoginRequest, request: Request, db: Session = Depends
         existing_session = db.query(UserSession).filter(UserSession.session_id == form_data.session_id, UserSession.user_id == authenticated_user.id).first()
         if existing_session:
             session_crud.update_current_session(db, user_id=authenticated_user.id)
-
         else:
           try:
-              db_session = UserSession(
-                  session_id=form_data.session_id,
-                  user_id=authenticated_user.id,
-                  device_id=form_data.device_id,
-                  user_agent=request.headers.get("user-agent", ""),
-                  ip_address=request.client.host or "",
-                  last_active_at=datetime.now(),
-                  is_current=True
-              )
-              db.add(db_session)
-              db.commit()
-              db.refresh(db_session)
+            ua_string = request.headers.get("user-agent", "")
+            ua = user_agent_parser.Parse(ua_string)
+            
+            # 디바이스 유형 구분
+            if ua["device"]["family"] == "Mobile":
+                device_type = "Mobile"
+            elif ua["device"]["family"] == "Tablet":
+                device_type = "Tablet"
+            else:
+                device_type = "Desktop"
+            
+            db_session = UserSession(
+                session_id=form_data.session_id,
+                user_id=authenticated_user.id,
+                device_id=form_data.device_id,
+                user_agent=ua_string,
+                ip_address=request.client.host or "",
+                device=ua["device"]["family"],
+                device_type=device_type,
+                os=ua["os"]["family"],
+                browser=ua["user_agent"]["family"],
+                last_active_at=datetime.now(),
+                is_current=True
+            )
+            db.add(db_session)
+            db.commit()
+            db.refresh(db_session)
           except Exception as e:
               db.rollback()
               logging.error(f"Error creating login session: {str(e)}")
@@ -266,19 +281,33 @@ async def social_callback(form_data: OauthRequest, request: Request, db: Session
                 logging.info(f"Successfully updated session: {existing_session.id}")
             else:
                 try:
+                  ua_string = request.headers.get("user-agent", "")
+                  ua = user_agent_parser.Parse(ua_string)
+                  
+                  # 디바이스 유형 구분
+                  if ua["device"]["family"] == "Mobile":
+                      device_type = "Mobile"
+                  elif ua["device"]["family"] == "Tablet":
+                      device_type = "Tablet"
+                  else:
+                      device_type = "Desktop"
+                      
                   db_session = UserSession(
                       session_id=form_data.session_id,
                       user_id=existing.id,
                       device_id=form_data.device_id,
-                      user_agent=request.headers.get("user-agent", ""),
+                      user_agent=ua_string,
                       ip_address=request.client.host or "",
+                      device=ua["device"]["family"],
+                      device_type=device_type,
+                      os=ua["os"]["family"],
+                      browser=ua["user_agent"]["family"],
                       last_active_at=datetime.now(),
                       is_current=True
                   )
                   db.add(db_session)
                   db.commit()
                   db.refresh(db_session)
-                  logging.info(f"Successfully created new session: {db_session.id}")
                 except Exception as e:
                     db.rollback()
                     logging.error(f"Error creating session: {str(e)}")

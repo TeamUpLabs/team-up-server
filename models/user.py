@@ -189,6 +189,10 @@ class UserSession(Base, BaseModel):
     user_agent = Column(String)
     ip_address = Column(String)
     geo_location = Column(String, nullable=True)
+    device = Column(String, nullable=True)
+    device_type = Column(String, nullable=True)
+    os = Column(String, nullable=True)
+    browser = Column(String, nullable=True)
     last_active_at = Column(DateTime, nullable=False, server_default=func.now())
     is_current = Column(Boolean, default=True)
     
