@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from schemas.auth import LoginRequest, OauthRequest
 from sqlalchemy.orm import Session
 from typing import Optional
 import logging
@@ -12,6 +12,9 @@ from database import get_db
 import os
 from crud.auth import get_github_user_info
 from datetime import datetime
+from crud.session import session as session_crud
+from schemas.session import SessionCreate
+from models.user import UserSession
 
 class TokenVerifyRequest(BaseModel):
     token: str
@@ -38,14 +41,14 @@ def register(user_in: UserCreate, db: Session = Depends(get_db)):
         )
 
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(form_data: LoginRequest, request: Request, db: Session = Depends(get_db)):
     """
     사용자 로그인
     """
     try:
         # 사용자 인증
         authenticated_user = user.authenticate(
-            db, email=form_data.username, password=form_data.password
+            db, email=form_data.email, password=form_data.password
         )
         
         if not authenticated_user:
@@ -55,18 +58,49 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        # 액세스 토큰 생성
-        access_token = create_access_token(
-            data={"sub": authenticated_user.email}
-        )
-        
+        # Update user status and last login if needed
         if authenticated_user.status == "inactive":
             authenticated_user.status = "active"
-            authenticated_user.last_login = datetime.now()
-            db.commit()
-            db.refresh(authenticated_user)
+        authenticated_user.last_login = datetime.now()
+        db.commit()
+        db.refresh(authenticated_user)
         
-        # UserBrief 객체 생성
+        existing_session = db.query(UserSession).filter(UserSession.session_id == form_data.session_id, UserSession.user_id == authenticated_user.id).first()
+        if existing_session:
+            session_crud.update_current_session(db, user_id=authenticated_user.id)
+
+        else:
+          try:
+              db_session = UserSession(
+                  session_id=form_data.session_id,
+                  user_id=authenticated_user.id,
+                  device_id=form_data.device_id,
+                  user_agent=request.headers.get("user-agent", ""),
+                  ip_address=request.client.host or "",
+                  last_active_at=datetime.now(),
+                  is_current=True
+              )
+              db.add(db_session)
+              db.commit()
+              db.refresh(db_session)
+          except Exception as e:
+              db.rollback()
+              logging.error(f"Error creating login session: {str(e)}")
+        
+        # Create access token with user info
+        access_token = create_access_token(
+            data={
+                "sub": authenticated_user.email,
+                "user_info": {
+                    "id": authenticated_user.id,
+                    "email": authenticated_user.email,
+                    "role": authenticated_user.role,
+                    "status": authenticated_user.status
+                }
+            }
+        )
+        
+        # Create user brief info
         user_brief = UserBrief(
             id=authenticated_user.id,
             name=authenticated_user.name,
@@ -92,7 +126,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         )
 
 @router.post("/token", response_model=Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login_for_access_token(form_data: LoginRequest, db: Session = Depends(get_db)):
     """
     OAuth2 호환 토큰 엔드포인트
     """
@@ -189,20 +223,19 @@ def social_login(provider: str):
         detail=f"{provider} 소셜 로그인은 아직 구현되지 않았습니다."
     )
 
-@router.get("/social/{provider}/callback")
-async def social_callback(provider: str, code: str, db: Session = Depends(get_db)):
+@router.post("/social/callback")
+async def social_callback(form_data: OauthRequest, request: Request, db: Session = Depends(get_db)):
     """
     소셜 로그인 콜백 처리
     """
-    if not code:
+    if not form_data.code:
         raise HTTPException(status_code=400, detail="Authorization code is required")
-    
+      
     try:
-        if provider == "github":
-            social_access_token, github_user, github_username = await get_github_user_info(code)
-            logging.info(f"Social access token received for GitHub user: {github_username}")
+        if form_data.provider == "github":
+            social_access_token, github_user, github_username = await get_github_user_info(form_data.code)
         else:
-            raise HTTPException(status_code=400, detail=f"Unsupported social provider: {provider}")
+            raise HTTPException(status_code=400, detail=f"Unsupported social provider: {form_data.provider}")
             
         if not github_user or not github_user.get("email"):
             raise HTTPException(
@@ -222,15 +255,48 @@ async def social_callback(provider: str, code: str, db: Session = Depends(get_db
             db.commit()
             db.refresh(existing)
             
-            # 액세스 토큰 생성
+            # Update user last login
+            existing.last_login = datetime.now()
+            db.commit()
+            db.refresh(existing)
+            
+            existing_session = db.query(UserSession).filter(UserSession.session_id == form_data.session_id, UserSession.user_id == existing.id).first()
+            if existing_session:
+                session_crud.update_current_session(db, user_id=existing.id)
+                logging.info(f"Successfully updated session: {existing_session.id}")
+            else:
+                try:
+                  db_session = UserSession(
+                      session_id=form_data.session_id,
+                      user_id=existing.id,
+                      device_id=form_data.device_id,
+                      user_agent=request.headers.get("user-agent", ""),
+                      ip_address=request.client.host or "",
+                      last_active_at=datetime.now(),
+                      is_current=True
+                  )
+                  db.add(db_session)
+                  db.commit()
+                  db.refresh(db_session)
+                  logging.info(f"Successfully created new session: {db_session.id}")
+                except Exception as e:
+                    db.rollback()
+                    logging.error(f"Error creating session: {str(e)}")
+            
+            # Create access token with user info
             access_token = create_access_token(
                 data={
                     "sub": existing.email,
-                    "user_info": existing
+                    "user_info": {
+                        "id": existing.id,
+                        "email": existing.email,
+                        "role": existing.role,
+                        "status": existing.status
+                    }
                 }
             )
             
-            # UserBrief 객체 생성
+            # Create user brief info
             user_brief = UserBrief(
                 id=existing.id,
                 name=existing.name,
@@ -243,6 +309,7 @@ async def social_callback(provider: str, code: str, db: Session = Depends(get_db
             return {
                 "status": "logged_in",
                 "access_token": access_token,
+                "token_type": "bearer",
                 "user_info": user_brief
             }
         else:

@@ -36,6 +36,9 @@ from schemas.chat import (
     ChatBase, ChatCreate, ChatUpdate, ChatResponse, ChatListResponse,
     ChatSearchRequest, ChatDateRangeRequest, UserInfo
 )
+from schemas.session import (
+    SessionBase, SessionCreate, SessionUpdate, SessionDetail
+)
 
 # 순환 참조 해결을 위한 forward refs 업데이트
 ProjectDetail.update_forward_refs()

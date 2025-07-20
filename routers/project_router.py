@@ -410,10 +410,11 @@ async def read_project_sse(project_id: str, request: Request, db: Session = Depe
     async def event_generator():
         try:
             db_project = project.get(db, project_id)
-            project_detail = convert_project_to_project_detail(db_project, db)
-            if project_detail:
-                project_dict = project_sse_manager.convert_to_dict(project_detail)
-                yield f"data: {json.dumps(project_dict)}\n\n"
+            if db_project is not None:  # Check if project exists
+                project_detail = convert_project_to_project_detail(db_project, db)
+                if project_detail:
+                    project_dict = project_sse_manager.convert_to_dict(project_detail)
+                    yield f"data: {json.dumps(project_dict)}\n\n"
         finally:
             db.close()
             

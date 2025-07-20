@@ -159,6 +159,23 @@ class UserSocialLinkResponse(BaseModel):
     
     class Config:
         from_attributes = True
+        
+# 사용자 세션 스키마
+class UserSessionResponse(BaseModel):
+    id: int
+    session_id: str
+    user_id: int
+    device_id: Optional[str] = None
+    user_agent: Optional[str] = None
+    geo_location: Optional[str] = None
+    ip_address: Optional[str] = None
+    last_active_at: datetime
+    is_current: bool
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
 
 # 기본 사용자 스키마
 class UserBase(BaseModel):
@@ -232,6 +249,7 @@ class UserDetail(UserBase):
     notification_settings: Optional[Dict[str, int]] = None
     social_links: Optional[List[UserSocialLinkResponse]] = None
     received_notifications: Optional[List[NotificationResponse]] = None
+    sessions: Optional[List[UserSessionResponse]] = None
     
     class Config:
         from_attributes = True
