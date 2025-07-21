@@ -17,6 +17,7 @@ from crud.base import CRUDBase
 import bcrypt
 from datetime import datetime
 from typing import Union
+from crud import session as session_crud
 
 # 패스워드 해싱 함수를 로컬에 정의
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -302,7 +303,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
         db.refresh(user)
         return user
     
-    def logout(self, db: Session, *, user_id: int) -> Dict:
+    def logout(self, db: Session, *, user_id: int, session_id: str) -> Dict:
         """사용자 로그아웃"""
         user = self.get(db, id=user_id)
         if not user:
@@ -311,6 +312,7 @@ class CRUDUser(CRUDBase[User, UserCreate, UserUpdate]):
                 detail="사용자를 찾을 수 없습니다."
             )
         user.status = "inactive"
+        session_crud.session.end(db, session_id=session_id, user_id=user_id)
         db.commit()
         db.refresh(user)
         return {"status": "success", "message": "로그아웃되었습니다."}

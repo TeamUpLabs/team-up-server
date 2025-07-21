@@ -11,3 +11,6 @@ class OauthRequest(BaseModel):
     code: str
     device_id: str
     session_id: str
+    
+class LogoutRequest(BaseModel):
+    session_id: str

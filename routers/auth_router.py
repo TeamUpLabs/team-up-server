@@ -1,19 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from schemas.auth import LoginRequest, OauthRequest
+from schemas.auth import LoginRequest, OauthRequest, LogoutRequest
 from sqlalchemy.orm import Session
-from typing import Optional
 import logging
 from pydantic import BaseModel
 from fastapi.responses import RedirectResponse
 from crud.user import user
-from schemas.user import UserCreate, UserDetail, Token, UserBrief, UserUpdate
+from schemas.user import UserCreate, UserDetail, Token, UserBrief
 from utils.auth import create_access_token, get_current_user, verify_token
 from database import get_db
 import os
 from crud.auth import get_github_user_info
 from datetime import datetime
 from crud.session import session as session_crud
-from schemas.session import SessionCreate
 from models.user import UserSession
 from ua_parser import user_agent_parser
 
@@ -217,11 +215,11 @@ def refresh_access_token(current_user: dict = Depends(get_current_user)):
         )
 
 @router.post("/{user_id}/logout")
-def logout(user_id: int, db: Session = Depends(get_db)):
+def logout(user_id: int, form_data: LogoutRequest, db: Session = Depends(get_db)):
     """
     로그아웃 (클라이언트에서 토큰을 삭제하도록 안내)
     """
-    user.logout(db, user_id=user_id)
+    user.logout(db, user_id=user_id, session_id=form_data.session_id)
     return {"message": "로그아웃되었습니다. 클라이언트에서 토큰을 삭제해주세요."}
 
 # 소셜 로그인 관련 엔드포인트 (향후 확장 가능)
@@ -277,7 +275,7 @@ async def social_callback(form_data: OauthRequest, request: Request, db: Session
             
             existing_session = db.query(UserSession).filter(UserSession.session_id == form_data.session_id, UserSession.user_id == existing.id).first()
             if existing_session:
-                session_crud.update_current_session(db, user_id=existing.id)
+                session_crud.update_current_session(db, user_id=existing.id, session_id=form_data.session_id)
                 logging.info(f"Successfully updated session: {existing_session.id}")
             else:
                 try:

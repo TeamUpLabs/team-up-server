@@ -68,9 +68,9 @@ class CRUDSession(CRUDBase[UserSession, SessionCreate, SessionDetail]):
             logging.error(f"Error in session creation: {str(e)}", exc_info=True)
             raise
     
-    def end(self, db: Session, *, session_id: str) -> UserSession:
+    def end(self, db: Session, *, session_id: str, user_id: int) -> UserSession:
         """세션 종료"""
-        db_obj = db.query(UserSession).filter(UserSession.session_id == session_id).first()
+        db_obj = db.query(UserSession).filter(UserSession.session_id == session_id, UserSession.user_id == user_id).first()
         if not db_obj:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="세션을 찾을 수 없습니다.")
         
@@ -79,9 +79,9 @@ class CRUDSession(CRUDBase[UserSession, SessionCreate, SessionDetail]):
         db.commit()
         return db_obj
       
-    def get_current_session(self, db: Session, *, user_id: int) -> UserSession:
+    def get_current_session(self, db: Session, *, user_id: int, session_id: str) -> UserSession:
         """현재 세션 조회"""
-        return db.query(UserSession).filter(UserSession.user_id == user_id, UserSession.is_current == True).first()
+        return db.query(UserSession).filter(UserSession.user_id == user_id, UserSession.session_id == session_id).first()
       
     def get_all_sessions(self, db: Session, *, user_id: int) -> List[UserSession]:
         """모든 세션 조회"""
@@ -103,14 +103,14 @@ class CRUDSession(CRUDBase[UserSession, SessionCreate, SessionDetail]):
         """세션 삭제"""
         return super().remove(db, id=id)
       
-    def update_current_session(self, db: Session, *, user_id: int) -> UserSession:
+    def update_current_session(self, db: Session, *, user_id: int, session_id: str) -> UserSession:
         """현재 세션 업데이트"""
-        db_obj = self.get_current_session(db, user_id=user_id)
+        db_obj = self.get_current_session(db, user_id=user_id, session_id=session_id)
         if not db_obj:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="세션을 찾을 수 없습니다.")
         
-        db_obj.last_active_at = datetime.now()
         db_obj.is_current = True
+        db_obj.last_active_at = datetime.now()
         db.commit()
         return db_obj
     
