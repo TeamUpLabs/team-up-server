@@ -1,309 +1,306 @@
-from schemas.task import TaskCreate, Task, TaskStatusUpdate, TaskUpdate, Comment, UpdateSubTaskState
-from models.task import Task as TaskModel
-from sqlalchemy.orm import Session
-import json
-from typing import List
-from models.member import Member as MemberModel
-from schemas.member import Member as MemberSchema
-from utils.send_notification import send_notification
+from typing import List, Optional, Dict, Any
 from datetime import datetime
+from sqlalchemy.orm import Session
+from fastapi import HTTPException, status
+from models.task import Task, SubTask, Comment
+from models.project import Project
+from models.milestone import Milestone
+from models.user import User
+from schemas.task import TaskCreate, TaskUpdate, SubTaskCreate, TaskDetail
+from crud.base import CRUDBase
 
-def get_basic_member_info(db: Session, member_id: int):
-    """Get basic member info without loading related data to avoid circular references"""
-    member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-    if not member:
-        return None
+class CRUDTask(CRUDBase[Task, TaskCreate, TaskUpdate]):
+    """업무 모델에 대한 CRUD 작업"""
     
-    # Create a basic info dict with all required fields
-    basic_info = {
-        "id": member.id,
-        "name": member.name,
-        "email": member.email,
-        "role": member.role,
-        "status": member.status,
-        "profileImage": member.profileImage,
-        "contactNumber": member.contactNumber,
-        "workingHours": member.workingHours,
-        # Include other required fields from the Member schema
-        "skills": member.skills or [],
-        "projects": member.projects or [],
-        "languages": member.languages or [],
-        "password": None  # Include as None since it's optional
-    }
-    
-    return MemberSchema.model_validate(basic_info)
-
-async def create_task(db: Session, project_id: str, task: TaskCreate):
-    try:
-        json_fields = ['assignee_id', 'tags', 'subtasks', 'comments']
-        task_data = task.model_dump()
-        task_data['project_id'] = project_id
-
-        for field in json_fields:
-            if field in task_data and task_data[field] is not None:
-                if isinstance(task_data[field], str):
-                    task_data[field] = json.loads(task_data[field])
-
-        db_task = TaskModel(**task_data)
-        db.add(db_task)
+    def create(self, db: Session, *, obj_in: TaskCreate) -> Task:
+        """
+        새 업무 생성
+        관계 검증 및 처리
+        """
+        # 기본 데이터 준비
+        obj_in_data = obj_in.model_dump(exclude={"assignee_ids", "subtasks"})
+        
+        # 프로젝트 존재 확인
+        project = db.query(Project).filter(Project.id == obj_in.project_id).first()
+        if not project:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"프로젝트 ID {obj_in.project_id}를 찾을 수 없습니다."
+            )
+        
+        # 마일스톤 검증
+        if obj_in.milestone_id:
+            milestone = db.query(Milestone).filter(Milestone.id == obj_in.milestone_id).first()
+            if not milestone:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"마일스톤 ID {obj_in.milestone_id}를 찾을 수 없습니다."
+                )
+            # 마일스톤이 동일한 프로젝트에 속하는지 확인
+            if milestone.project_id != obj_in.project_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="마일스톤이 지정된 프로젝트에 속하지 않습니다."
+                )
+        
+        # 업무 생성
+        db_obj = Task(**obj_in_data)
+        
+        # 담당자 추가
+        if obj_in.assignee_ids:
+            assignees = db.query(User).filter(User.id.in_(obj_in.assignee_ids)).all()
+            if len(assignees) != len(set(obj_in.assignee_ids)):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="일부 담당자를 찾을 수 없습니다."
+                )
+            db_obj.assignees = assignees
+        
+        db.add(db_obj)
+        db.flush()  # ID를 생성하기 위해 flush
+        
+        # 하위 업무 추가
+        if obj_in.subtasks:
+            for subtask_data in obj_in.subtasks:
+                subtask = SubTask(
+                    title=subtask_data.title,
+                    is_completed=subtask_data.is_completed,
+                    task_id=db_obj.id,
+                    created_at=datetime.utcnow(),
+                    updated_at=datetime.utcnow()
+                )
+                db.add(subtask)
+        
         db.commit()
-        db.refresh(db_task)
+        db.refresh(db_obj)
         
-        for assignee_id in db_task.assignee_id:
-          if assignee_id != db_task.createdBy:
-            member = get_basic_member_info(db, assignee_id)
-            if member:
-              await send_notification(
-                db=db,
-                id=int(datetime.now().timestamp()),
-                title="태스크 생성",
-                message=f'"{db_task.title}" 작업에 참여되었습니다.',
-                type="task",
-                isRead=False,
-                sender_id=db_task.createdBy,
-                receiver_id=member.id,
-                project_id=project_id
-              )
-        return Task.model_validate(db_task)
-    except Exception as e:
-        print(f"Error in create_task: {str(e)}")
-        db.rollback()
-        raise
-      
-def get_tasks(db: Session, skip: int = 0, limit: int = 100):
-  tasks = db.query(TaskModel).offset(skip).limit(limit).all()
-  result = []
-  
-  if tasks:
-    for task in tasks:
-      assignee = []
-      if task.assignee_id:
-        for assignee_id in task.assignee_id:
-          member = get_basic_member_info(db, assignee_id)
-          if member:
-            assignee.append(member)
-      task.assignee = assignee
-      
-      # Convert SQLAlchemy model to Pydantic model
-      result.append(Task.model_validate(task))
-      
-  return result
-
-def get_tasks_by_milestone_id(db: Session, milestone_id: int):
-  tasks = db.query(TaskModel).filter(TaskModel.milestone_id == milestone_id).all()
-  result = []
-  
-  for task in tasks:
-    assignee = []
-    if task.assignee_id:
-      for assignee_id in task.assignee_id:
-        member = get_basic_member_info(db, assignee_id)
-        if member:
-          assignee.append(member)
-    task.assignee = assignee
-    
-    # Convert SQLAlchemy model to Pydantic model
-    result.append(Task.model_validate(task))
-    
-  return result
-
-
-def get_tasks_by_project_id(db: Session, project_id: str):
-  tasks = db.query(TaskModel).filter(TaskModel.project_id == project_id).all()
-  result = []
-  
-  for task in tasks:
-    assignee = []
-    if task.assignee_id:
-      for assignee_id in task.assignee_id:
-        member = get_basic_member_info(db, assignee_id)
-        if member:
-          assignee.append(member)
-    task.assignee = assignee
-    
-    # Convert SQLAlchemy model to Pydantic model
-    result.append(Task.model_validate(task))
-    
-  return result
-
-def get_task_by_project_id_and_milestone_id(db: Session, project_id: str, milestone_id: int):
-  tasks = db.query(TaskModel).filter(TaskModel.project_id == project_id, TaskModel.milestone_id == milestone_id).all()
-  result = []
-  
-  for task in tasks:
-    assignee = [] 
-    if task.assignee_id:
-      for assignee_id in task.assignee_id:
-        member = get_basic_member_info(db, assignee_id)
-        if member:
-          assignee.append(member)
-    task.assignee = assignee
-    
-    # Convert SQLAlchemy model to Pydantic model
-    result.append(Task.model_validate(task))
-    
-  return result
+        # 마일스톤의 진행도 업데이트
+        if db_obj.milestone_id:
+            self._update_milestone_progress(db, milestone_id=db_obj.milestone_id)
         
-def get_tasks_by_member_id(db: Session, member_id: int):
-  from sqlalchemy import cast
-  from sqlalchemy.dialects.postgresql import JSONB
+        return db_obj
+    
+    def update(self, db: Session, *, db_obj: Task, obj_in: TaskUpdate) -> Task:
+        """
+        업무 정보 업데이트
+        관계 검증 및 처리
+        """
+        update_data = obj_in.model_dump(exclude_unset=True)
+        old_milestone_id = db_obj.milestone_id
+        
+        # 마일스톤 검증
+        if "milestone_id" in update_data and update_data["milestone_id"] is not None:
+            milestone = db.query(Milestone).filter(Milestone.id == update_data["milestone_id"]).first()
+            if not milestone:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"마일스톤 ID {update_data['milestone_id']}를 찾을 수 없습니다."
+                )
+            # 마일스톤이 동일한 프로젝트에 속하는지 확인
+            if milestone.project_id != db_obj.project_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="마일스톤이 업무의 프로젝트에 속하지 않습니다."
+                )
+        
+        # 담당자 업데이트
+        if "assignee_ids" in update_data:
+            assignee_ids = update_data.pop("assignee_ids")
+            if assignee_ids is not None:
+                assignees = db.query(User).filter(User.id.in_(assignee_ids)).all()
+                if len(assignees) != len(set(assignee_ids)):
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="일부 담당자를 찾을 수 없습니다."
+                    )
+                db_obj.assignees = assignees
+        
+        # 상태 변경 시 완료 일자 업데이트
+        if "status" in update_data:
+            if update_data["status"] == "completed" and db_obj.status != "completed":
+                update_data["completed_at"] = datetime.utcnow()
+            elif update_data["status"] != "completed" and db_obj.status == "completed":
+                update_data["completed_at"] = None
+        
+        # 업데이트 수행
+        updated_obj = super().update(db, db_obj=db_obj, obj_in=update_data)
+        
+        # 마일스톤 진행도 업데이트
+        if old_milestone_id:
+            self._update_milestone_progress(db, milestone_id=old_milestone_id)
+        if updated_obj.milestone_id and updated_obj.milestone_id != old_milestone_id:
+            self._update_milestone_progress(db, milestone_id=updated_obj.milestone_id)
+        
+        return updated_obj
+    
+    def _update_milestone_progress(self, db: Session, *, milestone_id: int) -> None:
+        """마일스톤의 진행도를 업데이트"""
+        milestone = db.query(Milestone).filter(Milestone.id == milestone_id).first()
+        if not milestone or not milestone.tasks:
+            return
+            
+        total_tasks = len(milestone.tasks)
+        completed_tasks = sum(1 for task in milestone.tasks if task.status == "completed")
+        
+        milestone.progress = int((completed_tasks / total_tasks) * 100) if total_tasks > 0 else 0
+        db.add(milestone)
+        db.commit()
+    
+    def get_by_project(self, db: Session, *, project_id: str, skip: int = 0, limit: int = 100) -> List[TaskDetail]:
+        """프로젝트별 업무 목록 조회"""
+        tasks = db.query(Task).filter(Task.project_id == project_id).offset(skip).limit(limit).all()
+        return [TaskDetail.model_validate(task, from_attributes=True) for task in tasks]
+    
+    def get_by_milestone(self, db: Session, *, milestone_id: int, skip: int = 0, limit: int = 100) -> List[Task]:
+        """마일스톤별 업무 목록 조회"""
+        return db.query(Task).filter(Task.milestone_id == milestone_id).offset(skip).limit(limit).all()
+    
+    def get_by_assignee(self, db: Session, *, user_id: int, skip: int = 0, limit: int = 100) -> List[Task]:
+        """담당자별 업무 목록 조회"""
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"사용자 ID {user_id}를 찾을 수 없습니다."
+            )
+        return user.assigned_tasks[skip:skip+limit]
+    
+    def get_assignees(self, db: Session, *, task_id: int) -> List[User]:
+        """업무 담당자 목록 조회"""
+        task = db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"업무 ID {task_id}를 찾을 수 없습니다."
+            )
+        return task.assignees
+    
+    def add_assignee(self, db: Session, *, task_id: int, user_id: int) -> Task:
+        """업무에 담당자 추가"""
+        task = db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"업무 ID {task_id}를 찾을 수 없습니다."
+            )
+        
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"사용자 ID {user_id}를 찾을 수 없습니다."
+            )
+        
+        if user not in task.assignees:
+            task.assignees.append(user)
+            db.add(task)
+            db.commit()
+            db.refresh(task)
+        
+        return task
+    
+    def remove_assignee(self, db: Session, *, task_id: int, user_id: int) -> Task:
+        """업무에서 담당자 제거"""
+        task = db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"업무 ID {task_id}를 찾을 수 없습니다."
+            )
+        
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"사용자 ID {user_id}를 찾을 수 없습니다."
+            )
+        
+        if user in task.assignees:
+            task.assignees.remove(user)
+            db.add(task)
+            db.commit()
+            db.refresh(task)
+        
+        return task
+    
+    def is_project_manager(self, db: Session, *, task_id: int, user_id: int) -> bool:
+        """사용자가 해당 업무의 프로젝트 관리자인지 확인"""
+        task = db.query(Task).filter(Task.id == task_id).first()
+        if not task:
+            return False
+        
+        # 프로젝트 멤버 테이블에서 관리자 권한 확인
+        from models.association_tables import project_members
+        member = db.query(project_members).filter(
+            project_members.c.project_id == task.project_id,
+            project_members.c.user_id == user_id
+        ).first()
+        
+        return member and (member.is_manager or member.is_leader)
+    
+    def get_multi_filtered(self, db: Session, *, skip: int = 0, limit: int = 100, 
+                          project_id: Optional[str] = None, milestone_id: Optional[int] = None,
+                          status: Optional[str] = None, priority: Optional[str] = None) -> List[Task]:
+        """필터링된 업무 목록 조회"""
+        query = db.query(Task)
+        
+        if project_id:
+            query = query.filter(Task.project_id == project_id)
+        if milestone_id:
+            query = query.filter(Task.milestone_id == milestone_id)
+        if status:
+            query = query.filter(Task.status == status)
+        if priority:
+            query = query.filter(Task.priority == priority)
+        
+        return query.offset(skip).limit(limit).all()
+    
+    def get_comments(self, db: Session, *, task_id: int, skip: int = 0, limit: int = 100) -> List[Comment]:
+        """업무의 댓글 목록 조회"""
+        return db.query(Comment).filter(Comment.task_id == task_id).offset(skip).limit(limit).all()
+    
+    def create_comment(self, db: Session, *, task_id: int, content: str, created_by: int) -> Comment:
+        """댓글 생성"""
+        comment = Comment(
+            content=content,
+            task_id=task_id,
+            created_by=created_by,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        db.add(comment)
+        db.commit()
+        db.refresh(comment)
+        return comment
+    
+    def update_comment(self, db: Session, *, comment_id: int, content: str) -> Comment:
+        """댓글 수정"""
+        comment = db.query(Comment).filter(Comment.id == comment_id).first()
+        if not comment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"댓글 ID {comment_id}를 찾을 수 없습니다."
+            )
+        
+        comment.content = content
+        comment.updated_at = datetime.utcnow()
+        db.add(comment)
+        db.commit()
+        db.refresh(comment)
+        return comment
+    
+    def delete_comment(self, db: Session, *, comment_id: int) -> bool:
+        """댓글 삭제"""
+        comment = db.query(Comment).filter(Comment.id == comment_id).first()
+        if not comment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"댓글 ID {comment_id}를 찾을 수 없습니다."
+            )
+        
+        db.delete(comment)
+        db.commit()
+        return True
 
-  tasks = db.query(TaskModel).filter(
-      cast(TaskModel.assignee_id, JSONB).contains([member_id])
-  ).all()
-  
-  result = []
-  
-  for task in tasks:
-    assignee = []
-    if task.assignee_id:
-      for assignee_id in task.assignee_id:
-        member = get_basic_member_info(db, assignee_id)
-        if member:
-          assignee.append(member)
-    task.assignee = assignee
-    
-    # Convert SQLAlchemy model to Pydantic model
-    result.append(Task.model_validate(task))
-    
-  return result
-
-def get_tasks_by_member_id_and_project_id(db: Session, member_id: int, project_id: str):
-  from sqlalchemy import cast
-  from sqlalchemy.dialects.postgresql import JSONB
-
-  tasks = db.query(TaskModel).filter(
-      cast(TaskModel.assignee_id, JSONB).contains([member_id]),
-      TaskModel.project_id == project_id
-  ).all()
-  
-  result = []
-  
-  for task in tasks:
-    assignee = []
-    if task.assignee_id:
-      for assignee_id in task.assignee_id:
-        member = get_basic_member_info(db, assignee_id)
-        if member:
-          assignee.append(member)
-    task.assignee = assignee
-    
-    # Convert SQLAlchemy model to Pydantic model
-    result.append(Task.model_validate(task))
-    
-  return result
-
-def delete_task_by_id(db: Session, project_id: str, task_id: int):
-  task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
-  if task:
-    db.delete(task)
-    db.commit()
-    return True
-  return False
-
-def update_task_status(db: Session, project_id: str, task_id: int, status: TaskStatusUpdate):
-  task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
-  if task:
-    task.status = status.status
-    db.commit()
-    db.refresh(task)
-    return Task.model_validate(task)
-  return None
-
-def update_task_by_id(db: Session, project_id: str, task_id: int, task_update: TaskUpdate):
-  task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
-  
-  if task:
-    task_data = task_update.dict(exclude_unset=True, exclude_none=True)
-    for field, value in task_data.items():
-      setattr(task, field, value)
-    db.commit()
-    db.refresh(task)
-    
-    return Task.model_validate(task)
-  return None
-
-def update_subtask_state_by_id(db: Session, project_id: str, task_id: int, subtask_id: int, subtask_update: UpdateSubTaskState):
-  task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
-  if task:
-    subtask = next((subtask for subtask in task.subtasks if subtask['id'] == subtask_id), None)
-    if subtask:
-      subtask['completed'] = subtask_update.completed
-      db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).update(
-        {"subtasks": task.subtasks},
-        synchronize_session="fetch"
-      )
-      db.commit()
-      db.refresh(task)
-      return Task.model_validate(task)
-  return None
-
-async def upload_task_comment(db: Session, project_id: str, task_id: int, comment: Comment):
-  try:
-    # Get task
-    task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
-    if not task:
-      print("Task not found")
-      return None
-    
-    current_comments = []
-    if task.comments:
-      if isinstance(task.comments, list):
-        current_comments = task.comments.copy()
-      elif isinstance(task.comments, str):
-        current_comments = json.loads(task.comments)
-    
-    comment_dict = {
-      "id": int(datetime.now().timestamp() * 1000),
-      "author_id": comment.author_id,
-      "content": comment.content,
-      "createdAt": comment.createdAt
-    }
-    
-    current_comments.append(comment_dict)
-
-    from sqlalchemy import update
-    stmt = update(TaskModel).where(
-      TaskModel.id == task_id,
-      TaskModel.project_id == project_id
-    ).values(
-      comments=current_comments
-    )
-    
-    for assignee_id in task.assignee_id:
-      if assignee_id != comment.author_id:
-        member = get_basic_member_info(db, assignee_id)
-        if member:
-          await send_notification(
-            db=db,
-            id=int(datetime.now().timestamp()),
-            title=f"{task.title}에 대한 {member.name}님의 새 댓글",
-            message=comment.content,
-            type="task",
-            isRead=False,
-            sender_id=comment.author_id,
-            receiver_id=assignee_id,
-            project_id=project_id,
-          )
-    
-    db.execute(stmt)
-    db.commit()
-    
-    # Return updated task
-    return Task.model_validate(task)
-  except Exception as e:
-    db.rollback()
-    print(f"Error in upload_task_comment: {str(e)}")
-    import traceback
-    print(traceback.format_exc())
-    raise
-  
-def delete_task_comment(db: Session, project_id: str, task_id: int, comment_id: int):
-  task = db.query(TaskModel).filter(TaskModel.id == task_id, TaskModel.project_id == project_id).first()
-  if task:
-    if task.comments:
-      task.comments = [comment for comment in task.comments if comment.get('id') != comment_id]
-      db.commit()
-      db.refresh(task)
-    return Task.model_validate(task)
-  return None
+# CRUDTask 클래스 인스턴스 생성
+task = CRUDTask(Task) 

@@ -105,8 +105,11 @@ projects = response.data
 개발 환경에서 서버를 실행하는 방법:
 
 ```bash
+# 데이터베이스 마이그레이션 (새로운 채널/채팅 기능 사용 시)
+python new_scripts/migrate_channel_chat.py
+
 # Uvicorn을 사용한 직접 실행 (자동 리로드)
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uvicorn new_main:app --reload --host 0.0.0.0 --port 8000
 
 # 또는 wsgi.py 사용
 python wsgi.py
@@ -127,6 +130,31 @@ gunicorn -c gunicorn_config.py wsgi:application
 
 - Swagger UI: `http://서버주소:8000/docs`
 - ReDoc: `http://서버주소:8000/redoc`
+
+### 주요 API 엔드포인트
+
+#### 채널 관리
+- `POST /channels/` - 새 채널 생성
+- `GET /channels/{channel_id}` - 채널 정보 조회
+- `GET /channels/{channel_id}/with-members` - 채널 정보와 멤버 목록 조회
+- `GET /channels/project/{project_id}` - 프로젝트의 채널 목록 조회
+- `GET /channels/user/{user_id}` - 사용자가 참여 중인 채널 목록 조회
+- `PUT /channels/{channel_id}` - 채널 정보 업데이트
+- `POST /channels/{channel_id}/members` - 채널에 멤버 추가
+- `DELETE /channels/{channel_id}/members/{user_id}` - 채널에서 멤버 제거
+- `GET /channels/{channel_id}/members` - 채널의 멤버 목록 조회
+- `DELETE /channels/{channel_id}` - 채널 삭제
+
+#### 채팅 관리
+- `POST /chats/` - 새 채팅 메시지 생성
+- `GET /chats/{chat_id}` - 채팅 메시지 조회
+- `GET /chats/channel/{channel_id}` - 채널의 채팅 메시지 조회
+- `GET /chats/project/{project_id}` - 프로젝트의 모든 채팅 메시지 조회
+- `GET /chats/user/{user_id}` - 사용자가 작성한 채팅 메시지 조회
+- `POST /chats/channel/{channel_id}/search` - 채널에서 메시지 검색
+- `POST /chats/channel/{channel_id}/date-range` - 특정 기간의 채팅 메시지 조회
+- `PUT /chats/{chat_id}` - 채팅 메시지 수정
+- `DELETE /chats/{chat_id}` - 채팅 메시지 삭제
 
 ## 외부 접속 설정
 

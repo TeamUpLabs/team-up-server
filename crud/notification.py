@@ -1,175 +1,144 @@
+from typing import Optional, List, Dict
 from sqlalchemy.orm import Session
-from models.member import Member as MemberModel
-from models.project import Project as ProjectModel
-from schemas.member import NotificationUpdate, NotificationInfo
-from crud.project import add_member_to_project
+from sqlalchemy import and_, desc
+from fastapi import HTTPException, status
 from datetime import datetime
 
-async def update_notification(db: Session, member_id: int, notification_id: int, notification_update: NotificationUpdate):
-  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-  if not member:
-    return None
-  
-  notifications = member.notification
-  for i, notification in enumerate(notifications):
-    if notification['id'] == notification_id:
-      for field, value in notification_update.dict(exclude_unset=True, exclude_none=True).items():
-        notification[field] = value
+from models.notification import Notification
+from schemas.notification import NotificationCreate, NotificationUpdate
+from crud.base import CRUDBase
+
+class CRUDNotification(CRUDBase[Notification, NotificationCreate, NotificationUpdate]):
+    """알림 모델에 대한 CRUD 작업"""
+    
+    def create_notification(self, db: Session, *, obj_in: NotificationCreate) -> Notification:
+        """새 알림 생성"""
+        db_obj = Notification(
+            title=obj_in.title,
+            message=obj_in.message,
+            type=obj_in.type,
+            timestamp=datetime.utcnow(),
+            is_read=False,
+            sender_id=obj_in.sender_id,
+            receiver_id=obj_in.receiver_id,
+            project_id=obj_in.project_id,
+            result=obj_in.result
+        )
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
+    
+    def get_user_notifications(
+        self, 
+        db: Session, 
+        *, 
+        user_id: int, 
+        skip: int = 0, 
+        limit: int = 50,
+        is_read: Optional[bool] = None
+    ) -> List[Notification]:
+        """사용자의 알림 목록 조회"""
+        query = db.query(Notification).filter(Notification.receiver_id == user_id)
         
-  db.query(MemberModel).filter(MemberModel.id == member_id).update(
-    {"notification": notifications},
-    synchronize_session="fetch"
-  )
-  
-  db.commit()
-  db.refresh(member)
-  return member
-
-def accept_scout_member(db: Session, member_id: int, notification_id: int):
-  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-  if not member:
-    return None
-  
-  target_notification = None
-  for notification in member.notification:
-    if notification['id'] == notification_id:
-      target_notification = notification
-      break
-  
-  if not target_notification:
-    return None
-  
-  target_project = db.query(ProjectModel).filter(ProjectModel.id == target_notification['project_id']).first()
-  if not target_project:
-    return None
-  
-  sender_member = db.query(MemberModel).filter(MemberModel.id == target_notification['sender_id']).first()
-  if not sender_member:
-    return None
-  
-  receiver_member = db.query(MemberModel).filter(MemberModel.id == target_notification["receiver_id"]).first()
-  if not receiver_member:
-    return None
-  
-  add_member_to_project(db, target_notification['project_id'], member_id)
-  
-  sender_notification = NotificationInfo(
-    id=int(datetime.now().timestamp()),
-    title="스카우트 요청 수락",
-    message=f'"{receiver_member.name}" 님이 "{target_project.title}" 프로젝트에 참여 요청을 수락했습니다.',
-    type="info",
-    isRead=False,
-    sender_id=receiver_member.id,
-    receiver_id=sender_member.id,
-    project_id=target_notification['project_id'],
-    result="accept"
-  )
-  
-  if not hasattr(sender_member, 'notification') or sender_member.notification is None:
-    sender_member.notification = []
+        if is_read is not None:
+            query = query.filter(Notification.is_read == is_read)
+        
+        return query.order_by(desc(Notification.timestamp)).offset(skip).limit(limit).all()
     
-  sender_member.notification.append(sender_notification.model_dump())
-  
-  db.query(MemberModel).filter(MemberModel.id == sender_member.id).update(
-    {"notification": sender_member.notification},
-    synchronize_session="fetch"
-  )
-  
-  update_notification(db, receiver_member.id, notification_id, NotificationUpdate(result="accept"))
-  
-  db.commit()
-  db.refresh(sender_member)
-  return {"message": "스카우트 요청 수락 완료"}
-  
-def reject_scout_member(db: Session, member_id: int, notification_id: int):
-  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-  if not member:
-    return None
-  
-  target_notification = None
-  for notification in member.notification:
-    if notification['id'] == notification_id:
-      target_notification = notification
-      break
-  
-  if not target_notification:
-    return None
-  
-  target_project = db.query(ProjectModel).filter(ProjectModel.id == target_notification['project_id']).first()
-  if not target_project:
-    return None
-  
-  sender_member = db.query(MemberModel).filter(MemberModel.id == target_notification['sender_id']).first()
-  if not sender_member:
-    return None
-  
-  receiver_member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-  if not receiver_member:
-    return None
-  
-  reject_notification = NotificationInfo(
-    id=int(datetime.now().timestamp()),
-    title="스카우트 요청 거절",
-    message=f'"{receiver_member.name}" 님이 "{target_project.title}" 프로젝트에 참여 요청을 거절했습니다.',
-    type="info",
-    isRead=False,
-    sender_id=receiver_member.id,
-    receiver_id=sender_member.id,
-    project_id=target_notification['project_id'],
-    result="reject"
-  )
-  
-  if not hasattr(sender_member, 'notification') or sender_member.notification is None:
-    sender_member.notification = []
+    def get_unread_count(self, db: Session, *, user_id: int) -> int:
+        """사용자의 읽지 않은 알림 개수 조회"""
+        return db.query(Notification).filter(
+            and_(
+                Notification.receiver_id == user_id,
+                Notification.is_read == False
+            )
+        ).count()
     
-  sender_member.notification.append(reject_notification.model_dump())
-  
-  db.query(MemberModel).filter(MemberModel.id == sender_member.id).update(
-    {"notification": sender_member.notification},
-    synchronize_session="fetch"
-  )
-  
-  update_notification(db, sender_member.id, notification_id, NotificationUpdate(result="reject"))
-  
-  db.commit()
-  db.refresh(sender_member)
-  return {"message": "스카우트 요청 거절 완료"}
+    def mark_as_read(self, db: Session, *, notification_id: int, user_id: int) -> Notification:
+        """알림을 읽음으로 표시"""
+        notification = db.query(Notification).filter(
+            and_(
+                Notification.id == notification_id,
+                Notification.receiver_id == user_id
+            )
+        ).first()
+        
+        if not notification:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="알림을 찾을 수 없습니다."
+            )
+        
+        notification.is_read = True
+        db.commit()
+        db.refresh(notification)
+        return notification
+    
+    def mark_all_as_read(self, db: Session, *, user_id: int) -> Dict:
+        """사용자의 모든 알림을 읽음으로 표시"""
+        result = db.query(Notification).filter(
+            and_(
+                Notification.receiver_id == user_id,
+                Notification.is_read == False
+            )
+        ).update({"is_read": True})
+        
+        db.commit()
+        
+        return {
+            "status": "success",
+            "message": f"{result}개의 알림이 읽음으로 표시되었습니다.",
+            "updated_count": result
+        }
+    
+    def delete_notification(self, db: Session, *, notification_id: int, user_id: int) -> Dict:
+        """알림 삭제"""
+        notification = db.query(Notification).filter(
+            and_(
+                Notification.id == notification_id,
+                Notification.receiver_id == user_id
+            )
+        ).first()
+        
+        if not notification:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="알림을 찾을 수 없습니다."
+            )
+        
+        db.delete(notification)
+        db.commit()
+        
+        return {"status": "success", "message": "알림이 삭제되었습니다."}
+    
+    def create_system_notification(
+        self, 
+        db: Session, 
+        *, 
+        user_id: int, 
+        title: str, 
+        message: str, 
+        notification_type: str,
+        project_id: Optional[str] = None,
+        result: Optional[str] = None
+    ) -> Notification:
+        """시스템 알림 생성 (sender_id가 없는 경우)"""
+        db_obj = Notification(
+            title=title,
+            message=message,
+            type=notification_type,
+            timestamp=datetime.utcnow(),
+            is_read=False,
+            sender_id=None,  # 시스템 알림
+            receiver_id=user_id,
+            project_id=project_id,
+            result=result
+        )
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
 
-def delete_notification(db: Session, member_id: int, notification_id: int):
-  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-  if not member:
-    return None
-  
-  member.notification = [notification for notification in member.notification if notification['id'] != notification_id]
-  
-  db.query(MemberModel).filter(MemberModel.id == member_id).update(
-    {"notification": member.notification},
-    synchronize_session="fetch"
-  )
-  
-  db.commit()
-  db.refresh(member)
-  return {"message": "알림 삭제 완료"}
-
-def delete_all_notifications(db: Session, member_id: int):
-  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-  if not member:
-    return None
-  
-  member.notification = []
-  
-  db.query(MemberModel).filter(MemberModel.id == member_id).update(
-    {"notification": member.notification},
-    synchronize_session="fetch"
-  )
-  
-  db.commit()
-  db.refresh(member)
-  return {"message": "모든 알림 삭제 완료"}
-
-def get_notifications(db: Session, member_id: int):
-  member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-  if not member:
-    return None
-  
-  return member.notification
+# CRUDNotification 클래스 인스턴스 생성
+notification = CRUDNotification(Notification) 

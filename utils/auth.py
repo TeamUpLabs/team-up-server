@@ -6,6 +6,8 @@ import os
 from dotenv import load_dotenv
 import bcrypt
 import logging
+from database import get_db
+from crud.user import user
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -46,8 +48,8 @@ def serialize_data(data):
 def create_access_token(data: dict):
     to_encode = data.copy()
     # Convert expiration time to Unix timestamp (seconds since epoch)
-    expire = int((datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)).timestamp())
-    to_encode.update({"exp": expire})
+    # expire = int((datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)).timestamp())
+    # to_encode.update({"exp": expire})
     
     # Serialize the data to ensure all objects are JSON serializable
     to_encode = serialize_data(to_encode)
@@ -64,18 +66,23 @@ def verify_token(token: str):
         return None
       
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/users/token")
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
+def get_current_user(token: str = Depends(oauth2_scheme), db=Depends(get_db)) -> dict:
     try:
         payload = verify_token(token)
         if payload is None:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-        user_info = payload.get("user_info")
-        if not user_info:
-            raise HTTPException(status_code=401, detail="User info not found in token")
+        email = payload.get("sub")
+        if not email:
+            raise HTTPException(status_code=401, detail="Email not found in token")
 
-        return user_info
+        # 이메일로 사용자 찾기
+        db_user = user.get_by_email(db, email=email)
+        if not db_user:
+            raise HTTPException(status_code=401, detail="User not found")
+
+        return db_user
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")

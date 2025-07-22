@@ -1,110 +1,89 @@
-from schemas.schedule import ScheduleCreate, ScheduleUpdate
-from sqlalchemy.orm import Session
 from models.schedule import Schedule
-from models.member import Member as MemberModel
-from schemas.member import Member as MemberSchema
-import logging
-from utils.send_notification import send_notification
-from datetime import datetime
+from schemas.schedule import ScheduleCreate, ScheduleUpdate
+from crud.base import CRUDBase
+from sqlalchemy.orm import Session
+from typing import List
+from models.association_tables import schedule_assignees
+from models.project import Project
 
-def get_basic_member_info(db: Session, member_id: int):
-    """Get basic member info without loading related data to avoid circular references"""
-    member = db.query(MemberModel).filter(MemberModel.id == member_id).first()
-    if not member:
-        return None
-    
-    # Create a basic info dict with all required fields
-    basic_info = {
-        "id": member.id,
-        "name": member.name,
-        "email": member.email,
-        "role": member.role,
-        "status": member.status,
-        "profileImage": member.profileImage,
-        "contactNumber": member.contactNumber,
-        "workingHours": member.workingHours,
-        # Include other required fields from the Member schema
-        "skills": member.skills or [],
-        "projects": member.projects or [],
-        "languages": member.languages or [],
-        "password": None  # Include as None since it's optional
-    }
-    
-    return MemberSchema.model_validate(basic_info)
-
-async def create_schedule(db: Session, schedule: ScheduleCreate):
-    try:
-        schedule_data_for_db = schedule.model_dump()
+class CRUDSchedule(CRUDBase[Schedule, ScheduleCreate, ScheduleUpdate]):
+    """스케줄 모델에 대한 CRUD 작업"""
+    def create(self, db: Session, *, project_id: str, obj_in: ScheduleCreate) -> Schedule:
+        schedule_data_for_db = obj_in.model_dump(exclude={"assignee_ids"})
+        schedule_data_for_db["project_id"] = project_id
         db_schedule = Schedule(**schedule_data_for_db)
         db.add(db_schedule)
+        db.flush()  # Get the ID without committing
+        
+        # Handle assignees
+        if obj_in.assignee_ids:
+            from models.user import User
+            for user_id in obj_in.assignee_ids:
+                user = db.query(User).filter(User.id == user_id).first()
+                if user:
+                    db_schedule.assignees.append(user)
+        
         db.commit()
         db.refresh(db_schedule)
-        
-        for assignee_id in db_schedule.assignee_id:
-          if assignee_id != db_schedule.created_by:
-            member = get_basic_member_info(db, assignee_id)
-            if member:
-              await send_notification(
-                db=db,
-                id=int(datetime.now().timestamp()),
-                title="스케줄 생성",
-                message=f'"{db_schedule.title}" 스케줄에 참여되었습니다.',
-                type="schedule",
-                isRead=False,
-                sender_id=db_schedule.created_by,
-                receiver_id=member.id,
-                project_id=db_schedule.project_id
-              )
         return db_schedule
-    except Exception as e:
-        print(f"Error in create_schedule: {str(e)}")
-        db.rollback()
-        raise
-
-def get_schedule(db: Session, schedule_id: int):
-    schedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
     
-    if schedule:
-      assignee = []
-      if schedule.assignee_id:
-        for assignee_id in schedule.assignee_id:
-          assignee.append(get_basic_member_info(db, assignee_id))
-      schedule.assignee = assignee
-      return schedule
-    return None
-
-def get_schedules(db: Session, project_id: str):
-    schedules = db.query(Schedule).filter(Schedule.project_id == project_id).all()
-    result = []
+    def get_by_project(self, db: Session, *, project_id: str) -> List[Schedule]:
+        return db.query(Schedule).filter(Schedule.project_id == project_id).all()
     
-    for schedule in schedules:
-      assignee = []
-      if schedule.assignee_id:
-        for assignee_id in schedule.assignee_id:
-          assignee.append(get_basic_member_info(db, assignee_id))
-      schedule.assignee = assignee
-      result.append(schedule)
-    if not schedules:
-        return []
-    return result
+    def get_by_assignee(self, db: Session, *, user_id: int) -> List[Schedule]:
+        return db.query(Schedule).join(schedule_assignees).filter(
+            schedule_assignees.c.user_id == user_id
+        ).all()
     
-
-def update_schedule(db: Session, schedule_id: int, schedule: ScheduleUpdate):
-    db_schedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
+    def get_by_id(self, db: Session, *, schedule_id: int) -> Schedule:
+        return db.query(Schedule).filter(Schedule.id == schedule_id).first()
+        
+    def get_multi(self, db: Session, *, skip: int = 0, limit: int = 100) -> List[Schedule]:
+        return db.query(Schedule).offset(skip).limit(limit).all()
+        
+    def update(self, db: Session, *, db_obj: Schedule, obj_in: ScheduleUpdate) -> Schedule:
+        obj_data = db_obj.__dict__
+        update_data = obj_in.model_dump(exclude_unset=True, exclude={"assignee_ids"})
+        
+        for field in obj_data:
+            if field in update_data:
+                setattr(db_obj, field, update_data[field])
+        
+        # Handle assignees update if provided
+        if hasattr(obj_in, "assignee_ids") and obj_in.assignee_ids is not None:
+            from models.user import User
+            # Clear existing assignees
+            db_obj.assignees = []
+            # Add new assignees
+            for user_id in obj_in.assignee_ids:
+                user = db.query(User).filter(User.id == user_id).first()
+                if user:
+                    db_obj.assignees.append(user)
+        
+        db.add(db_obj)
+        db.commit()
+        db.refresh(db_obj)
+        return db_obj
+        
+    def remove(self, db: Session, *, schedule_id: int) -> Schedule:
+        obj = db.query(Schedule).get(schedule_id)
+        db.delete(obj)
+        db.commit()
+        return obj
     
-    if db_schedule:
-      schedule_data = schedule.model_dump()
-      for field, value in schedule_data.items():
-        setattr(db_schedule, field, value)
-      db.commit()
-      db.refresh(db_schedule)
-      return db_schedule
-    return None
+    def is_project_manager(self, db: Session, *, project_id: str, user_id: int) -> bool:
+        """사용자가 해당 프로젝트의 관리자인지 확인"""
+        project = db.query(Project).filter(Project.id == project_id).first()
+        if not project:
+            return False
+        
+        # 프로젝트 멤버 테이블에서 관리자 권한 확인
+        from models.association_tables import project_members
+        member = db.query(project_members).filter(
+            project_members.c.project_id == project_id,
+            project_members.c.user_id == user_id
+        ).first()
+        
+        return member and (member.is_manager or member.is_leader)
 
-def delete_schedule_by_id(db: Session, schedule_id: int):
-    schedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
-    if not schedule:
-        return None
-    db.delete(schedule)
-    db.commit()
-    return schedule
+schedule = CRUDSchedule(Schedule)
