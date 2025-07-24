@@ -66,7 +66,7 @@ async def login(form_data: LoginRequest, request: Request, db: Session = Depends
         
         existing_session = db.query(UserSession).filter(UserSession.session_id == form_data.session_id, UserSession.user_id == authenticated_user.id).first()
         if existing_session:
-            session_crud.update_current_session(db, user_id=authenticated_user.id)
+            session_crud.update_current_session(db, user_id=authenticated_user.id, session_id=form_data.session_id)
         else:
           try:
             ua_string = request.headers.get("user-agent", "")
