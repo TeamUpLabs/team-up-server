@@ -7,3 +7,4 @@ from crud.schedule import schedule
 from crud.notification import notification
 from crud.channel import ChannelCRUD
 from crud.chat import ChatCRUD
+from crud.whiteboard import whiteboard

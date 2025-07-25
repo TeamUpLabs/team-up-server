@@ -49,6 +49,12 @@ class Project(Base, BaseModel):
         cascade="all, delete-orphan"
     )
     
+    whiteboards = relationship(
+        "WhiteBoard",
+        back_populates="project",
+        cascade="all, delete-orphan"
+    )
+    
     milestones = relationship(
         "Milestone",
         back_populates="project",

@@ -12,4 +12,5 @@ from routers.video_call_router import router as video_call_router
 from routers.voice_call_router import router as voice_call_router
 from routers.github_router import router as github_router
 from routers.session_router import router as session_router
+from routers.whiteboard_router import router as whiteboard_router
 

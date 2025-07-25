@@ -8,6 +8,7 @@ from .participation_request import ParticipationRequestResponse
 from .schedule import ScheduleResponse
 from .channel import ChannelResponse
 from .user import UserDetail
+from .whiteboard import WhiteBoardDetail
 
 # 프로젝트 기본 스키마
 class ProjectBase(BaseModel):
@@ -79,6 +80,7 @@ class ProjectDetail(ProjectBase):
     participation_requests: List[ParticipationRequestResponse] = []
     schedules: List[ScheduleResponse] = []
     channels: List[ChannelResponse] = []
+    whiteboards: List[WhiteBoardDetail] = []
     
     # 통계
     task_count: Optional[int] = len(tasks)
@@ -92,6 +94,7 @@ class ProjectDetail(ProjectBase):
     schedule_count: Optional[int] = len(schedules)
     channel_count: Optional[int] = len(channels)
     chat_count: Optional[int] = len([chat for channel in channels for chat in channel.chats])
+    whiteboard_count: Optional[int] = len(whiteboards)
     class Config:
         from_attributes = True
 

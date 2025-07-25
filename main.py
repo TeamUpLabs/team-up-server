@@ -16,7 +16,8 @@ from routers import (
     video_call_router,
     voice_call_router,
     github_router,
-    session_router
+    session_router,
+    whiteboard_router
 )
 
 # 모든 모델이 정의된 후 테이블 생성
@@ -53,6 +54,7 @@ app.include_router(video_call_router)
 app.include_router(voice_call_router)
 app.include_router(github_router)
 app.include_router(session_router)
+app.include_router(whiteboard_router)
 
 @app.get("/")
 async def root():

@@ -7,6 +7,7 @@ from models.schedule import Schedule
 from models.notification import Notification
 from models.channel import Channel
 from models.chat import Chat
+from models.whiteboard import WhiteBoard
 from models.association_tables import (
     project_members,
     task_assignees,

@@ -14,6 +14,7 @@ from schemas.task import TaskBrief, SubTaskDetail
 from schemas.schedule import ScheduleResponse
 from schemas.channel import ChannelResponse, ChannelMemberResponse
 from schemas.chat import ChatResponse
+from schemas.whiteboard import WhiteBoardDetail
 from utils.sse_manager import project_sse_manager
 import json
 
@@ -233,6 +234,13 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
             channel_with_members.chats_count = len(chats)
     project_detail.channels = channels
     
+    # WhiteBoard 정보 추가
+    whiteboards = []
+    if db_project.whiteboards:
+        for whiteboard in db_project.whiteboards:
+            whiteboards.append(WhiteBoardDetail.model_validate(whiteboard, from_attributes=True))
+    project_detail.whiteboards = whiteboards
+    
     # 통계 정보 추가
     project_detail.task_count = len(db_project.tasks)
     project_detail.completed_task_count = len([t for t in db_project.tasks if t.status == "completed"])
@@ -244,6 +252,7 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
     project_detail.schedule_count = len(db_project.schedules)
     project_detail.channel_count = len(db_project.channels)
     project_detail.chat_count = len([chat for channel in db_project.channels for chat in channel.chats])
+    project_detail.whiteboard_count = len(db_project.whiteboards)
     
     return project_detail
 
