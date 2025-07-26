@@ -6,6 +6,8 @@ from datetime import datetime
 class AttachmentBase(BaseModel):
     filename: str
     file_url: str
+    file_type: str
+    file_size: int
 
 class AttachmentCreate(AttachmentBase):
     pass
@@ -43,6 +45,7 @@ class WhiteBoardBase(BaseModel):
     title: str
     
 class WhiteBoardCreate(WhiteBoardBase):
+    tags: List[str]
     created_by: int
     updated_by: int
     attachments: List[AttachmentCreate] = []
@@ -50,6 +53,7 @@ class WhiteBoardCreate(WhiteBoardBase):
 class WhiteBoardUpdate(BaseModel):
     id: int
     title: Optional[str] = None
+    tags: List[str]
     updated_by: int
     
 class WhiteBoardDetail(WhiteBoardBase):

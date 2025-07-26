@@ -41,7 +41,8 @@ class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
                 # Create document
                 document = Document(
                     whiteboard_id=whiteboard.id,
-                    content=obj_in.content or ""
+                    content=obj_in.content or "",
+                    tags=obj_in.tags or [],
                 )
                 db.add(document)
                 db.flush()
@@ -52,6 +53,8 @@ class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
                         attachment = Attachment(
                             filename=attachment_in.filename,
                             file_url=attachment_in.file_url,
+                            file_type=attachment_in.file_type,
+                            file_size=attachment_in.file_size,
                             document_id=document.id
                         )
                         db.add(attachment)

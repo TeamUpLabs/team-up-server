@@ -47,6 +47,9 @@ class Attachment(Base, BaseModel):
     id = Column(Integer, primary_key=True, index=True)
     filename = Column(String, nullable=False)
     file_url = Column(String, nullable=False)
+    file_type = Column(String, nullable=False)
+    file_size = Column(Integer, nullable=False)
+    
     document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
     
     document = relationship("Document", back_populates="attachments")
