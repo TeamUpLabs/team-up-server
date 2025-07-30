@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Union
 from schemas.user import UserBrief
 from datetime import datetime
 
@@ -23,11 +23,10 @@ class Attachment(AttachmentBase):
 
 class DocumentBase(BaseModel):
     content: str
-    tags: Optional[dict] = None
-    attachments: List[AttachmentCreate] = []
+    tags: Optional[Union[dict, List[str]]] = None
 
 class DocumentCreate(DocumentBase):
-    pass
+    attachments: List[AttachmentCreate] = []
 
 class Document(DocumentBase):
     id: int
@@ -45,6 +44,7 @@ class WhiteBoardBase(BaseModel):
     title: str
     
 class WhiteBoardCreate(WhiteBoardBase):
+    content: str
     tags: List[str]
     created_by: int
     updated_by: int
@@ -53,6 +53,7 @@ class WhiteBoardCreate(WhiteBoardBase):
 class WhiteBoardUpdate(BaseModel):
     id: int
     title: Optional[str] = None
+    content: Optional[str] = None
     tags: List[str]
     updated_by: int
     

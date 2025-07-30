@@ -6,6 +6,8 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
+import logging
+logger = logging.getLogger(__name__)
 
 class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
     """
@@ -36,29 +38,44 @@ class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
             )
             db.add(whiteboard)
             db.flush()
+            logger.info(f"WhiteBoard {whiteboard.id} created successfully.")
     
             if obj_in.type == "document":
                 # Create document
-                document = Document(
-                    whiteboard_id=whiteboard.id,
-                    content=obj_in.content or "",
-                    tags=obj_in.tags or [],
-                )
-                db.add(document)
-                db.flush()
-                
+                try:
+                    document = Document(
+                        whiteboard_id=whiteboard.id,
+                        content=obj_in.content or "",
+                        tags=obj_in.tags or [],
+                    )
+                    db.add(document)
+                    db.flush()
+                    logger.info(f"Document {document.id} created successfully.")
+                except Exception as e:
+                    logger.error(f"Failed to create document: {str(e)}")
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=f"Failed to create document: {str(e)}"
+                    )                
                 # Add attachments if any
-                if hasattr(obj_in, 'attachments') and obj_in.attachments:
-                    for attachment_in in obj_in.attachments:
-                        attachment = Attachment(
-                            filename=attachment_in.filename,
-                            file_url=attachment_in.file_url,
-                            file_type=attachment_in.file_type,
-                            file_size=attachment_in.file_size,
-                            document_id=document.id
-                        )
-                        db.add(attachment)
-                
+                try:
+                    if hasattr(obj_in, 'attachments') and obj_in.attachments:
+                        for attachment_in in obj_in.attachments:
+                            attachment = Attachment(
+                                filename=attachment_in.filename,
+                                file_url=attachment_in.file_url,
+                                file_type=attachment_in.file_type,
+                                file_size=attachment_in.file_size,
+                                document_id=document.id
+                            )
+                            db.add(attachment)
+                            logger.info(f"Attachment {attachment.id} added to document {document.id} successfully.")
+                except Exception as e:
+                    logger.error(f"Failed to add attachments: {str(e)}")
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail=f"Failed to add attachments: {str(e)}"
+                    )
                 db.commit()
                 db.refresh(whiteboard)
                 
