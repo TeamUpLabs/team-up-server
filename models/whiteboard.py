@@ -1,8 +1,18 @@
 # models/document.py
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, JSON, DateTime
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import text
 from database import Base
 from models.base import BaseModel
+
+# Association table for user likes
+class UserWhiteBoardLike(Base):
+    __tablename__ = "user_whiteboard_likes"
+    
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    whiteboard_id = Column(Integer, ForeignKey("whiteboards.id", ondelete="CASCADE"), primary_key=True)
+    created_at = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
+
 
 class WhiteBoard(Base, BaseModel):
     __tablename__ = "whiteboards"
@@ -27,6 +37,14 @@ class WhiteBoard(Base, BaseModel):
     project = relationship("Project", back_populates="whiteboards")
     
     documents = relationship("Document", back_populates="whiteboard", cascade="all, delete-orphan")
+    
+    # Users who liked this whiteboard
+    liked_by_users = relationship(
+        "User",
+        secondary="user_whiteboard_likes",
+        back_populates="liked_whiteboards",
+        lazy="dynamic"
+    )
     
     def __repr__(self):
         return f"WhiteBoard(id={self.id}, type={self.type}, project_id={self.project_id}, title={self.title})"

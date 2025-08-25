@@ -1,10 +1,11 @@
 from crud.base import CRUDBase
-from models.whiteboard import WhiteBoard, Document, Attachment, WhiteBoardComment
+from models.whiteboard import WhiteBoard, Document, Attachment, WhiteBoardComment, UserWhiteBoardLike
+from models.user import User
 from schemas.whiteboard import WhiteBoardCreate, WhiteBoardUpdate, WhiteBoardDetail, Comment
 from models.project import Project
-from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
-from typing import List, Optional
+from fastapi import HTTPException, status, Depends
+from sqlalchemy.orm import Session, joinedload
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 import logging
 logger = logging.getLogger(__name__)
@@ -200,28 +201,58 @@ class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
                 detail=f"WhiteBoard 삭제 중 오류 발생: {str(e)}"
             )
             
-    def update_like(self, db: Session, *, id: int) -> WhiteBoardDetail:
-        """WhiteBoard 좋아요 업데이트"""
+    def update_like(self, db: Session, *, whiteboard_id: int, user_id: int) -> WhiteBoardDetail:
+        """
+        WhiteBoard 좋아요 토글
+        이미 좋아요를 누른 상태라면 좋아요 취소, 아니면 좋아요 추가
+        """
         try:
-            whiteboard = db.query(WhiteBoard).filter(WhiteBoard.id == id).first()
+            # 화이트보드 존재 확인
+            whiteboard = db.query(WhiteBoard).filter(WhiteBoard.id == whiteboard_id).first()
             if not whiteboard:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"WhiteBoard ID {id}를 찾을 수 없습니다."
+                    detail=f"WhiteBoard ID {whiteboard_id}를 찾을 수 없습니다."
                 )
             
-            whiteboard.likes += 1
+            # 사용자 존재 확인
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"사용자 ID {user_id}를 찾을 수 없습니다."
+                )
+            
+            # 이미 좋아요를 눌렀는지 확인
+            like_exists = db.query(UserWhiteBoardLike).filter(
+                UserWhiteBoardLike.user_id == user_id,
+                UserWhiteBoardLike.whiteboard_id == whiteboard_id
+            ).first()
+            
+            if like_exists:
+                # 좋아요 취소
+                db.delete(like_exists)
+                whiteboard.likes = max(0, whiteboard.likes - 1)
+            else:
+                # 좋아요 추가
+                new_like = UserWhiteBoardLike(user_id=user_id, whiteboard_id=whiteboard_id)
+                db.add(new_like)
+                whiteboard.likes += 1
+            
             db.add(whiteboard)
             db.commit()
             db.refresh(whiteboard)
             
             return WhiteBoardDetail.model_validate(whiteboard, from_attributes=True)
             
+        except HTTPException:
+            raise
         except Exception as e:
             db.rollback()
+            logger.error(f"Error in update_like: {str(e)}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"WhiteBoard 좋아요 업데이트 중 오류 발생: {str(e)}"
+                detail="좋아요 처리 중 오류가 발생했습니다."
             )
     
     def update_view(self, db: Session, *, id: int) -> WhiteBoardDetail:

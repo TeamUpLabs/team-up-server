@@ -43,10 +43,18 @@ class User(Base, BaseModel):
     })
     
     # 관계 정의    
+    # Projects the user is a member of
     projects = relationship(
         "Project",
         secondary=project_members,
         back_populates="members"
+    )
+    
+    # Whiteboards the user has liked
+    liked_whiteboards = relationship(
+        "WhiteBoard",
+        secondary="user_whiteboard_likes",
+        back_populates="liked_by_users"
     )
     
     # 참여 요청/초대 관계

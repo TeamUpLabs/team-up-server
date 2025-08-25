@@ -84,6 +84,7 @@ class WhiteBoardDetail(WhiteBoardBase):
     comments: List[Comment] = []
     likes: int = 0
     views: int = 0
+    liked_by_users: List[UserBrief] = []
     
     class Config:
         from_attributes = True

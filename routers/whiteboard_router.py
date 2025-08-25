@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from crud.whiteboard import whiteboard
 from crud.project import project
 from database import get_db
@@ -6,8 +6,10 @@ from schemas.whiteboard import WhiteBoardCreate, WhiteBoardDetail, WhiteBoardBri
 from sqlalchemy.orm import Session
 from typing import List
 from utils.sse_manager import project_sse_manager
+from utils.auth import get_current_user
 import json
 from routers.project_router import convert_project_to_project_detail
+from models.user import User
 
 router = APIRouter(
     prefix="/api/whiteboards",
@@ -61,11 +63,23 @@ def read_comments(whiteboard_id: int, skip: int = 0, limit: int = 100, db: Sessi
 @router.post("/{whiteboard_id}/comments", response_model=Comment)
 async def create_comment(whiteboard_id: int, comment_in: CommentCreate, db: Session = Depends(get_db)):
     db_comment = whiteboard.create_comment(db=db, whiteboard_id=whiteboard_id, content=comment_in.content, creator_id=comment_in.creator.id)
+    
+    project_data = convert_project_to_project_detail(project.get(db, db_comment.project_id), db)
+    await project_sse_manager.send_event(
+        db_comment.project_id,
+        json.dumps(project_sse_manager.convert_to_dict(project_data))
+    )
     return db_comment
 
 @router.put("/{whiteboard_id}/comments/{comment_id}", response_model=Comment)
 async def update_comment(whiteboard_id: int, comment_id: int, comment_in: CommentUpdate, db: Session = Depends(get_db)):
     db_comment = whiteboard.update_comment(db=db, whiteboard_id=whiteboard_id, comment_id=comment_id, content=comment_in.content)
+    
+    project_data = convert_project_to_project_detail(project.get(db, db_comment.project_id), db)
+    await project_sse_manager.send_event(
+        db_comment.project_id,
+        json.dumps(project_sse_manager.convert_to_dict(project_data))
+    )
     return db_comment
 
 @router.delete("/{whiteboard_id}/comments/{comment_id}", response_model=dict)
@@ -73,4 +87,32 @@ async def delete_comment(whiteboard_id: int, comment_id: int, db: Session = Depe
     success = whiteboard.delete_comment(db=db, whiteboard_id=whiteboard_id, comment_id=comment_id)
     if not success:
         raise HTTPException(status_code=404, detail="Comment not found")
+    
+    project_data = convert_project_to_project_detail(project.get(db, db_comment.project_id), db)
+    await project_sse_manager.send_event(
+        db_comment.project_id,
+        json.dumps(project_sse_manager.convert_to_dict(project_data))
+    )
     return {"status": "success", "message": "Comment deleted successfully"}
+  
+@router.put("/{whiteboard_id}/like", response_model=WhiteBoardDetail)
+async def toggle_whiteboard_like(
+    whiteboard_id: int, 
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    WhiteBoard 좋아요/좋아요 취소 토글
+    이미 좋아요를 누른 상태라면 좋아요 취소, 아니면 좋아요 추가
+    """
+    db_whiteboard = whiteboard.update_like(db=db, whiteboard_id=whiteboard_id, user_id=current_user.id)
+    
+    # SSE로 좋아요 상태 변경 알림 전송
+    if db_whiteboard:
+        project_data = convert_project_to_project_detail(project.get(db, db_whiteboard.project_id), db)
+        await project_sse_manager.send_event(
+            db_whiteboard.project_id,
+            json.dumps(project_sse_manager.convert_to_dict(project_data))
+        )
+    
+    return db_whiteboard
