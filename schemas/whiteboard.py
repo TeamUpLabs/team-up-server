@@ -37,6 +37,16 @@ class Document(DocumentBase):
 
     class Config:
         from_attributes = True
+        
+class Comment(BaseModel):
+    id: int
+    content: str
+    created_at: datetime
+    updated_at: datetime
+    creator: Optional[UserBrief] = None
+    
+    class Config:
+        from_attributes = True
 
 class WhiteBoardBase(BaseModel):
     type: str
@@ -64,6 +74,9 @@ class WhiteBoardDetail(WhiteBoardBase):
     created_at: datetime
     updated_at: datetime
     documents: List[Document] = []
+    comments: List[Comment] = []
+    likes: int = 0
+    views: int = 0
     
     class Config:
         from_attributes = True
