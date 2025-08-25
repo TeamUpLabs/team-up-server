@@ -1,5 +1,5 @@
 # models/document.py
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, JSON, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
 from models.base import BaseModel
@@ -12,6 +12,12 @@ class WhiteBoard(Base, BaseModel):
     project_id = Column(String(6), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     title = Column(String(255), nullable=False)
     
+    # # 반응
+    likes = Column(Integer, default=0)
+    views = Column(Integer, default=0)
+    comments = relationship("WhiteBoardComment", back_populates="whiteboard", cascade="all, delete-orphan")
+    
+    # 생성자, 수정자
     created_by = Column(Integer, ForeignKey("users.id"))
     updated_by = Column(Integer, ForeignKey("users.id"))
     
@@ -56,4 +62,27 @@ class Attachment(Base, BaseModel):
     
     def __repr__(self):
         return f"Attachment(id={self.id}, filename={self.filename}, document_id={self.document_id})"
+      
+class WhiteBoardComment(Base, BaseModel):
+    """댓글 모델"""
+    __tablename__ = "whiteboard_comments"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, nullable=False)
+    updated_at = Column(DateTime, nullable=False)
+    
+    # 외래 키
+    whiteboard_id = Column(Integer, ForeignKey("whiteboards.id", ondelete="CASCADE"), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    
+    # 관계 정의
+    whiteboard = relationship("WhiteBoard", back_populates="comments")
+    creator = relationship(
+        "User",
+        foreign_keys=[created_by]
+    )
+    
+    def __repr__(self):
+        return f"WhiteBoardComment(id={self.id}, content='{self.content}')" 
     

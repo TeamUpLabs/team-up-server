@@ -48,6 +48,13 @@ class Comment(BaseModel):
     class Config:
         from_attributes = True
 
+class CommentCreate(BaseModel):
+    content: str
+    creator: UserBrief
+
+class CommentUpdate(BaseModel):
+    content: str
+
 class WhiteBoardBase(BaseModel):
     type: str
     project_id: str

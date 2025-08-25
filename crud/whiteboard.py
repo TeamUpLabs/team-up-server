@@ -1,6 +1,6 @@
 from crud.base import CRUDBase
-from models.whiteboard import WhiteBoard, Document, Attachment
-from schemas.whiteboard import WhiteBoardCreate, WhiteBoardUpdate, WhiteBoardDetail, DocumentCreate
+from models.whiteboard import WhiteBoard, Document, Attachment, WhiteBoardComment
+from schemas.whiteboard import WhiteBoardCreate, WhiteBoardUpdate, WhiteBoardDetail, Comment
 from models.project import Project
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
@@ -199,5 +199,101 @@ class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"WhiteBoard 삭제 중 오류 발생: {str(e)}"
             )
+            
+    def update_like(self, db: Session, *, id: int) -> WhiteBoardDetail:
+        """WhiteBoard 좋아요 업데이트"""
+        try:
+            whiteboard = db.query(WhiteBoard).filter(WhiteBoard.id == id).first()
+            if not whiteboard:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"WhiteBoard ID {id}를 찾을 수 없습니다."
+                )
+            
+            whiteboard.likes += 1
+            db.add(whiteboard)
+            db.commit()
+            db.refresh(whiteboard)
+            
+            return WhiteBoardDetail.model_validate(whiteboard, from_attributes=True)
+            
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"WhiteBoard 좋아요 업데이트 중 오류 발생: {str(e)}"
+            )
+    
+    def update_view(self, db: Session, *, id: int) -> WhiteBoardDetail:
+        """WhiteBoard 조회수 업데이트"""
+        try:
+            whiteboard = db.query(WhiteBoard).filter(WhiteBoard.id == id).first()
+            if not whiteboard:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"WhiteBoard ID {id}를 찾을 수 없습니다."
+                )
+            
+            whiteboard.views += 1
+            db.add(whiteboard)
+            db.commit()
+            db.refresh(whiteboard)
+            
+            return WhiteBoardDetail.model_validate(whiteboard, from_attributes=True)
+            
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"WhiteBoard 조회수 업데이트 중 오류 발생: {str(e)}"
+            )
+            
+    def get_comments(self, db: Session, *, whiteboard_id: int, skip: int = 0, limit: int = 100) -> List[Comment]:
+        """댓글 목록 조회"""
+        comments = db.query(WhiteBoardComment).filter(WhiteBoardComment.whiteboard_id == whiteboard_id).offset(skip).limit(limit).all()
+        return [Comment.model_validate(c, from_attributes=True) for c in comments]
+            
+    def create_comment(self, db: Session, *, whiteboard_id: int, content: str, creator_id: int) -> Comment:
+        """댓글 생성"""
+        comment = WhiteBoardComment(
+            content=content,
+            whiteboard_id=whiteboard_id,
+            created_by=creator_id,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        db.add(comment)
+        db.commit()
+        db.refresh(comment)
+        return comment
+      
+    def update_comment(self, db: Session, *, whiteboard_id: int, comment_id: int, content: str) -> Comment:
+        """댓글 수정"""
+        comment = db.query(WhiteBoardComment).filter(WhiteBoardComment.id == comment_id, WhiteBoardComment.whiteboard_id == whiteboard_id).first()
+        if not comment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"댓글 ID {comment_id}를 찾을 수 없습니다."
+            )
+        
+        comment.content = content
+        comment.updated_at = datetime.utcnow()
+        db.add(comment)
+        db.commit()
+        db.refresh(comment)
+        return comment
+      
+    def delete_comment(self, db: Session, *, whiteboard_id: int, comment_id: int) -> bool:
+        """댓글 삭제"""
+        comment = db.query(WhiteBoardComment).filter(WhiteBoardComment.id == comment_id, WhiteBoardComment.whiteboard_id == whiteboard_id).first()
+        if not comment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"댓글 ID {comment_id}를 찾을 수 없습니다."
+            )
+        
+        db.delete(comment)
+        db.commit()
+        return True
       
 whiteboard = CRUDWhiteBoard(WhiteBoard)
