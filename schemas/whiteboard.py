@@ -68,10 +68,9 @@ class WhiteBoardCreate(WhiteBoardBase):
     attachments: List[AttachmentCreate] = []
     
 class WhiteBoardUpdate(BaseModel):
-    id: int
     title: Optional[str] = None
     content: Optional[str] = None
-    tags: List[str]
+    tags: Optional[List[str]] = None
     updated_by: int
     
 class WhiteBoardDetail(WhiteBoardBase):

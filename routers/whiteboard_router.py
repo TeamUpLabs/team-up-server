@@ -36,18 +36,33 @@ def read_whiteboards_by_project(project_id: str, skip: int = 0, limit: int = 100
     return whiteboard.get_by_project(db=db, project_id=project_id, skip=skip, limit=limit)
 
 @router.put("/{whiteboard_id}", response_model=WhiteBoardDetail)
-async def update_whiteboard(whiteboard_id: int, whiteboard_in: WhiteBoardUpdate, db: Session = Depends(get_db)):
-  db_whiteboard = whiteboard.update(db=db, id=whiteboard_id, obj_in=whiteboard_in)
-  if db_whiteboard:
+async def update_whiteboard(
+    whiteboard_id: int, 
+    whiteboard_in: WhiteBoardUpdate, 
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    # Add the current user's ID to the update data
+    update_data = whiteboard_in.model_dump()
+    update_data['updated_by'] = current_user.id
+    
+    db_whiteboard = whiteboard.update(
+        db=db, 
+        whiteboard_id=whiteboard_id, 
+        obj_in=WhiteBoardUpdate(**update_data)
+    )
+    
+    if db_whiteboard:
         project_data = convert_project_to_project_detail(project.get(db, db_whiteboard.project_id), db)
         await project_sse_manager.send_event(
             db_whiteboard.project_id,
             json.dumps(project_sse_manager.convert_to_dict(project_data))
         )
+    return db_whiteboard
 
 @router.delete("/{whiteboard_id}", response_model=WhiteBoardDetail)
 async def delete_whiteboard(whiteboard_id: int, db: Session = Depends(get_db)):
-    db_whiteboard = whiteboard.remove(db=db, id=whiteboard_id)
+    db_whiteboard = whiteboard.remove(db=db, whiteboard_id=whiteboard_id)
     if db_whiteboard:
         project_data = convert_project_to_project_detail(project.get(db, db_whiteboard.project_id), db)
         await project_sse_manager.send_event(

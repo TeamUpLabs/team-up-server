@@ -112,20 +112,20 @@ class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
         
         return WhiteBoardDetail.model_validate(whiteboard, from_attributes=True)
     
-    def update(self, db: Session, *, id: int, obj_in: WhiteBoardUpdate) -> Optional[WhiteBoard]:
+    def update(self, db: Session, *, whiteboard_id: int, obj_in: WhiteBoardUpdate) -> Optional[WhiteBoard]:
         """
         WhiteBoard 업데이트
         """
         try:
-            whiteboard = db.query(self.model).filter(self.model.id == id).first()
+            whiteboard = db.query(self.model).filter(self.model.id == whiteboard_id).first()
             if not whiteboard:
                 return None
                 
-            update_data = obj_in.dict(exclude_unset=True)
+            update_data = obj_in.model_dump(exclude_unset=True)
             
             # 문서 타입인 경우 content를 document에 업데이트
             if whiteboard.type == "document":
-                document = db.query(Document).filter(Document.whiteboard_id == id).first()
+                document = db.query(Document).filter(Document.whiteboard_id == whiteboard_id).first()
                 if document:
                     if "content" in update_data:
                         document.content = update_data.pop("content")
@@ -144,7 +144,7 @@ class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
             
             # If it's a document type, set the content for the response
             if whiteboard.type == "document":
-                document = db.query(Document).filter(Document.whiteboard_id == id).first()
+                document = db.query(Document).filter(Document.whiteboard_id == whiteboard_id).first()
                 if document:
                     whiteboard.content = document.content
             
@@ -157,21 +157,21 @@ class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
                 detail=f"WhiteBoard 업데이트 중 오류 발생: {str(e)}"
             )
     
-    def remove(self, db: Session, *, id: int) -> WhiteBoardDetail:
+    def remove(self, db: Session, *, whiteboard_id: int) -> WhiteBoardDetail:
         """WhiteBoard 삭제"""
         try:
             # WhiteBoard 조회
-            whiteboard = db.query(WhiteBoard).filter(WhiteBoard.id == id).first()
+            whiteboard = db.query(WhiteBoard).filter(WhiteBoard.id == whiteboard_id).first()
             if not whiteboard:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"WhiteBoard ID {id}를 찾을 수 없습니다."
+                    detail=f"WhiteBoard ID {whiteboard_id}를 찾을 수 없습니다."
                 )
             
             # 문서 내용 조회 (응답에 포함하기 위해)
             content = None
             if whiteboard.type == "document":
-                document = db.query(Document).filter(Document.whiteboard_id == id).first()
+                document = db.query(Document).filter(Document.whiteboard_id == whiteboard_id).first()
                 if document:
                     content = document.content
             
