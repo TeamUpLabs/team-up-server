@@ -116,3 +116,18 @@ async def toggle_whiteboard_like(
         )
     
     return db_whiteboard
+  
+@router.put("/{whiteboard_id}/view", response_model=WhiteBoardDetail)
+async def update_whiteboard_view(whiteboard_id: int, db: Session = Depends(get_db)):
+    db_whiteboard = whiteboard.update_view(db=db, whiteboard_id=whiteboard_id)
+    
+    # SSE로 조회수 변경 알림 전송
+    if db_whiteboard:
+        project_data = convert_project_to_project_detail(project.get(db, db_whiteboard.project_id), db)
+        await project_sse_manager.send_event(
+            db_whiteboard.project_id,
+            json.dumps(project_sse_manager.convert_to_dict(project_data))
+        )
+    
+    return db_whiteboard
+    

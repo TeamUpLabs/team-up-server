@@ -255,14 +255,14 @@ class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
                 detail="좋아요 처리 중 오류가 발생했습니다."
             )
     
-    def update_view(self, db: Session, *, id: int) -> WhiteBoardDetail:
+    def update_view(self, db: Session, *, whiteboard_id: int) -> WhiteBoardDetail:
         """WhiteBoard 조회수 업데이트"""
         try:
-            whiteboard = db.query(WhiteBoard).filter(WhiteBoard.id == id).first()
+            whiteboard = db.query(WhiteBoard).filter(WhiteBoard.id == whiteboard_id).first()
             if not whiteboard:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail=f"WhiteBoard ID {id}를 찾을 수 없습니다."
+                    detail=f"WhiteBoard ID {whiteboard_id}를 찾을 수 없습니다."
                 )
             
             whiteboard.views += 1
