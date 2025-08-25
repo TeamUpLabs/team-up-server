@@ -62,35 +62,35 @@ def read_comments(whiteboard_id: int, skip: int = 0, limit: int = 100, db: Sessi
   
 @router.post("/{whiteboard_id}/comments", response_model=Comment)
 async def create_comment(whiteboard_id: int, comment_in: CommentCreate, db: Session = Depends(get_db)):
-    db_comment = whiteboard.create_comment(db=db, whiteboard_id=whiteboard_id, content=comment_in.content, creator_id=comment_in.creator.id)
+    comment, project_id = whiteboard.create_comment(db=db, whiteboard_id=whiteboard_id, content=comment_in.content, creator_id=comment_in.creator.id)
     
-    project_data = convert_project_to_project_detail(project.get(db, db_comment.project_id), db)
+    project_data = convert_project_to_project_detail(project.get(db, project_id), db)
     await project_sse_manager.send_event(
-        db_comment.project_id,
+        project_id,
         json.dumps(project_sse_manager.convert_to_dict(project_data))
     )
-    return db_comment
+    return Comment.model_validate(comment, from_attributes=True)
 
 @router.put("/{whiteboard_id}/comments/{comment_id}", response_model=Comment)
 async def update_comment(whiteboard_id: int, comment_id: int, comment_in: CommentUpdate, db: Session = Depends(get_db)):
-    db_comment = whiteboard.update_comment(db=db, whiteboard_id=whiteboard_id, comment_id=comment_id, content=comment_in.content)
+    comment, project_id = whiteboard.update_comment(db=db, whiteboard_id=whiteboard_id, comment_id=comment_id, content=comment_in.content)
     
-    project_data = convert_project_to_project_detail(project.get(db, db_comment.project_id), db)
+    project_data = convert_project_to_project_detail(project.get(db, project_id), db)
     await project_sse_manager.send_event(
-        db_comment.project_id,
+        project_id,
         json.dumps(project_sse_manager.convert_to_dict(project_data))
     )
-    return db_comment
+    return Comment.model_validate(comment, from_attributes=True)
 
 @router.delete("/{whiteboard_id}/comments/{comment_id}", response_model=dict)
 async def delete_comment(whiteboard_id: int, comment_id: int, db: Session = Depends(get_db)):
-    success = whiteboard.delete_comment(db=db, whiteboard_id=whiteboard_id, comment_id=comment_id)
+    success, project_id = whiteboard.delete_comment(db=db, whiteboard_id=whiteboard_id, comment_id=comment_id)
     if not success:
         raise HTTPException(status_code=404, detail="Comment not found")
     
-    project_data = convert_project_to_project_detail(project.get(db, db_comment.project_id), db)
+    project_data = convert_project_to_project_detail(project.get(db, project_id), db)
     await project_sse_manager.send_event(
-        db_comment.project_id,
+        project_id,
         json.dumps(project_sse_manager.convert_to_dict(project_data))
     )
     return {"status": "success", "message": "Comment deleted successfully"}

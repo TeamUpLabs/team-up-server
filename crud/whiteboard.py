@@ -284,8 +284,15 @@ class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
         comments = db.query(WhiteBoardComment).filter(WhiteBoardComment.whiteboard_id == whiteboard_id).offset(skip).limit(limit).all()
         return [Comment.model_validate(c, from_attributes=True) for c in comments]
             
-    def create_comment(self, db: Session, *, whiteboard_id: int, content: str, creator_id: int) -> Comment:
+    def create_comment(self, db: Session, *, whiteboard_id: int, content: str, creator_id: int) -> [Comment, int]:
         """댓글 생성"""
+        whiteboard = db.query(WhiteBoard).filter(WhiteBoard.id == whiteboard_id).first()
+        if not whiteboard:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"WhiteBoard ID {whiteboard_id}를 찾을 수 없습니다."
+            )
+        
         comment = WhiteBoardComment(
             content=content,
             whiteboard_id=whiteboard_id,
@@ -296,10 +303,17 @@ class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
         db.add(comment)
         db.commit()
         db.refresh(comment)
-        return comment
+        return comment, whiteboard.project_id
       
-    def update_comment(self, db: Session, *, whiteboard_id: int, comment_id: int, content: str) -> Comment:
+    def update_comment(self, db: Session, *, whiteboard_id: int, comment_id: int, content: str) -> [Comment, int]:
         """댓글 수정"""
+        whiteboard = db.query(WhiteBoard).filter(WhiteBoard.id == whiteboard_id).first()
+        if not whiteboard:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"WhiteBoard ID {whiteboard_id}를 찾을 수 없습니다."
+            )
+        
         comment = db.query(WhiteBoardComment).filter(WhiteBoardComment.id == comment_id, WhiteBoardComment.whiteboard_id == whiteboard_id).first()
         if not comment:
             raise HTTPException(
@@ -312,10 +326,17 @@ class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
         db.add(comment)
         db.commit()
         db.refresh(comment)
-        return comment
+        return comment, whiteboard.project_id
       
-    def delete_comment(self, db: Session, *, whiteboard_id: int, comment_id: int) -> bool:
+    def delete_comment(self, db: Session, *, whiteboard_id: int, comment_id: int) -> [bool, int]:
         """댓글 삭제"""
+        whiteboard = db.query(WhiteBoard).filter(WhiteBoard.id == whiteboard_id).first()
+        if not whiteboard:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"WhiteBoard ID {whiteboard_id}를 찾을 수 없습니다."
+            )
+        
         comment = db.query(WhiteBoardComment).filter(WhiteBoardComment.id == comment_id, WhiteBoardComment.whiteboard_id == whiteboard_id).first()
         if not comment:
             raise HTTPException(
@@ -325,6 +346,6 @@ class CRUDWhiteBoard(CRUDBase[WhiteBoard, WhiteBoardCreate, WhiteBoardUpdate]):
         
         db.delete(comment)
         db.commit()
-        return True
+        return True, whiteboard.project_id
       
 whiteboard = CRUDWhiteBoard(WhiteBoard)
