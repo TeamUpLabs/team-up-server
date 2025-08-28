@@ -120,7 +120,9 @@ async def login(form_data: LoginRequest, request: Request, db: Session = Depends
             email=authenticated_user.email,
             profile_image=authenticated_user.profile_image,
             role=authenticated_user.role,
-            status=authenticated_user.status
+            status=authenticated_user.status,
+            created_at=authenticated_user.created_at,
+            updated_at=authenticated_user.updated_at
         )
         
         return {
@@ -330,7 +332,9 @@ async def social_callback(form_data: OauthRequest, request: Request, db: Session
                 email=existing.email,
                 profile_image=existing.profile_image,
                 role=existing.role,
-                status=existing.status
+                status=existing.status,
+                created_at=existing.created_at,
+                updated_at=existing.updated_at
             )
             
             return {

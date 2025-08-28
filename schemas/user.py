@@ -12,6 +12,8 @@ class UserBrief(BaseModel):
     profile_image: Optional[str] = None
     role: Optional[str] = None
     status: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
     
     class Config:
         from_attributes = True
