@@ -154,7 +154,7 @@ async def get_google_user_info(code: str) -> tuple:
       url = "https://www.googleapis.com/oauth2/v3/userinfo"
       headers = {'Authorization': f'Bearer {access_token}'}
       response = requests.request("GET", url, headers=headers)
-      print("response: ", response.json())
+      
       return access_token, response.json()
     
     
