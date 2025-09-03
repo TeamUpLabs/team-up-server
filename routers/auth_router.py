@@ -9,7 +9,7 @@ from schemas.user import UserCreate, UserDetail, Token, UserBrief
 from utils.auth import create_access_token, get_current_user, verify_token
 from database import get_db
 import os
-from crud.auth import get_github_user_info
+from crud.auth import get_github_user_info, get_google_user_info
 from datetime import datetime
 from crud.session import session as session_crud
 from models.user import UserSession
@@ -233,6 +233,8 @@ def social_login(provider: str):
     # GitHub, Google, Apple 등 소셜 로그인 구현 예정
     if provider == "github":
         return RedirectResponse(f"https://github.com/login/oauth/authorize?client_id={os.getenv('GITHUB_CLIENT_ID')}&scope=user:email,repo,admin:org")
+    if provider == "google":
+        return RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?client_id={os.getenv('GOOGLE_CLIENT_ID')}&redirect_uri={os.getenv('GOOGLE_REDIRECT_URI')}&response_type=code&scope=openid%20email%20profile")
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
         detail=f"{provider} 소셜 로그인은 아직 구현되지 않았습니다."
@@ -249,23 +251,32 @@ async def social_callback(form_data: OauthRequest, request: Request, db: Session
     try:
         if form_data.provider == "github":
             social_access_token, github_user, github_username = await get_github_user_info(form_data.code)
+            # Process GitHub login...
+        elif form_data.provider == "google":
+            social_access_token, google_user = await get_google_user_info(form_data.code)
+            # Process Google login...
         else:
             raise HTTPException(status_code=400, detail=f"Unsupported social provider: {form_data.provider}")
-            
-        if not github_user or not github_user.get("email"):
+
+        if form_data.provider == "github" and (not github_user or not github_user.get("email")):
             raise HTTPException(
                 status_code=400,
                 detail="Could not retrieve user email from GitHub. Please ensure your GitHub account has a verified email address and that you've granted email access permissions."
-            ) 
-            
-        existing = user.get_by_email(db, email=github_user.get("email"))
+            )
+        if form_data.provider == "google" and (not google_user or not google_user.get("email")):
+            raise HTTPException(
+                status_code=400,
+                detail="Could not retrieve user email from Google. Please ensure your Google account has a verified email address and that you've granted email access permissions."
+            )
+        if form_data.provider == "github":
+            existing = user.get_by_email(db, email=github_user.get("email"))
+        elif form_data.provider == "google":
+            existing = user.get_by_email(db, email=google_user.get("email"))
         
         if existing:
             # Update the existing user's GitHub access token and last login
             existing.last_login = datetime.now()
             existing.status = "active"
-            existing.auth_provider = "github" # 소셜 로그인 플랫폼
-            existing.auth_provider_id = github_username # 소셜 로그인 아이디
             existing.auth_provider_access_token = social_access_token # 소셜 로그인 토큰
             db.commit()
             db.refresh(existing)
@@ -345,20 +356,35 @@ async def social_callback(form_data: OauthRequest, request: Request, db: Session
             }
         else:
             # Create new user
-            return {
-                "status": "need_additional_info",
-                "user_info": {
-                    "name": github_user.get("name"),
-                    "email": github_user.get("email"),
-                    "profile_image": github_user.get("avatar_url"),
-                    "social_links": [{"platform": "github", "url": github_user.get("html_url")}],
-                    "bio": github_user.get("bio"),
-                    "auth_provider": "github",
-                    "auth_provider_id": github_user.get("login"),
-                    "auth_provider_access_token": social_access_token
-                }
-            }
-            
+            if form_data.provider == "github":
+              return {
+                  "status": "need_additional_info",
+                  "user_info": {
+                      "name": github_user.get("name"),
+                      "email": github_user.get("email"),
+                      "profile_image": github_user.get("avatar_url"),
+                      "social_links": [{"platform": "github", "url": github_user.get("html_url")}],
+                      "bio": github_user.get("bio"),
+                      "auth_provider": "github",
+                      "auth_provider_id": github_user.get("login"),
+                      "auth_provider_access_token": social_access_token
+                  }
+              }
+            elif form_data.provider == "google":
+              return {
+                  "status": "need_additional_info",
+                  "user_info": {
+                      "name": google_user.get("name"),
+                      "email": google_user.get("email"),
+                      "profile_image": google_user.get("picture"),
+                      "social_links": [{"platform": "google", "url": "https://www.google.com"}],
+                      "bio": "안녕하세요.",
+                      "auth_provider": "google",
+                      "auth_provider_id": google_user.get("sub"),
+                      "auth_provider_access_token": social_access_token
+                  }
+              }
+              
     except Exception as e:
         logging.error(f"Social login callback error: {str(e)}")
         raise HTTPException(

@@ -3,6 +3,7 @@ import os
 import logging
 from fastapi import HTTPException
 from dotenv import load_dotenv
+import requests
 
 load_dotenv()
 
@@ -123,5 +124,42 @@ async def get_github_user_info(code: str) -> tuple:
         raise HTTPException(status_code=503, detail=error_msg)
     except Exception as e:
         error_msg = f"Unexpected error in get_github_user_info: {str(e)}"
+        logging.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+      
+async def get_google_access_token(code: str) -> str:
+    try:
+      url = "https://www.googleapis.com/oauth2/v3/token"
+      payload={
+        'code': code,
+        'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+        'client_secret': os.getenv('GOOGLE_CLIENT_SECRET'),
+        'redirect_uri': os.getenv('GOOGLE_REDIRECT_URI'),
+        'grant_type': 'authorization_code'
+      }
+      headers = {}
+      response = requests.request("POST", url, headers=headers, data=payload)
+      return response.json()['access_token']
+    except Exception as e:
+        error_msg = f"Unexpected error in get_google_access_token: {str(e)}"
+        logging.error(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+      
+async def get_google_user_info(code: str) -> tuple:
+    try:
+      access_token = await get_google_access_token(code)
+      if not access_token:
+        raise ValueError("Failed to obtain access token from Google")
+      
+      url = "https://www.googleapis.com/oauth2/v3/userinfo"
+      headers = {'Authorization': f'Bearer {access_token}'}
+      response = requests.request("GET", url, headers=headers)
+      print("response: ", response.json())
+      return access_token, response.json()
+    
+    
+        
+    except Exception as e:
+        error_msg = f"Unexpected error in get_google_user_info: {str(e)}"
         logging.error(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
