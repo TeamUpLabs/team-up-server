@@ -11,6 +11,7 @@ from schemas.channel import ChannelResponse, ChannelMemberResponse
 from schemas.chat import ChatResponse
 from schemas.whiteboard import WhiteBoardDetail
 from schemas.participation_request import ParticipationRequestResponse
+from datetime import datetime
 
 def convert_project_to_project_detail(db_project: Project, db: Session) -> ProjectDetail:
     """SQLAlchemy Project 모델을 ProjectDetail 스키마로 변환"""
@@ -90,7 +91,33 @@ def convert_project_to_project_detail(db_project: Project, db: Session) -> Proje
     channels = []
     if db_project.channels:
         for channel in db_project.channels:
-            channels.append(ChannelResponse.model_validate(channel, from_attributes=True))
+            # Create a dictionary of the channel data
+            channel_data = {
+                'project_id': channel.project_id,
+                'channel_id': channel.channel_id,
+                'name': channel.name,
+                'description': channel.description,
+                'is_public': channel.is_public,
+                'created_at': channel.created_at,
+                'updated_at': channel.updated_at,
+                'created_by': channel.created_by,
+                'updated_by': channel.updated_by,
+                'member_count': len(channel.members) if hasattr(channel, 'members') else 0,
+                'members': [
+                    {
+                        'id': getattr(member, 'id', None) or getattr(member, 'user_id', None) or (member.user.id if hasattr(member, 'user') else None),
+                        'name': getattr(member, 'name', None) or (member.user.name if hasattr(member, 'user') else 'Unknown'),
+                        'email': getattr(member, 'email', None) or (member.user.email if hasattr(member, 'user') else ''),
+                        'profile_image': getattr(member, 'profile_image', None) or (getattr(member.user, 'profile_image', None) if hasattr(member, 'user') else None),
+                        'role': getattr(member, 'role', 'member'),
+                        'joined_at': getattr(member, 'joined_at', None) or getattr(member, 'created_at', None) or datetime.utcnow()
+                    }
+                    for member in channel.members if hasattr(channel, 'members')
+                ],
+                'chats': [],
+                'chats_count': len(channel.chats) if hasattr(channel, 'chats') else 0
+            }
+            channels.append(ChannelResponse.model_validate(channel_data))
     project_detail.channels = channels
     
     # WhiteBoard 정보 추가
