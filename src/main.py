@@ -17,6 +17,7 @@ except Exception as e:
 # Import routers after models to avoid circular imports
 from api.v1.routes.user import routers as user_routers
 from api.v1.routes.project import routers as project_routers
+from api.v1.routes.community import routers as community_routers
 
 app = FastAPI(
   title=setting.TITLE,
@@ -42,6 +43,10 @@ for router in user_routers:
 
 # Include all project routers
 for router in project_routers:
+    app.include_router(router)
+
+# Include all community routers
+for router in community_routers:
     app.include_router(router)
 
 @app.get("/")
