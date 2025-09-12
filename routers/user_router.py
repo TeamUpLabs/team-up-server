@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
 from typing import List, Dict
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from database import get_db
 from utils.auth import create_access_token, get_current_user
@@ -67,9 +67,29 @@ def oauth_login(user_data: OAuthLoginRequest, db: Session = Depends(get_db)):
         )
 
 @router.get("/me", response_model=UserDetail)
-def read_current_user(current_user: User = Depends(get_current_user)):
+def read_current_user(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """현재 로그인한 사용자 정보 조회"""
-    return UserDetail.model_validate(current_user, from_attributes=True)
+    # Explicitly load relationships
+    db_user = db.query(User).options(
+        joinedload(User.collaboration_preference),
+        joinedload(User.tech_stacks),
+        joinedload(User.interests),
+        joinedload(User.social_links),
+        joinedload(User.received_notifications),
+        joinedload(User.sessions)
+    ).filter(User.id == current_user.id).first()
+    
+    # Convert to Pydantic model
+    user_detail = UserDetail.model_validate(db_user, from_attributes=True)
+    
+    # Convert projects to ProjectBrief models
+    if db_user.projects:
+        user_detail.projects = [
+            ProjectBrief.model_validate(project, from_attributes=True)
+            for project in db_user.projects
+        ]
+        
+    return user_detail
 
 @router.put("/me", response_model=UserDetail)
 async def update_current_user(user_in: UserUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

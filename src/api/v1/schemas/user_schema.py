@@ -152,9 +152,12 @@ class UserDetail(UserBase):
   auth_provider_access_token: Optional[str] = None
   projects: Optional[str] = None
   notification_settings: Optional[Dict[str, int]] = None
-    
-  # Related resource URLs
-  urls: dict = {}
+  
+  collaboration_preference: str = ""
+  tech_stacks: str = ""
+  interests: str = ""
+  social_links: str = ""
+  sessions: str = ""
   
   class Config:
     from_attributes = True

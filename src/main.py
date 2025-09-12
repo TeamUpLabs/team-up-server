@@ -6,7 +6,15 @@ from core.middleware.ErrorHandlingMiddleware import ErrorHandlingMiddleware
 from core.middleware.LoggingMiddleware import LoggingMiddleware
 from core.middleware.AuthMiddleware import AuthMiddleware
 
-from api.v1.routes import user_router
+from api.v1.routes import (
+  user_router,
+  collaboration_preferences_router,
+  tech_stacks_router,
+  interests_router,
+  social_links_router,
+  notifications_router,
+  sessions_router
+)
 
 Base.metadata.create_all(bind=engine)
 
@@ -29,6 +37,12 @@ app.add_middleware(LoggingMiddleware)
 # app.add_middleware(AuthMiddleware)
 
 app.include_router(user_router)
+app.include_router(collaboration_preferences_router)
+app.include_router(tech_stacks_router)
+app.include_router(interests_router)
+app.include_router(social_links_router)
+app.include_router(notifications_router)
+app.include_router(sessions_router)
 
 @app.get("/")
 async def root():

@@ -2,7 +2,7 @@ from typing import List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from api.v1.models.user import UserNotification as DBNotification
+from api.v1.models.notification import Notification as DBNotification
 from api.v1.schemas.notification_schema import (
     NotificationCreate,
     NotificationUpdate,
@@ -23,7 +23,7 @@ class NotificationService:
         offset: int = 0
     ) -> List[Notification]:
         query = self.db.query(DBNotification).filter(
-            DBNotification.user_id == user_id
+            DBNotification.receiver_id == user_id
         )
         
         if is_read is not None:
@@ -37,7 +37,7 @@ class NotificationService:
     def get_notification(self, notification_id: int, user_id: int) -> Notification:
         db_notification = self.db.query(DBNotification).filter(
             DBNotification.id == notification_id,
-            DBNotification.user_id == user_id
+            DBNotification.receiver_id == user_id
         ).first()
         
         if not db_notification:
@@ -51,7 +51,7 @@ class NotificationService:
         self, user_id: int, notification: NotificationCreate
     ) -> Notification:
         db_notification = DBNotification(
-            user_id=user_id,
+            receiver_id=user_id,
             **notification.dict()
         )
         self.db.add(db_notification)
@@ -72,11 +72,11 @@ class NotificationService:
 
     def mark_all_as_read(self, user_id: int) -> dict:
         self.db.query(DBNotification).filter(
-            DBNotification.user_id == user_id,
+            DBNotification.receiver_id == user_id,
             DBNotification.is_read == False
         ).update({
             DBNotification.is_read: True,
-            DBNotification.read_at: datetime.utcnow()
+            DBNotification.read_at: datetime.now()
         })
         self.db.commit()
         return {"message": "All notifications marked as read"}
@@ -89,6 +89,6 @@ class NotificationService:
         
     def get_unread_count(self, user_id: int) -> int:
         return self.db.query(DBNotification).filter(
-            DBNotification.user_id == user_id,
+            DBNotification.receiver_id == user_id,
             DBNotification.is_read == False
         ).count()
