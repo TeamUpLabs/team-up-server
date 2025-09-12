@@ -2,102 +2,11 @@ from typing import Optional, List, Dict
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from api.v1.schemas.brief import UserBrief
-
-class CollaborationPreference(BaseModel):
-  collaboration_style: Optional[str] = None
-  preferred_project_type: Optional[str] = None
-  preferred_role: Optional[str] = None
-  available_time_zone: Optional[str] = None
-  work_hours_start: Optional[int] = None
-  work_hours_end: Optional[int] = None
-  preferred_project_length: Optional[str] = None
-    
-class CollaborationPreferenceResponse(CollaborationPreference):
-  id: int
-  created_at: datetime
-  updated_at: datetime
-  
-  class Config:
-    from_attributes = True
-    
-class UserProject(BaseModel):
-  project_id: str
-  role_description: Optional[str] = None
-  contribution: Optional[str] = None
-  
-class UserProjectResponse(UserProject):
-  id: int
-  joined_at: datetime
-  left_at: Optional[datetime] = None
-  
-  class Config:
-    from_attributes = True
-    
-class UserTechStack(BaseModel):
-  tech: str
-  level: int
-
-class UserTechStackResponse(UserTechStack):
-  id: int
-  created_at: datetime
-  updated_at: datetime
-  
-  class Config:
-    from_attributes = True
-    
-class UserInterest(BaseModel):
-  interest_category: str
-  interest_name: str
-
-class UserInterestResponse(UserInterest):
-  id: int
-  created_at: datetime
-  updated_at: datetime
-  
-  class Config:
-    from_attributes = True
-    
-class NotificationSettings(BaseModel):
-  emailEnable: Optional[int] = 1
-  taskNotification: Optional[int] = 1
-  milestoneNotification: Optional[int] = 1
-  scheduleNotification: Optional[int] = 1
-  deadlineNotification: Optional[int] = 1
-  weeklyReport: Optional[int] = 1
-  pushNotification: Optional[int] = 1
-  securityNotification: Optional[int] = 1
-
-class UserSocialLink(BaseModel):
-  platform: str
-  url: str
-
-class UserSocialLinkResponse(UserSocialLink):
-  id: int
-  created_at: datetime
-  updated_at: datetime
-  
-  class Config:
-    from_attributes = True
-    
-class UserSessionResponse(BaseModel):
-  id: int
-  session_id: str
-  user_id: int
-  device_id: Optional[str] = None
-  user_agent: Optional[str] = None
-  geo_location: Optional[str] = None
-  ip_address: Optional[str] = None
-  device: Optional[str] = None
-  device_type: Optional[str] = None
-  os: Optional[str] = None
-  browser: Optional[str] = None
-  last_active_at: datetime
-  is_current: bool
-  created_at: datetime
-  updated_at: datetime
-  
-  class Config:
-    from_attributes = True
+from api.v1.schemas.notification_schema import NotificationCreate, NotificationUpdate
+from api.v1.schemas.collaboration_preference_schema import CollaborationPreferenceCreate, CollaborationPreferenceUpdate
+from api.v1.schemas.interest_schema import InterestCreate, InterestUpdate
+from api.v1.schemas.tech_stack_schema import TechStackCreate, TechStackUpdate
+from api.v1.schemas.social_link_schema import SocialLinkCreate, SocialLinkUpdate
 
 class UserBase(BaseModel):
   name: str = Field(..., min_length=2, max_length=100)
@@ -118,11 +27,11 @@ class UserCreate(UserBase):
   auth_provider_id: Optional[str] = None
   auth_provider_access_token: Optional[str] = None
   
-  collaboration_preference: Optional[CollaborationPreference] = None
-  interests: Optional[List[UserInterest]] = None
-  notification_settings: Optional[NotificationSettings] = None
-  social_links: Optional[List[UserSocialLink]] = None
-  tech_stacks: Optional[List[UserTechStack]] = None
+  collaboration_preference: Optional[CollaborationPreferenceCreate] = None
+  interests: Optional[List[InterestCreate]] = None
+  notification_settings: Optional[NotificationCreate] = None
+  social_links: Optional[List[SocialLinkCreate]] = None
+  tech_stacks: Optional[List[TechStackCreate]] = None
   
 class UserUpdate(BaseModel):
   name: Optional[str] = Field(None, min_length=2, max_length=100)
@@ -134,11 +43,11 @@ class UserUpdate(BaseModel):
   phone: Optional[str] = None
   birth_date: Optional[str] = None
   status: Optional[str] = None
-  notification_settings: Optional[NotificationSettings] = None
-  social_links: Optional[List[UserSocialLink]] = None
-  tech_stacks: Optional[List[UserTechStack]] = None
-  collaboration_preference: Optional[CollaborationPreference] = None
-  interests: Optional[List[UserInterest]] = None
+  notification_settings: Optional[NotificationUpdate] = None
+  social_links: Optional[List[SocialLinkUpdate]] = None
+  tech_stacks: Optional[List[TechStackUpdate]] = None
+  collaboration_preference: Optional[CollaborationPreferenceUpdate] = None
+  interests: Optional[List[InterestUpdate]] = None
   auth_provider_access_token: Optional[str] = None
   last_login: Optional[datetime] = None
   

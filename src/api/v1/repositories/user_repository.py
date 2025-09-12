@@ -1,10 +1,12 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Any, Union, Dict, Optional
-from api.v1.models.user import User, CollaborationPreference, UserTechStack, UserInterest, UserSocialLink
-from api.v1.schemas.user_schema import UserCreate, UserUpdate, NotificationSettings, UserDetail
-from api.v1.schemas.brief import ProjectBrief
 from datetime import datetime
+
+from core.security.password import get_password_hash
+from api.v1.models.user import User, CollaborationPreference, UserTechStack, UserInterest, UserSocialLink
+from api.v1.schemas.user_schema import UserCreate, UserUpdate, UserDetail
+from api.v1.schemas.brief import ProjectBrief
 
 class UserRepository:
   def __init__(self, db: Session):
@@ -35,13 +37,6 @@ class UserRepository:
         "auth_provider_id": db_user.auth_provider_id,
         "auth_provider_access_token": db_user.auth_provider_access_token,
         "notification_settings": db_user.notification_settings,
-        # These fields will be populated by the UserDetail model's __init__
-        "collaboration_preference": None,
-        "tech_stacks": None,
-        "interests": None,
-        "social_links": None,
-        "received_notifications": None,
-        "sessions": None
     }
     
     user_detail = UserDetail(**user_dict)
@@ -185,152 +180,17 @@ class UserRepository:
     self.db.delete(db_user)
     self.db.commit()
     return db_user
-  
-  def _update_social_links(self, db: Session, db_obj: User, social_links_data: List[Any]) -> None:
-    """Helper method to update social links"""
-    existing_links = {link.platform: link for link in db_obj.social_links}
-    
-    for link_data in social_links_data:
-      platform = link_data.get("platform") if isinstance(link_data, dict) else link_data.platform
-      url = link_data.get("url") if isinstance(link_data, dict) else link_data.url
-      
-      if platform in existing_links:
-        # Update existing link
-        existing_link = existing_links.pop(platform)
-        if existing_link.url != url:
-          existing_link.url = url
-      else:
-        # Add new link
-        new_link = UserSocialLink(
-          user_id=db_obj.id,
-          platform=platform,
-          url=url
-        )
-        db.add(new_link)
-    
-    # Remove links that are no longer in the update data
-    for link in existing_links.values():
-      db.delete(link)
-      
-  def _update_tech_stacks(self, db: Session, db_obj: User, tech_stacks_data: List[Any]) -> None:
-    """Helper method to update tech stacks"""
-    existing_stacks = {stack.tech: stack for stack in db_obj.tech_stacks}
-    
-    for stack_data in tech_stacks_data:
-      tech = stack_data.get("tech") if isinstance(stack_data, dict) else stack_data.tech
-      level = stack_data.get("level") if isinstance(stack_data, dict) else stack_data.level
-      
-      if tech in existing_stacks:
-        # Update existing stack
-        existing_stack = existing_stacks.pop(tech)
-        if existing_stack.level != level:
-          existing_stack.level = level
-      else:
-        # Add new stack
-        new_stack = UserTechStack(
-          user_id=db_obj.id,
-          tech=tech,
-          level=level
-        )
-        db.add(new_stack)
-    
-    # Remove stacks that are no longer in the update data
-    for stack in existing_stacks.values():
-      db.delete(stack)
-      
-  def _update_interests(self, db: Session, db_obj: User, interests_data: List[Any]) -> None:
-    """Helper method to update interests"""
-    existing_interests = {(i.interest_category, i.interest_name): i for i in db_obj.interests}
-    
-    # Track which interests are being updated
-    updated_interests = set()
-    
-    for interest_data in interests_data:
-      category = (interest_data.get("interest_category") if isinstance(interest_data, dict) else interest_data.interest_category)
-      name = (interest_data.get("interest_name") if isinstance(interest_data, dict) else interest_data.interest_name)
-      
-      interest_key = (category, name)
-      updated_interests.add(interest_key)
-      
-      if interest_key not in existing_interests:
-        # Add new interest
-        new_interest = UserInterest(
-          user_id=db_obj.id,
-          interest_category=category,
-          interest_name=name
-        )
-        db.add(new_interest)
-    
-    # Remove interests that are no longer in the update data
-    for interest_key, interest in existing_interests.items():
-      if interest_key not in updated_interests:
-        db.delete(interest)
-        
-  def _update_collaboration_preference(self, db: Session, db_obj: User, preference_data: Union[Dict, Any]) -> None:
-    """Helper method to update user's collaboration preference"""
-    # Get the existing preference or create a new one if it doesn't exist
-    preference = db_obj.collaboration_preference
-    
-    # If preference_data is a Pydantic model, convert to dict
-    if hasattr(preference_data, 'model_dump'):
-      preference_data = preference_data.model_dump(exclude_unset=True)
-    
-    if preference is None:
-      # Create new preference
-      preference = CollaborationPreference(
-        user_id=db_obj.id,
-        **preference_data
-      )
-      db.add(preference)
-    else:
-      # Update existing preference
-      for field, value in preference_data.items():
-        if hasattr(preference, field):
-          setattr(preference, field, value)
           
-  def _update_notification_settings(self, db: Session, *, user_id: int, settings_in: NotificationSettings) -> Dict[str, int]:
-    """사용자 알림 설정 업데이트"""
-    # 사용자 조회
-    user = self.get(db, id=user_id)
+  def update_last_login(self, user_id: int) -> User:
+    """Update the user's last login time"""
+    user = self.db.get(User, user_id)
     if not user:
       raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="사용자를 찾을 수 없습니다."
-      )
-    
-    # 현재 설정 가져오기 (기본값이 있는 경우를 위해 getattr 사용)
-    current_settings = getattr(user, 'notification_settings', {})
-    if current_settings is None:
-      current_settings = {}
-    
-    # 새 설정으로 업데이트 (None이 아닌 값만 업데이트)
-    update_data = {k: v for k, v in settings_in.model_dump(exclude_unset=True).items() if v is not None}
-    current_settings.update(update_data)
-    
-    try:
-      # 데이터베이스 업데이트
-      user.notification_settings = current_settings
-      db.add(user)
-      db.commit()
-      db.refresh(user)
-      return current_settings
-    except Exception as e:
-      db.rollback()
-      raise HTTPException(
-        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        detail=f"알림 설정 업데이트 중 오류가 발생했습니다: {str(e)}"
-      )
-          
-  def update_last_login(self, db: Session, *, user_id: int) -> User:
-    """사용자 마지막 로그인 시간 업데이트"""
-    user = self.get(db, id=user_id)
-    if not user:
-      raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="사용자를 찾을 수 없습니다."
+        status_code=404,
+        detail="User not found"
       )
     
     user.last_login = datetime.now()
-    db.commit()
-    db.refresh(user)
+    self.db.commit()
+    self.db.refresh(user)
     return user

@@ -1,36 +1,82 @@
+from typing import Optional
+from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+
 from api.v1.repositories.user_repository import UserRepository
-from api.v1.schemas.user_schema import UserCreate, UserUpdate
+from api.v1.schemas.user_schema import (
+    UserCreate,
+    UserUpdate,
+    UserDetail
+)
+from api.v1.schemas.brief import UserBrief
 
 class UserService:
-  def __init__(self, db: Session):
-    self.repo = UserRepository(db)
+    def __init__(self, repository: UserRepository):
+        self.repository = repository
     
-  def get_user(self, user_id: int):
-    user = self.repo.get(user_id)
-    if not user:
-      raise ValueError("존재하지 않는 사용자입니다.")
-    return user
-  
-  def get_user_by_email(self, email: str):
-    user = self.repo.get_by_email(email)
-    if not user:
-      raise ValueError("존재하지 않는 사용자입니다.")
-    return user
+    def get_user(self, user_id: int) -> UserDetail:
+        """Get a user by ID"""
+        try:
+            return self.repository.get(user_id)
+        except HTTPException as e:
+            if e.status_code == 404:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"User with id {user_id} not found"
+                )
+            raise
     
-  def create_user(self, user: UserCreate):
-    if self.repo.get_by_email(user.email):
-      raise ValueError("이미 존재하는 이메일입니다.")
-    return self.repo.create(user)
+    def get_user_by_email(self, email: str) -> UserDetail:
+        """Get a user by email"""
+        try:
+            return self.repository.get_by_email(email)
+        except HTTPException as e:
+            if e.status_code == 404:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"User with email {email} not found"
+                )
+            raise
+    
+    def create_user(self, user_data: UserCreate) -> UserDetail:
+        """Create a new user"""
+        try:
+            # Check if user with email already exists
+            self.repository.get_by_email(user_data.email)
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"User with email {user_data.email} already exists"
+            )
+        except HTTPException as e:
+            if e.status_code == 404:  # User not found, safe to create
+                return self.repository.create(user_data)
+            raise  # Re-raise other HTTP exceptions
+    
+    def update_user(
+        self, 
+        user_id: int, 
+        user_data: UserUpdate
+    ) -> UserDetail:
+        """Update an existing user"""
+        try:
+            return self.repository.update(user_id, user_data)
+        except HTTPException as e:
+            if e.status_code == 404:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"User with id {user_id} not found"
+                )
+            raise
   
-  def update_user(self, user_id: int, user: UserUpdate):
-    user = self.get_user(user_id)
-    if not user:
-      raise ValueError("존재하지 않는 사용자입니다.")
-    return self.repo.update(user_id, user)
-  
-  def delete_user(self, user_id: int):
-    user = self.get_user(user_id)
-    if not user:
-      raise ValueError("존재하지 않는 사용자입니다.")
-    return self.repo.remove(user_id)
+    def delete_user(self, user_id: int) -> dict:
+        """Delete a user by ID"""
+        try:
+            self.repository.delete(user_id)
+            return {"message": f"User with id {user_id} has been deleted"}
+        except HTTPException as e:
+            if e.status_code == 404:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"User with id {user_id} not found"
+                )
+            raise

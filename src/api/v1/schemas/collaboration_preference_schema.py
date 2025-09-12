@@ -7,8 +7,8 @@ class CollaborationPreferenceBase(BaseModel):
     preferred_project_type: Optional[str] = None
     preferred_role: Optional[str] = None
     available_time_zone: Optional[str] = None
-    work_hours_start: Optional[int] = Field(None, ge=0, le=23)
-    work_hours_end: Optional[int] = Field(None, ge=0, le=23)
+    work_hours_start: Optional[int] = None
+    work_hours_end: Optional[int] = None
     preferred_project_length: Optional[str] = None
 
 class CollaborationPreferenceCreate(CollaborationPreferenceBase):

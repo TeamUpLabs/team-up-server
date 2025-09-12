@@ -25,7 +25,7 @@ def login(db: Session, email: str, password: str):
       detail="이메일 또는 비밀번호가 올바르지 않습니다.",
       headers={"WWW-Authenticate": "Bearer"},
     )
-  access_token = create_access_token({"sub": str(user.id)})
+  access_token = create_access_token({"sub": user.email})
   return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -35,11 +35,11 @@ def get_current_user(
   """현재 로그인된 사용자 반환"""
   try:
     payload = verify_token(token)
-    user_id: str = payload.get("sub")
+    user_email = payload.get("sub")
   except Exception:
     raise HTTPException(status_code=401, detail="Invalid authentication token")
 
-  user = db.query(User).filter(User.id == int(user_id)).first()
+  user = db.query(User).filter(User.email == user_email).first()
   if user is None:
     raise HTTPException(status_code=401, detail="User not found")
 
