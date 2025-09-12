@@ -1,7 +1,6 @@
 import os
 from dotenv import load_dotenv
 from jose import JWTError, jwt
-import logging
 
 load_dotenv()
 
