@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from api.v1.models.user import CollaborationPreference as DBCollaborationPreference
+from api.v1.models.user.collaboration_preference import CollaborationPreference as DBCollaborationPreference
 from api.v1.schemas.user.collaboration_preference_schema import CollaborationPreferenceCreate, CollaborationPreferenceUpdate, CollaborationPreference
 
 class CollaborationPreferenceRepository:

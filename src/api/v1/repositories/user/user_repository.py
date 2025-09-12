@@ -4,7 +4,11 @@ from typing import List
 from datetime import datetime
 
 from core.security.password import get_password_hash
-from api.v1.models.user import User, CollaborationPreference, UserTechStack, UserInterest, UserSocialLink
+from api.v1.models.user.user import User
+from api.v1.models.user.tech_stack import UserTechStack
+from api.v1.models.user.interest import UserInterest
+from api.v1.models.user.social_link import UserSocialLink
+from api.v1.models.user.collaboration_preference import CollaborationPreference
 from api.v1.schemas.user.user_schema import UserCreate, UserUpdate, UserDetail
 
 class UserRepository:

@@ -1,7 +1,7 @@
 from typing import List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from api.v1.models.user import UserSocialLink as DBSocialLink
+from api.v1.models.user.social_link import UserSocialLink as DBSocialLink
 from api.v1.schemas.user.social_link_schema import (
     SocialLinkCreate,
     SocialLinkUpdate
