@@ -56,30 +56,67 @@ class UserDetail(UserBase):
   created_at: datetime
   updated_at: datetime
   last_login: Optional[datetime] = None
-  auth_provider: str
-  auth_provider_id: Optional[str] = None
-  auth_provider_access_token: Optional[str] = None
+  auth: Dict = {}
   notification_settings: Optional[Dict[str, int]] = None
     
   # Related resource URLs
-  urls: dict = {}
+  links: Dict = {}
   
   class Config:
     from_attributes = True
     
   def __init__(self, **data):
     super().__init__(**data)
+    
+    self.auth = {
+      "provider": data.get("auth_provider"),
+      "provider_id": data.get("auth_provider_id"),
+      "provider_access_token": data.get("auth_provider_access_token")
+    }
+    
     # Generate related resource URLs
     base_url = f"/api/v1/users/{self.id}"
-    self.urls = {
-      "self": f"{base_url}",
-      "projects": f"{base_url}/projects",
-      "collaboration_preferences": f"{base_url}/collaboration-preferences",
-      "tech_stacks": f"{base_url}/tech-stacks",
-      "interests": f"{base_url}/interests",
-      "social_links": f"{base_url}/social-links",
-      "notifications": f"{base_url}/notifications",
-      "sessions": f"{base_url}/sessions"
+    self.links = {
+      "self": {
+        "href": f"{base_url}",
+        "method": "GET",
+        "title": "자신의 사용자 정보 조회"
+      },
+      "projects": {
+        "href": f"/api/v1/projects?user_id={self.id}",
+        "method": "GET",
+        "title": "자신이 참여한 프로젝트 조회"
+      },
+      "collaboration_preferences": {
+        "href": f"{base_url}/collaboration-preferences",
+        "method": "GET",
+        "title": "자신의 협업 선호도 조회"
+      },
+      "tech_stacks": {
+        "href": f"{base_url}/tech-stacks",
+        "method": "GET",
+        "title": "자신의 기술 스택 조회"
+      },
+      "interests": {
+        "href": f"{base_url}/interests",
+        "method": "GET",
+        "title": "자신의 관심사 조회"
+      },
+      "social_links": {
+        "href": f"{base_url}/social-links",
+        "method": "GET",
+        "title": "자신의 소셜 링크 조회"
+      },
+      "notifications": {
+        "href": f"{base_url}/notifications",
+        "method": "GET",
+        "title": "자신의 알림 조회"
+      },
+      "sessions": {
+        "href": f"{base_url}/sessions",
+        "method": "GET",
+        "title": "자신의 세션 조회"
+      },
     }
     
 class Token(BaseModel):
