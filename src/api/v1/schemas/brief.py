@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Dict
 from datetime import datetime
 from pydantic import BaseModel
 
@@ -13,8 +13,22 @@ class UserBrief(BaseModel):
   created_at: datetime
   updated_at: datetime
   
+  links: Dict = {}
+
+  def __init__(self, **data):
+    super().__init__(**data)
+    
+    self.links = {
+      "self": {
+        "href": f"/api/v1/users/{self.id}",
+        "method": "GET",
+        "title": "사용자 정보 조회"
+      }
+    }
+    
   class Config:
     from_attributes = True
+  
 
 class ProjectBrief(BaseModel):
   """간략한 프로젝트 정보"""
@@ -26,6 +40,17 @@ class ProjectBrief(BaseModel):
   tags: Optional[List[str]] = None
   members: Optional[List[UserBrief]] = None
   project_type: Optional[str] = None
+  links: Dict = {}
+  
+  def __init__(self, **data):
+    super().__init__(**data)
+    self.links = {
+      "self": {
+        "href": f"/api/v1/projects/{self.id}",
+        "method": "GET",
+        "title": "프로젝트 정보 조회"
+      }
+    }
   
   class Config:
     from_attributes = True
@@ -37,6 +62,17 @@ class TaskBrief(BaseModel):
   status: str
   priority: str
   due_date: Optional[datetime] = None
+  links: Dict = {}
+  
+  def __init__(self, **data):
+    super().__init__(**data)
+    self.links = {
+      "self": {
+        "href": f"/api/v1/tasks/{self.id}",
+        "method": "GET",
+        "title": "업무 정보 조회"
+      }
+    }
   
   class Config:
     from_attributes = True
@@ -47,6 +83,17 @@ class MilestoneBrief(BaseModel):
   title: str
   status: str
   due_date: Optional[datetime] = None
+  links: Dict = {}
+  
+  def __init__(self, **data):
+    super().__init__(**data)
+    self.links = {
+      "self": {
+        "href": f"/api/v1/milestones/{self.id}",
+        "method": "GET",
+        "title": "마일스톤 정보 조회"
+      }
+    }
   
   class Config:
     from_attributes = True

@@ -6,9 +6,15 @@ from core.middleware.ErrorHandlingMiddleware import ErrorHandlingMiddleware
 from core.middleware.LoggingMiddleware import LoggingMiddleware
 from core.middleware.AuthMiddleware import AuthMiddleware
 
-from api.v1.routes.user import routers as user_routers
+# Import all models to ensure they are registered with SQLAlchemy
+from api.v1.models import *
 
+# Create database tables
 Base.metadata.create_all(bind=engine)
+
+# Import routers after models to avoid circular imports
+from api.v1.routes.user import routers as user_routers
+from api.v1.routes.project import routers as project_routers
 
 app = FastAPI(
   title="TeamUp API",
@@ -30,6 +36,10 @@ app.add_middleware(LoggingMiddleware)
 
 # Include all user routers
 for router in user_routers:
+    app.include_router(router)
+
+# Include all project routers
+for router in project_routers:
     app.include_router(router)
 
 @app.get("/")
