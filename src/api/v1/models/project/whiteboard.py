@@ -85,8 +85,6 @@ class WhiteBoardComment(Base, BaseModel):
   
   id = Column(Integer, primary_key=True, index=True)
   content = Column(Text, nullable=False)
-  created_at = Column(DateTime, nullable=False)
-  updated_at = Column(DateTime, nullable=False)
   
   # 외래 키
   whiteboard_id = Column(Integer, ForeignKey("whiteboards.id", ondelete="CASCADE"), nullable=False)
