@@ -40,7 +40,6 @@ class User(Base, BaseModel):
   })
   
   # 관계 정의    
-  # Projects the user is a member of
   projects = relationship(
     "Project",
     secondary=project_members,
