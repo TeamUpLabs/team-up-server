@@ -2,7 +2,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from api.v1.models.user import UserTechStack as DBTechStack
-from api.v1.schemas.tech_stack_schema import (
+from api.v1.schemas.user.tech_stack_schema import (
     TechStackCreate,
     TechStackUpdate
 )

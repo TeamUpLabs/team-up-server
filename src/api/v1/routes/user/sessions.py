@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from core.database.database import get_db
-from api.v1.schemas.session_schema import (
+from api.v1.schemas.user.session_schema import (
     Session as SessionSchema,
     SessionCreate
 )
-from api.v1.services.session_service import SessionService
+from api.v1.services.user.session_service import SessionService
 from core.security.auth import get_current_user
 
 router = APIRouter(

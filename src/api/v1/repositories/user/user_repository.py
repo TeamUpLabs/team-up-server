@@ -1,12 +1,11 @@
 from fastapi import HTTPException
-from sqlalchemy.orm import Session, joinedload
-from typing import List, Any, Union, Dict, Optional
+from sqlalchemy.orm import Session
+from typing import List
 from datetime import datetime
 
 from core.security.password import get_password_hash
 from api.v1.models.user import User, CollaborationPreference, UserTechStack, UserInterest, UserSocialLink
-from api.v1.schemas.user_schema import UserCreate, UserUpdate, UserDetail
-from api.v1.schemas.brief import ProjectBrief
+from api.v1.schemas.user.user_schema import UserCreate, UserUpdate, UserDetail
 
 class UserRepository:
   def __init__(self, db: Session):

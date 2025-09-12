@@ -3,27 +3,27 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from core.database.database import get_db
-from api.v1.schemas.social_link_schema import (
-    SocialLink,
-    SocialLinkCreate,
-    SocialLinkUpdate
+from api.v1.schemas.user.interest_schema import (
+    Interest,
+    InterestCreate,
+    InterestUpdate
 )
-from api.v1.services.social_link_service import SocialLinkService
+from api.v1.services.user.interest_service import InterestService
 from core.security.auth import get_current_user
 
 router = APIRouter(
-  prefix="/api/v1/users/{user_id}/social-links",
-  tags=["social-links"]
+  prefix="/api/v1/users/{user_id}/interests",
+  tags=["interests"]
 )
 
-@router.get("/", response_model=List[SocialLink])
-def list_social_links(
+@router.get("/", response_model=List[Interest])
+def list_interests(
   user_id: int,
   db: Session = Depends(get_db),
   current_user: dict = Depends(get_current_user)
 ):
   """
-  Get all social links for a user
+  Get all interests for a user
   """
   if current_user.id != user_id:
     raise HTTPException(
@@ -31,18 +31,18 @@ def list_social_links(
       detail="Not authorized to access this resource"
     )
       
-  service = SocialLinkService(db)
-  return service.get_user_social_links(user_id)
+  service = InterestService(db)
+  return service.get_user_interests(user_id)
 
-@router.post("/", response_model=SocialLink, status_code=status.HTTP_201_CREATED)
-def create_social_link(
+@router.post("/", response_model=Interest, status_code=status.HTTP_201_CREATED)
+def create_interest(
   user_id: int,
-  social_link: SocialLinkCreate,
+  interest: InterestCreate,
   db: Session = Depends(get_db),
   current_user: dict = Depends(get_current_user)
 ):
   """
-  Add a new social link for a user
+  Add a new interest for a user
   """
   if current_user.id != user_id:
     raise HTTPException(
@@ -50,18 +50,18 @@ def create_social_link(
       detail="Not authorized to perform this action"
     )
         
-  service = SocialLinkService(db)
-  return service.create_social_link(user_id, social_link)
+  service = InterestService(db)
+  return service.create_interest(user_id, interest)
 
-@router.get("/{link_id}", response_model=SocialLink)
-def get_social_link(
+@router.get("/{interest_id}", response_model=Interest)
+def get_interest(
   user_id: int,
-  link_id: int,
+  interest_id: int,
   db: Session = Depends(get_db),
   current_user: dict = Depends(get_current_user)
 ):
   """
-  Get a specific social link by ID
+  Get a specific interest by ID
   """
   if current_user.id != user_id:
     raise HTTPException(
@@ -69,19 +69,19 @@ def get_social_link(
       detail="Not authorized to access this resource"
     )
         
-  service = SocialLinkService(db)
-  return service.get_social_link(link_id, user_id)
+  service = InterestService(db)
+  return service.get_interest(interest_id, user_id)
 
-@router.put("/{link_id}", response_model=SocialLink)
-def update_social_link(
+@router.put("/{interest_id}", response_model=Interest)
+def update_interest(
   user_id: int,
-  link_id: int,
-  social_link: SocialLinkUpdate,
+  interest_id: int,
+  interest: InterestUpdate,
   db: Session = Depends(get_db),
   current_user: dict = Depends(get_current_user)
 ):
   """
-  Update a social link
+  Update an interest
   """
   if current_user.id != user_id:
     raise HTTPException(
@@ -89,18 +89,18 @@ def update_social_link(
       detail="Not authorized to perform this action"
     )
         
-  service = SocialLinkService(db)
-  return service.update_social_link(link_id, user_id, social_link)
+  service = InterestService(db)
+  return service.update_interest(interest_id, user_id, interest)
 
-@router.delete("/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_social_link(
+@router.delete("/{interest_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_interest(
   user_id: int,
-  link_id: int,
+  interest_id: int,
   db: Session = Depends(get_db),
   current_user: dict = Depends(get_current_user)
 ):
   """
-  Delete a social link
+  Delete an interest
   """
   if current_user.id != user_id:
     raise HTTPException(
@@ -108,6 +108,6 @@ def delete_social_link(
       detail="Not authorized to perform this action"
     )
         
-  service = SocialLinkService(db)
-  service.delete_social_link(link_id, user_id)
+  service = InterestService(db)
+  service.delete_interest(interest_id, user_id)
   return None

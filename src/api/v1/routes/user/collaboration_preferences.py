@@ -3,12 +3,12 @@ from sqlalchemy.orm import Session
 
 from core.database.database import get_db
 from core.security.auth import get_current_user
-from api.v1.schemas.collaboration_preference_schema import (
+from api.v1.schemas.user.collaboration_preference_schema import (
     CollaborationPreferenceCreate,
     CollaborationPreferenceUpdate,
     CollaborationPreference
 )
-from api.v1.services.collaboration_preference_service import CollaborationPreferenceService
+from api.v1.services.user.collaboration_preference_service import CollaborationPreferenceService
 
 router = APIRouter(
   prefix="/api/v1/users/{user_id}/collaboration-preferences",

@@ -3,7 +3,7 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from api.v1.models.notification import Notification as DBNotification
-from api.v1.schemas.notification_schema import (
+from api.v1.schemas.user.notification_schema import (
     NotificationCreate,
     NotificationUpdate,
     NotificationType

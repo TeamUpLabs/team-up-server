@@ -1,12 +1,12 @@
 from typing import List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from api.v1.schemas.social_link_schema import (
+from api.v1.schemas.user.social_link_schema import (
     SocialLinkCreate,
     SocialLinkUpdate,
     SocialLinkInDB
 )
-from api.v1.repositories.social_link_repository import SocialLinkRepository
+from api.v1.repositories.user.social_link_repository import SocialLinkRepository
 
 class SocialLinkService:
   def __init__(self, db: Session):

@@ -1,11 +1,11 @@
 from typing import List
 from sqlalchemy.orm import Session
-from api.v1.schemas.interest_schema import (
+from api.v1.schemas.user.interest_schema import (
     InterestCreate,
     InterestUpdate,
     InterestInDB
 )
-from api.v1.repositories.interest_repository import InterestRepository
+from api.v1.repositories.user.interest_repository import InterestRepository
 
 class InterestService:
   def __init__(self, db: Session):

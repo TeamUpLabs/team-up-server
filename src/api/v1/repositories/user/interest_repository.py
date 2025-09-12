@@ -2,7 +2,7 @@ from typing import List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from api.v1.models.user import UserInterest as DBInterest
-from api.v1.schemas.interest_schema import (
+from api.v1.schemas.user.interest_schema import (
     InterestCreate,
     InterestUpdate
 )

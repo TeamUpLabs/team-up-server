@@ -1,8 +1,7 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
-from api.v1.repositories.session_repository import SessionRepository
-from api.v1.schemas.session_schema import (
+from api.v1.repositories.user.session_repository import SessionRepository
+from api.v1.schemas.user.session_schema import (
     Session as SessionSchema,
     SessionCreate,
     SessionUpdate,

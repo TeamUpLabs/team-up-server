@@ -2,11 +2,11 @@ from typing import Optional, List, Dict
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
 from api.v1.schemas.brief import UserBrief
-from api.v1.schemas.notification_schema import NotificationCreate, NotificationUpdate
-from api.v1.schemas.collaboration_preference_schema import CollaborationPreferenceCreate, CollaborationPreferenceUpdate
-from api.v1.schemas.interest_schema import InterestCreate, InterestUpdate
-from api.v1.schemas.tech_stack_schema import TechStackCreate, TechStackUpdate
-from api.v1.schemas.social_link_schema import SocialLinkCreate, SocialLinkUpdate
+from api.v1.schemas.user.notification_schema import NotificationCreate, NotificationUpdate
+from api.v1.schemas.user.collaboration_preference_schema import CollaborationPreferenceCreate, CollaborationPreferenceUpdate
+from api.v1.schemas.user.interest_schema import InterestCreate, InterestUpdate
+from api.v1.schemas.user.tech_stack_schema import TechStackCreate, TechStackUpdate
+from api.v1.schemas.user.social_link_schema import SocialLinkCreate, SocialLinkUpdate
 
 class UserBase(BaseModel):
   name: str = Field(..., min_length=2, max_length=100)

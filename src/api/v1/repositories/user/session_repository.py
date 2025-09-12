@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 from api.v1.models.user import UserSession as DBSession
-from api.v1.schemas.session_schema import SessionCreate, SessionUpdate
+from api.v1.schemas.user.session_schema import SessionCreate, SessionUpdate
 
 class SessionRepository:
   def __init__(self, db: Session):

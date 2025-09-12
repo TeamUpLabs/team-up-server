@@ -4,12 +4,12 @@ from typing import List, Optional
 from datetime import datetime
 
 from core.database.database import get_db
-from api.v1.schemas.notification_schema import (
+from api.v1.schemas.user.notification_schema import (
     Notification,
     NotificationCreate,
     NotificationType
 )
-from api.v1.services.notification_service import NotificationService
+from api.v1.services.user.notification_service import NotificationService
 from core.security.auth import get_current_user
 
 router = APIRouter(

@@ -3,12 +3,12 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from core.database.database import get_db
-from api.v1.schemas.tech_stack_schema import (
+from api.v1.schemas.user.tech_stack_schema import (
     TechStack,
     TechStackCreate,
     TechStackUpdate
 )
-from api.v1.services.tech_stack_service import TechStackService
+from api.v1.services.user.tech_stack_service import TechStackService
 from core.security.auth import get_current_user
 
 router = APIRouter(

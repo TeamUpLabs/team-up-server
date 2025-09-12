@@ -1,13 +1,13 @@
 from typing import List, Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
-from api.v1.schemas.notification_schema import (
+from api.v1.schemas.user.notification_schema import (
     NotificationCreate,
     NotificationUpdate,
     NotificationInDB,
     NotificationType
 )
-from api.v1.repositories.notification_repository import NotificationRepository
+from api.v1.repositories.user.notification_repository import NotificationRepository
 
 class NotificationService:
   def __init__(self, db: Session):
