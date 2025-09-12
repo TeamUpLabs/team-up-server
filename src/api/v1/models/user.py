@@ -1,9 +1,8 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, JSON
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Text, ForeignKey, JSON, func
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-from src.core.database.database import Base
-from src.api.v1.models.base import BaseModel
-from src.api.v1.models.association_tables import project_members
+from core.database.database import Base
+from api.v1.models.base import BaseModel
+from api.v1.models.association_tables import project_members
 
 class User(Base, BaseModel):
   """사용자 모델"""

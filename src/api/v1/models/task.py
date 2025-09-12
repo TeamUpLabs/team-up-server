@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Float, Boolean
 from sqlalchemy.orm import relationship
-from src.core.database.database import Base
-from src.api.v1.models.base import BaseModel
-from src.api.v1.models.association_tables import task_assignees
+from core.database.database import Base
+from api.v1.models.base import BaseModel
+from api.v1.models.association_tables import task_assignees
 
 class Task(Base, BaseModel):
   """업무 모델"""

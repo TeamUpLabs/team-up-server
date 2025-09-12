@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
-from src.core.database.database import Base
-from src.api.v1.models.base import BaseModel
-from src.api.v1.models.association_tables import project_members
+from core.database.database import Base
+from api.v1.models.base import BaseModel
+from api.v1.models.association_tables import project_members
 
 class Project(Base, BaseModel):
     """프로젝트 모델"""
@@ -25,8 +25,6 @@ class Project(Base, BaseModel):
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     
     # 추가 메타데이터
-    created_at = Column(DateTime, nullable=False)
-    updated_at = Column(DateTime, nullable=False)
     tags = Column(JSON, nullable=True)
     location = Column(String(255), nullable=True)
     github_url = Column(String(255), nullable=True)

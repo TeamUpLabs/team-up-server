@@ -2,8 +2,8 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, JSON, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import text
-from src.core.database.database import Base
-from src.api.v1.models.base import BaseModel
+from core.database.database import Base
+from api.v1.models.base import BaseModel
 
 # Association table for user likes
 class UserWhiteBoardLike(Base):
@@ -12,9 +12,6 @@ class UserWhiteBoardLike(Base):
   user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
   whiteboard_id = Column(Integer, ForeignKey("whiteboards.id", ondelete="CASCADE"), primary_key=True)
   created_at = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
-  
-  user = relationship("User", back_populates="liked_whiteboards")
-  whiteboard = relationship("WhiteBoard", back_populates="liked_by_users")
   
   def __repr__(self):
     return f"UserWhiteBoardLike(user_id={self.user_id}, whiteboard_id={self.whiteboard_id})"

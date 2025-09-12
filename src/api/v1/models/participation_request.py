@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, func
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
-from src.core.database.database import Base
-from src.api.v1.models.base import BaseModel
+from core.database.database import Base
+from api.v1.models.base import BaseModel
 
 
 class ParticipationRequest(Base, BaseModel):
@@ -15,7 +14,7 @@ class ParticipationRequest(Base, BaseModel):
   request_type = Column(String(20), nullable=False)  # 'invitation': 프로젝트에서 사용자 초대, 'request': 사용자가 참여 요청
   status = Column(String(20), nullable=False, default='pending')  # 'pending', 'accepted', 'rejected'
   message = Column(Text, nullable=True)  # 요청 또는 초대 메시지
-  created_at = Column(DateTime, nullable=False, server_default=func.now())
+  # created_at = Column(DateTime, nullable=False, server_default=func.now())
   processed_at = Column(DateTime, nullable=True)  # 요청이 수락/거절된 시간
 
   # 관계 정의

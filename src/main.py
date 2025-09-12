@@ -1,10 +1,12 @@
 from fastapi import FastAPI
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from src.core.database.database import engine, Base
-from src.core.middleware.ErrorHandlingMiddleware import ErrorHandlingMiddleware
-from src.core.middleware.LoggingMiddleware import LoggingMiddleware
-from src.core.middleware.AuthMiddleware import AuthMiddleware
+from core.database.database import engine, Base
+from core.middleware.ErrorHandlingMiddleware import ErrorHandlingMiddleware
+from core.middleware.LoggingMiddleware import LoggingMiddleware
+from core.middleware.AuthMiddleware import AuthMiddleware
+
+from api.v1.routes import user_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -24,7 +26,9 @@ app.add_middleware(
 
 app.add_middleware(ErrorHandlingMiddleware)
 app.add_middleware(LoggingMiddleware)
-app.add_middleware(AuthMiddleware)
+# app.add_middleware(AuthMiddleware)
+
+app.include_router(user_router)
 
 @app.get("/")
 async def root():
