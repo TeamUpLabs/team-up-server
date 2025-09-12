@@ -150,14 +150,10 @@ class UserDetail(UserBase):
   auth_provider: str
   auth_provider_id: Optional[str] = None
   auth_provider_access_token: Optional[str] = None
-  projects: Optional[str] = None
   notification_settings: Optional[Dict[str, int]] = None
-  
-  collaboration_preference: str = ""
-  tech_stacks: str = ""
-  interests: str = ""
-  social_links: str = ""
-  sessions: str = ""
+    
+  # Related resource URLs
+  urls: dict = {}
   
   class Config:
     from_attributes = True
@@ -168,6 +164,7 @@ class UserDetail(UserBase):
     base_url = f"/api/v1/users/{self.id}"
     self.urls = {
       "self": f"{base_url}",
+      "projects": f"{base_url}/projects",
       "collaboration_preferences": f"{base_url}/collaboration-preferences",
       "tech_stacks": f"{base_url}/tech-stacks",
       "interests": f"{base_url}/interests",

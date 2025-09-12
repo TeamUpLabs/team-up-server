@@ -34,7 +34,6 @@ class UserRepository:
         "auth_provider": db_user.auth_provider,
         "auth_provider_id": db_user.auth_provider_id,
         "auth_provider_access_token": db_user.auth_provider_access_token,
-        "projects": f"/api/v1/users/{db_user.id}/projects",
         "notification_settings": db_user.notification_settings,
         # These fields will be populated by the UserDetail model's __init__
         "collaboration_preference": None,
