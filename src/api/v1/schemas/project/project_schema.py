@@ -77,7 +77,7 @@ class ProjectDetail(ProjectBase):
     super().__init__(**data)
     for schema in ["tasks", "milestones", "participation_requests", "schedules", "channels", "whiteboards"]:
       self.__setattr__(schema, {
-        "get": {
+        "self": {
           "href": f"/api/v1/projects/{self.id}/{schema}",
           "method": "GET",
           "title": f"프로젝트의 {schema} 조회"
