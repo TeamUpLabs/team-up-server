@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 from api.v1.schemas.brief import UserBrief
 from api.v1.schemas.project.chat_schema import ChatDetail
@@ -51,8 +51,17 @@ class ChannelDetail(ChannelBase):
   updated_by: int
   member_count: int = 0
   members: List[ChannelMemberResponse] = []
-  chats: List[ChatDetail] = []
+  chats: Dict[str, Any] = {}
   chats_count: int = 0
+  
+  def model_post_init(self, __context):
+    self.chats = {
+      "self": {
+        "href": f"/api/v1/projects/{self.project_id}/chats?channel_id={self.channel_id}",
+        "method": "GET",
+        "title": "채널별 채팅 조회"
+      }
+    }
   
   class Config:
     from_attributes = True
