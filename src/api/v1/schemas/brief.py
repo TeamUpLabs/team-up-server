@@ -67,6 +67,16 @@ class TaskBrief(BaseModel):
         "href": f"/api/v1/tasks/{self.id}",
         "method": "GET",
         "title": "업무 정보 조회"
+      },
+      "put": {
+        "href": f"/api/v1/tasks/{self.id}",
+        "method": "PUT",
+        "title": "업무 정보 수정"
+      },
+      "delete": {
+        "href": f"/api/v1/tasks/{self.id}",
+        "method": "DELETE",
+        "title": "업무 정보 삭제"
       }
     }
   
@@ -87,6 +97,16 @@ class MilestoneBrief(BaseModel):
         "href": f"/api/v1/milestones/{self.id}",
         "method": "GET",
         "title": "마일스톤 정보 조회"
+      },
+      "put": {
+        "href": f"/api/v1/milestones/{self.id}",
+        "method": "PUT",
+        "title": "마일스톤 정보 수정"
+      },
+      "delete": {
+        "href": f"/api/v1/milestones/{self.id}",
+        "method": "DELETE",
+        "title": "마일스톤 정보 삭제"
       }
     }
   
