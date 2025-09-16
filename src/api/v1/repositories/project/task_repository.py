@@ -126,16 +126,25 @@ class TaskRepository:
       elif update_data["status"] != "completed" and task.status == "completed":
         update_data["completed_at"] = None
     
-    # 업데이트 수행
-    updated_obj = self.db.query(Task).filter(Task.project_id == project_id, Task.id == task_id).update(update_data)
+    # Get the task first
+    db_task = self.db.query(Task).filter(Task.project_id == project_id, Task.id == task_id).first()
+    if not db_task:
+        raise HTTPException(status_code=404, detail="할 일을 찾을 수 없습니다.")
     
-    # 마일스톤 진행도 업데이트
+    # Update the task
+    for key, value in update_data.items():
+        setattr(db_task, key, value)
+    
+    self.db.commit()
+    self.db.refresh(db_task)
+    
+    # Update milestone progress
     if old_milestone_id:
-      self._update_milestone_progress(self.db, milestone_id=old_milestone_id)
-    if updated_obj.milestone_id and updated_obj.milestone_id != old_milestone_id:
-      self._update_milestone_progress(self.db, milestone_id=updated_obj.milestone_id)
+        self._update_milestone_progress(self.db, milestone_id=old_milestone_id)
+    if db_task.milestone_id and db_task.milestone_id != old_milestone_id:
+        self._update_milestone_progress(self.db, milestone_id=db_task.milestone_id)
     
-    return updated_obj
+    return db_task
   
   def delete(self, project_id: str, task_id: int) -> Task:
     """
@@ -152,12 +161,20 @@ class TaskRepository:
     """
     마일스톤의 진행도를 업데이트
     """
-    milestone = db.query(Task).filter(Task.id == milestone_id).first()
-    if not milestone or not milestone.tasks:
+    milestone = db.query(Milestone).filter(Milestone.id == milestone_id).first()
+    if not milestone:
       return
     
-    total_tasks = len(milestone.tasks)
-    completed_tasks = sum(1 for task in milestone.tasks if task.status == "completed")
+    # Get all tasks for this milestone
+    tasks = db.query(Task).filter(Task.milestone_id == milestone_id).all()
+    if not tasks:
+      milestone.progress = 0
+      db.add(milestone)
+      db.commit()
+      return
+    
+    total_tasks = len(tasks)
+    completed_tasks = sum(1 for task in tasks if task.status == "completed")
     
     milestone.progress = int((completed_tasks / total_tasks) * 100) if total_tasks > 0 else 0
     db.add(milestone)
