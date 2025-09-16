@@ -17,8 +17,8 @@ class ChatService:
   def get_by_project_id(self, project_id: str, skip: int = 0, limit: int = 100) -> List[ChatDetail]:
     return self.repository.get_by_project_id(project_id, skip, limit)
 
-  def get_by_channel_id(self, channel_id: str, skip: int = 0, limit: int = 100) -> List[ChatDetail]:
-    return self.repository.get_by_channel_id(channel_id, skip, limit)
+  def get_by_channel_id(self, project_id: str, channel_id: str, skip: int = 0, limit: int = 100) -> List[ChatDetail]:
+    return self.repository.get_by_channel_id(project_id, channel_id, skip, limit)
 
   def get_by_user_id(self, user_id: int, skip: int = 0, limit: int = 100) -> List[ChatDetail]:
     return self.repository.get_by_user_id(user_id, skip, limit)

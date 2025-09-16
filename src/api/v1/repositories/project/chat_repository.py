@@ -41,11 +41,11 @@ class ChatRepository:
     chats = self.db.query(Chat).filter(Chat.project_id == project_id).offset(skip).limit(limit).all()
     return [ChatDetail.model_validate(chat, from_attributes=True) for chat in chats]
     
-  def get_by_channel_id(self, channel_id: str, skip: int = 0, limit: int = 100) -> List[ChatDetail]:
+  def get_by_channel_id(self, project_id: str, channel_id: str, skip: int = 0, limit: int = 100) -> List[ChatDetail]:
     """
     채널별 채팅 조회
     """
-    chats = self.db.query(Chat).filter(Chat.channel_id == channel_id).offset(skip).limit(limit).all()
+    chats = self.db.query(Chat).filter(Chat.project_id == project_id, Chat.channel_id == channel_id).offset(skip).limit(limit).all()
     return [ChatDetail.model_validate(chat, from_attributes=True) for chat in chats]
   
   def get_by_user_id(self, user_id: int, skip: int = 0, limit: int = 100) -> List[ChatDetail]:
