@@ -35,6 +35,29 @@ class ProjectRepository:
     
     return ProjectDetail.model_validate(project_dict, from_attributes=True)
   
+  def get_all_projects(self) -> List[ProjectDetail]:
+    """
+    모든 프로젝트 조회
+    """
+    projects = self.db.query(Project).all()
+    if not projects:
+      raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
+    
+    result = []
+    for project in projects:
+      project_dict = project.__dict__.copy()
+      project_dict["owner"] = UserRepository(self.db).get(project.owner_id)
+      formatted_members = [
+          format_member_details(self.db, project.id, member)
+          for member in project.members
+      ]
+      
+      project_dict["members"] = formatted_members
+      
+      result.append(ProjectDetail.model_validate(project_dict, from_attributes=True))
+    
+    return result
+  
   def get_by_user_id(self, user_id: int) -> List[ProjectDetail]:
     """
     사용자 ID로 프로젝트 조회

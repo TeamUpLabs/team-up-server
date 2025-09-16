@@ -19,6 +19,16 @@ class ProjectService:
           status_code=status.HTTP_404_NOT_FOUND,
           detail=f"Project with id {project_id} not found"
         )
+        
+  def get_all_projects(self) -> List[ProjectDetail]:
+    try:
+      return self.repository.get_all_projects()
+    except HTTPException as e:
+      if e.status_code == 404:
+        raise HTTPException(
+          status_code=status.HTTP_404_NOT_FOUND,
+          detail="No projects found"
+        )
   
   def get_by_user_id(self, user_id: int) -> List[ProjectDetail]:
     try:

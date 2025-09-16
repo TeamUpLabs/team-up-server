@@ -48,6 +48,25 @@ async def get_all_projects(
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
   
+@router.get("/all", response_model=List[ProjectDetail])
+async def get_all_projects(
+  db: Session = Depends(get_db),
+  current_user: dict = Depends(get_current_user)
+):
+  if not current_user:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Not authorized to perform this action"
+    )
+    
+  try:
+    service = ProjectService(db)
+    return service.get_all_projects()
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+  
 @router.get("/exclude", response_model=List[ProjectDetail])
 async def get_all_projects_excluding_my(
   user_id: int,

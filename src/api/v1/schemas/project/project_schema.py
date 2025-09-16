@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 from api.v1.schemas.brief import UserBrief, TaskBrief, MilestoneBrief
 
@@ -55,7 +55,7 @@ class ProjectStats(BaseModel):
   completed_milestones: int = 0
   progress_percentage: float = 0.0
   days_remaining: Optional[int] = None
-  
+    
   class Config:
     from_attributes = True
       
@@ -64,13 +64,40 @@ class ProjectDetail(ProjectBase):
   completed_at: Optional[datetime] = None
   
   owner: Optional[UserBrief] = None
-  members: Optional[List[ProjectMember]] = []
-  tasks: Optional[List[TaskBrief]] = []
-  milestones: Optional[List[MilestoneBrief]] = []
-  # participation_requests: Optional[List[ParticipationRequestResponse]] = []
-  # schedules: Optional[List[ScheduleResponse]] = []
-  # channels: Optional[List[ChannelResponse]] = []
-  # whiteboards: Optional[List[WhiteBoardDetail]] = []
+  members: List[ProjectMember] = []
+  
+  tasks: Dict[str, Any] = {}
+  milestones: Dict[str, Any] = {}
+  participation_requests: Dict[str, Any] = {}
+  schedules: Dict[str, Any] = {}
+  channels: Dict[str, Any] = {}
+  whiteboards: Dict[str, Any] = {}
+  
+  def __init__(self, **data):
+    super().__init__(**data)
+    for schema in ["tasks", "milestones", "participation_requests", "schedules", "channels", "whiteboards"]:
+      self.__setattr__(schema, {
+        "get": {
+          "href": f"/api/v1/projects/{self.id}/{schema}",
+          "method": "GET",
+          "title": f"프로젝트의 {schema} 조회"
+        },
+        "post": {
+          "href": f"/api/v1/projects/{self.id}/{schema}",
+          "method": "POST",
+          "title": f"프로젝트의 {schema} 생성"
+        },
+        "put": {
+          "href": f"/api/v1/projects/{self.id}/{schema}/{{id}}",
+          "method": "PUT",
+          "title": f"프로젝트의 {schema} 수정"
+        },
+        "delete": {
+          "href": f"/api/v1/projects/{self.id}/{schema}/{{id}}",
+          "method": "DELETE",
+          "title": f"프로젝트의 {schema} 삭제"
+        }
+      })
   
   stats: Optional[ProjectStats] = None
   
