@@ -55,7 +55,7 @@ class ProjectStats(BaseModel):
   completed_milestones: int = 0
   progress_percentage: float = 0.0
   days_remaining: Optional[int] = None
-    
+  
   class Config:
     from_attributes = True
       

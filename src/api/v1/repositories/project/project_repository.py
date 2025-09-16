@@ -7,9 +7,7 @@ from api.v1.repositories.user.user_repository import UserRepository
 from api.v1.models.association_tables import project_members
 from api.v1.models.user.user import User
 from core.utils.format_project_members import format_member_details
-from sqlalchemy.orm import joinedload
-from api.v1.schemas.user.user_schema import UserBrief
-
+from core.utils.calculate_project_stat import calculate_project_stat
 
 class ProjectRepository:
   def __init__(self, db: Session):
@@ -33,6 +31,8 @@ class ProjectRepository:
     ]
     project_dict["members"] = formatted_members
     
+    project_dict["stats"] = calculate_project_stat(project)
+    
     return ProjectDetail.model_validate(project_dict, from_attributes=True)
   
   def get_all_projects(self) -> List[ProjectDetail]:
@@ -53,6 +53,8 @@ class ProjectRepository:
       ]
       
       project_dict["members"] = formatted_members
+      
+      project_dict["stats"] = calculate_project_stat(project)
       
       result.append(ProjectDetail.model_validate(project_dict, from_attributes=True))
     
@@ -81,6 +83,8 @@ class ProjectRepository:
       
       project_dict["members"] = formatted_members
       
+      project_dict["stats"] = calculate_project_stat(project)
+      
       result.append(ProjectDetail.model_validate(project_dict, from_attributes=True))
     
     return result
@@ -108,6 +112,8 @@ class ProjectRepository:
       ]
       
       project_dict["members"] = formatted_members
+      
+      project_dict["stats"] = calculate_project_stat(project)
       
       result.append(ProjectDetail.model_validate(project_dict, from_attributes=True))
     
