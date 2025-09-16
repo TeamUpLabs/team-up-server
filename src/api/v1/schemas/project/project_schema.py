@@ -73,8 +73,7 @@ class ProjectDetail(ProjectBase):
   channels: Dict[str, Any] = {}
   whiteboards: Dict[str, Any] = {}
   
-  def __init__(self, **data):
-    super().__init__(**data)
+  def model_post_init(self, __context):
     for schema in ["tasks", "milestones", "participation_requests", "schedules", "channels", "whiteboards"]:
       self.__setattr__(schema, {
         "self": {

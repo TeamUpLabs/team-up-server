@@ -1,6 +1,6 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 class UserBrief(BaseModel):
   """간략한 사용자 정보"""
@@ -13,11 +13,9 @@ class UserBrief(BaseModel):
   created_at: datetime
   updated_at: datetime
   
-  links: Dict = {}
-
-  def __init__(self, **data):
-    super().__init__(**data)
-    
+  links: Dict[str, Any] = {}
+  
+  def model_post_init(self, __context):
     self.links = {
       "self": {
         "href": f"/api/v1/users/{self.id}",
@@ -40,10 +38,9 @@ class ProjectBrief(BaseModel):
   tags: Optional[List[str]] = None
   members: Optional[List[UserBrief]] = None
   project_type: Optional[str] = None
-  links: Dict = {}
+  links: Dict[str, Any] = {}
   
-  def __init__(self, **data):
-    super().__init__(**data)
+  def model_post_init(self, __context):
     self.links = {
       "self": {
         "href": f"/api/v1/projects/{self.id}",
@@ -62,10 +59,9 @@ class TaskBrief(BaseModel):
   status: str
   priority: str
   due_date: Optional[datetime] = None
-  links: Dict = {}
+  links: Dict[str, Any] = {}
   
-  def __init__(self, **data):
-    super().__init__(**data)
+  def model_post_init(self, __context):
     self.links = {
       "self": {
         "href": f"/api/v1/tasks/{self.id}",
@@ -83,10 +79,9 @@ class MilestoneBrief(BaseModel):
   title: str
   status: str
   due_date: Optional[datetime] = None
-  links: Dict = {}
+  links: Dict[str, Any] = {}
   
-  def __init__(self, **data):
-    super().__init__(**data)
+  def model_post_init(self, __context):
     self.links = {
       "self": {
         "href": f"/api/v1/milestones/{self.id}",
