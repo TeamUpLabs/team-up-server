@@ -1,10 +1,9 @@
 from sqlalchemy.orm import Session
-from api.v1.schemas.project.session_schema import SessionCreate
+from api.v1.schemas.user.session_schema import SessionCreate, SessionUpdate
 from api.v1.models.user import UserSession
 import httpx
 from datetime import datetime
 from fastapi import HTTPException, status
-from api.v1.schemas.project.session_schema import SessionUpdate
 from typing import List
 
 async def get_geoip(ip: str):
