@@ -112,3 +112,42 @@ class MilestoneBrief(BaseModel):
   
   class Config:
     from_attributes = True
+    
+class WhiteBoardBrief(BaseModel):
+    id: int
+    type: str
+    project_id: str
+    title: str
+    created_at: datetime
+    updated_at: datetime
+    creator: Optional[UserBrief] = None
+    updater: Optional[UserBrief] = None
+    
+    links: Dict[str, Any] = {}
+    
+    def model_post_init(self, __context):
+      self.links = {
+        "self": {
+          "href": f"/api/v1/whiteboards/{self.id}",
+          "method": "GET",
+          "title": "화이트보드 정보 조회"
+        },
+        "post": {
+          "href": f"/api/v1/whiteboards/{self.id}",
+          "method": "POST",
+          "title": "화이트보드 생성"
+        },
+        "put": {
+          "href": f"/api/v1/whiteboards/{self.id}",
+          "method": "PUT",
+          "title": "화이트보드 정보 수정"
+        },
+        "delete": {
+          "href": f"/api/v1/whiteboards/{self.id}",
+          "method": "DELETE",
+          "title": "화이트보드 정보 삭제"
+        }
+      }
+    
+    class Config:
+        from_attributes = True
