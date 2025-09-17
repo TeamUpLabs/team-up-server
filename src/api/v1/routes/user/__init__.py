@@ -5,6 +5,7 @@ from .interests import router as interests_router
 from .social_links import router as social_links_router
 from .notifications import router as notifications_router
 from .sessions import router as sessions_router
+from .oauth import router as oauth_router
 
 # Import all routers
 routers = [
@@ -14,5 +15,6 @@ routers = [
     interests_router,
     social_links_router,
     notifications_router,
-    sessions_router
+    sessions_router,
+    oauth_router
 ]
