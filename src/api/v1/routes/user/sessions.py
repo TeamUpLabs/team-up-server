@@ -4,8 +4,8 @@ from typing import List, Optional
 
 from core.database.database import get_db
 from api.v1.schemas.user.session_schema import (
-    Session as SessionSchema,
-    SessionCreate
+    SessionCreate,
+    SessionDetail
 )
 from api.v1.services.user.session_service import SessionService
 from core.security.auth import get_current_user
@@ -15,51 +15,7 @@ router = APIRouter(
     tags=["sessions"]
 )
 
-@router.get("/", response_model=List[SessionSchema])
-def list_sessions(
-  user_id: int,
-  is_current: Optional[bool] = None,
-  limit: int = Query(100, ge=1, le=1000),
-  offset: int = Query(0, ge=0),
-  db: Session = Depends(get_db),
-  current_user: dict = Depends(get_current_user)
-):
-  """
-  Get all sessions for a user with optional filters
-  """
-  if current_user.id != user_id:
-    raise HTTPException(
-      status_code=status.HTTP_403_FORBIDDEN,
-      detail="Not authorized to access this resource"
-    )
-      
-  service = SessionService(db)
-  return service.get_user_sessions(
-    user_id=user_id,
-    is_current=is_current,
-    limit=limit,
-    offset=offset
-  )
-
-@router.get("/active-count", response_model=dict)
-def get_active_sessions_count(
-  user_id: int,
-  db: Session = Depends(get_db),
-  current_user: dict = Depends(get_current_user)
-):
-  """
-  Get count of active sessions for a user
-  """
-  if current_user.id != user_id:
-    raise HTTPException(
-      status_code=status.HTTP_403_FORBIDDEN,
-      detail="Not authorized to access this resource"
-    )
-        
-  service = SessionService(db)
-  return {"count": service.get_active_sessions_count(user_id)}
-
-@router.post("/", response_model=SessionSchema, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=SessionCreate, status_code=status.HTTP_201_CREATED)
 def create_session(
   user_id: int,
   session: SessionCreate,
@@ -67,7 +23,7 @@ def create_session(
   current_user: dict = Depends(get_current_user)
 ):
   """
-  Create a new session for a user (typically used during login)
+  세션 생성
   """
   if current_user.id != user_id:
     raise HTTPException(
@@ -78,34 +34,15 @@ def create_session(
   service = SessionService(db)
   return service.create_session(user_id, session)
 
-@router.get("/{session_id}", response_model=SessionSchema)
-def get_session(
+@router.post("/end", status_code=status.HTTP_204_NO_CONTENT)
+def end_session(
   user_id: int,
-  session_id: str,
+  session_id: int,
   db: Session = Depends(get_db),
   current_user: dict = Depends(get_current_user)
 ):
   """
-  Get a specific session by ID
-  """
-  if current_user.id != user_id:
-    raise HTTPException(
-      status_code=status.HTTP_403_FORBIDDEN,
-      detail="Not authorized to access this resource"
-    )
-        
-  service = SessionService(db)
-  return service.get_session(session_id, user_id)
-
-@router.post("/{session_id}/refresh", response_model=SessionSchema)
-def refresh_session(
-  user_id: int,
-  session_id: str,
-  db: Session = Depends(get_db),
-  current_user: dict = Depends(get_current_user)
-):
-  """
-  Refresh a session's last active timestamp
+  세션 종료
   """
   if current_user.id != user_id:
     raise HTTPException(
@@ -114,17 +51,53 @@ def refresh_session(
     )
         
   service = SessionService(db)
-  return service.update_session_activity(session_id, user_id)
+  return service.end(session_id, user_id)
+
+@router.get("/current", response_model=SessionDetail)
+def get_current_session(
+  user_id: int,
+  db: Session = Depends(get_db),
+  current_user: dict = Depends(get_current_user)
+):
+  """
+  현재 세션 조회
+  """
+  if current_user.id != user_id:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Not authorized to perform this action"
+    )
+        
+  service = SessionService(db)
+  return service.get_current_session(user_id)
+
+@router.get("/all", response_model=List[SessionDetail])
+def get_all_sessions(
+  user_id: int,
+  db: Session = Depends(get_db),
+  current_user: dict = Depends(get_current_user)
+):
+  """
+  세션 조회
+  """
+  if current_user.id != user_id:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Not authorized to perform this action"
+    )
+        
+  service = SessionService(db)
+  return service.get_all_sessions(user_id)
 
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
-def invalidate_session(
+def delete_session(
   user_id: int,
-  session_id: str,
+  session_id: int,
   db: Session = Depends(get_db),
   current_user: dict = Depends(get_current_user)
 ):
   """
-  Invalidate a specific session (logout)
+  세션 삭제
   """
   if current_user.id != user_id:
     raise HTTPException(
@@ -133,24 +106,5 @@ def invalidate_session(
     )
         
   service = SessionService(db)
-  service.invalidate_session(session_id, user_id)
+  service.remove(session_id)
   return None
-
-@router.post("/invalidate-all", response_model=dict)
-def invalidate_all_sessions(
-  user_id: int,
-  exclude_current: bool = False,
-  db: Session = Depends(get_db),
-  current_user: dict = Depends(get_current_user)
-):
-  """
-  Invalidate all sessions for a user (logout from all devices)
-  """
-  if current_user.id != user_id:
-    raise HTTPException(
-      status_code=status.HTTP_403_FORBIDDEN,
-      detail="Not authorized to perform this action"
-    )
-        
-  service = SessionService(db)
-  return service.invalidate_all_sessions(user_id, exclude_current=exclude_current)

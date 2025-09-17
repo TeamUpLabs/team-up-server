@@ -1,106 +1,125 @@
-from typing import List, Optional
-from datetime import datetime, timezone
 from sqlalchemy.orm import Session
+from api.v1.schemas.project.session_schema import SessionCreate
+from api.v1.models.user import UserSession
+import httpx
+from datetime import datetime
 from fastapi import HTTPException, status
-from api.v1.models.user.session import UserSession as DBSession
-from api.v1.schemas.user.session_schema import SessionCreate, SessionUpdate
+from api.v1.schemas.project.session_schema import SessionUpdate
+from typing import List
+
+async def get_geoip(ip: str):
+  async with httpx.AsyncClient() as client:
+    response = await client.get(f"http://ip-api.com/json/{ip}")
+    return response.json()
 
 class SessionRepository:
   def __init__(self, db: Session):
     self.db = db
-
-  def get_user_sessions(
-    self, 
-    user_id: int,
-    is_current: Optional[bool] = None,
-    limit: int = 100,
-    offset: int = 0
-  ) -> List[DBSession]:
-    """Get all sessions for a user with optional filters"""
-    query = self.db.query(DBSession).filter(
-      DBSession.user_id == user_id
-    )
     
-    if is_current is not None:
-      query = query.filter(DBSession.is_current == is_current)
+  async def create(self, obj_in: SessionCreate) -> UserSession:
+    try:
+      existing_session = self.db.query(UserSession).filter(UserSession.session_id == obj_in.session_id).first()
+      
+      if existing_session:
+        existing_session.last_active_at = datetime.now()
+        existing_session.is_current = True
+        existing_session.ip_address = obj_in.ip_address
+        existing_session.user_agent = obj_in.user_agent
         
-    return query.order_by(DBSession.last_active_at.desc()).offset(offset).limit(limit).all()
-
-  def get_session(self, session_id: str, user_id: int) -> DBSession:
-    """Get a specific session by ID for a user"""
-    db_session = self.db.query(DBSession).filter(
-      DBSession.id == session_id,
-      DBSession.user_id == user_id
-    ).first()
-    
-    if not db_session:
-      raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"Session {session_id} not found for user {user_id}"
+        self.db.commit()
+        self.db.refresh(existing_session)
+        return existing_session
+      
+      try:
+        geoip = await get_geoip(obj_in.ip_address)
+        geo_location = f"{geoip['country']}, {geoip['city']}" if geoip.get('country') and geoip.get('city') else None
+      except Exception as e:
+        self.db.rollback()
+        geo_location = None
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+      
+      db_session = UserSession(
+        session_id=obj_in.session_id,
+        user_id=obj_in.user_id,
+        user_agent=obj_in.user_agent,
+        device_id=obj_in.device_id,
+        ip_address=obj_in.ip_address,
+        device=obj_in.device,
+        device_type=obj_in.device_type,
+        os=obj_in.os,
+        browser=obj_in.browser,
+        geo_location=geo_location,
+        last_active_at=datetime.now(),
+        is_current=True
       )
-    return db_session
-
-  def create_session(self, session_data: SessionCreate) -> DBSession:
-    """Create a new session"""
-    db_session = DBSession(**session_data.model_dump())
-    self.db.add(db_session)
-    self.db.commit()
-    self.db.refresh(db_session)
-    return db_session
-
-  def update_session(
-    self, 
-    session_id: str, 
-    user_id: int, 
-    session_data: SessionUpdate
-  ) -> DBSession:
-    """Update an existing session"""
-    db_session = self.get_session(session_id, user_id)
       
-    update_data = session_data.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-      setattr(db_session, field, value)
-          
-    self.db.add(db_session)
-    self.db.commit()
-    self.db.refresh(db_session)
-    return db_session
+      self.db.add(db_session)
+      self.db.commit()
+      self.db.refresh(db_session)
+      return db_session
+    
+    except Exception as e:
+      self.db.rollback()
+      raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        
+  def end(self, db: Session, *, session_id: str, user_id: int) -> UserSession:
+    """세션 종료"""
+    db_obj = db.query(UserSession).filter(UserSession.session_id == session_id, UserSession.user_id == user_id).first()
+    if not db_obj:
+      raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="세션을 찾을 수 없습니다.")
+    
+    db_obj.is_current = False
+    db_obj.last_active_at = datetime.now()
+    
+    db.commit()
+    db.refresh(db_obj)
+    return db_obj
 
-  def delete_session(self, session_id: str, user_id: int) -> None:
-    """Delete a session"""
-    db_session = self.get_session(session_id, user_id)
-    self.db.delete(db_session)
-    self.db.commit()
-
-  def update_last_active(self, session_id: str, user_id: int) -> DBSession:
-    """Update the last active timestamp of a session"""
-    db_session = self.get_session(session_id, user_id)
-    db_session.last_active_at = datetime.now(timezone.utc)
-    self.db.add(db_session)
-    self.db.commit()
-    self.db.refresh(db_session)
-    return db_session
-
-  def invalidate_session(self, session_id: str, user_id: int) -> DBSession:
-    """Mark a session as invalid/expired"""
-    db_session = self.get_session(session_id, user_id)
-    db_session.is_current = False
-    db_session.expires_at = datetime.now(timezone.utc)
-    self.db.add(db_session)
-    self.db.commit()
-    self.db.refresh(db_session)
-    return db_session
-
-  def invalidate_other_sessions(self, user_id: int, exclude_session_id: str) -> int:
-    """Invalidate all other sessions except the specified one"""
-    result = self.db.query(DBSession).filter(
-      DBSession.user_id == user_id,
-      DBSession.id != exclude_session_id,
-      DBSession.is_current == True
-    ).update({
-      'is_current': False,
-      'expires_at': datetime.now(timezone.utc)
-    })
-      
-    self.db.commit()
-    return result
+  def get_current_session(self, db: Session, *, user_id: int, session_id: str) -> UserSession:
+    """현재 세션 조회"""
+    return db.query(UserSession).filter(UserSession.user_id == user_id, UserSession.session_id == session_id).first()
+  
+  def get_all_sessions(self, db: Session, *, user_id: int) -> List[UserSession]:
+    """모든 세션 조회"""
+    return db.query(UserSession).filter(UserSession.user_id == user_id).all()
+    
+  def get_session_by_id(self, db: Session, *, session_id: str) -> UserSession:
+    """세션 ID로 세션 조회"""
+    return db.query(UserSession).filter(UserSession.session_id == session_id).first()
+    
+  def get_all_sessions_by_user_id(self, db: Session, *, user_id: int) -> List[UserSession]:
+    """사용자 ID로 모든 세션 조회"""
+    return db.query(UserSession).filter(UserSession.user_id == user_id).all()
+    
+  def update(self, db: Session, *, db_obj: UserSession, obj_in: SessionUpdate) -> UserSession:
+    """세션 정보 업데이트"""
+    update_data = obj_in.model_dump(exclude_unset=True)
+    
+    for key, value in update_data.items():
+      setattr(db_obj, key, value)
+    
+    db.commit()
+    db.refresh(db_obj)
+    return db_obj
+    
+  def remove(self, db: Session, *, id: int) -> UserSession:
+    """세션 삭제"""
+    db_obj = db.query(UserSession).filter(UserSession.id == id).first()
+    if not db_obj:
+      raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="세션을 찾을 수 없습니다.")
+    
+    db.delete(db_obj)
+    db.commit()
+    return db_obj
+  
+  def update_current_session(self, db: Session, *, user_id: int, session_id: str) -> UserSession:
+    """현재 세션 업데이트"""
+    db_obj = self.get_current_session(db, user_id=user_id, session_id=session_id)
+    if not db_obj:
+      raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="세션을 찾을 수 없습니다.")
+    
+    db_obj.is_current = True
+    db_obj.last_active_at = datetime.now()
+    db.commit()
+    db.refresh(db_obj)
+    return db_obj

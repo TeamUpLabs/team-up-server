@@ -1,34 +1,41 @@
 from pydantic import BaseModel
-from datetime import datetime
 from typing import Optional
+from datetime import datetime
+from api.v1.schemas.brief import UserBrief
 
 class SessionBase(BaseModel):
-    device_id: str
-    user_agent: Optional[str] = None
-    ip_address: Optional[str] = None
-    geo_location: Optional[str] = None
-    device: Optional[str] = None
-    device_type: Optional[str] = None
-    os: Optional[str] = None
-    browser: Optional[str] = None
-    is_current: bool = True
-
+  user_agent: Optional[str] = None
+  ip_address: Optional[str] = None
+  geo_location: Optional[str] = None
+  device: Optional[str] = None
+  device_type: Optional[str] = None
+  os: Optional[str] = None
+  browser: Optional[str] = None
+  last_active_at: Optional[datetime] = None
+  is_current: Optional[bool] = False
+  device_id: str
+  session_id: str
+  
 class SessionCreate(SessionBase):
-    pass
-
+  user_id: int
+  
 class SessionUpdate(BaseModel):
-    is_current: Optional[bool] = None
-    last_active_at: Optional[datetime] = None
-
-class SessionInDB(SessionBase):
-    id: int
-    user_id: int
-    session_id: str
-    last_active_at: datetime
-    created_at: datetime
-
-    class Config:
-        orm_mode = True
-
-class Session(SessionInDB):
-    pass
+  user_agent: Optional[str] = None
+  ip_address: Optional[str] = None
+  geo_location: Optional[str] = None
+  device: Optional[str] = None
+  device_type: Optional[str] = None
+  os: Optional[str] = None
+  browser: Optional[str] = None
+  last_active_at: Optional[datetime] = None
+  is_current: Optional[bool] = False
+  
+class SessionDetail(SessionBase):
+  session_id: str
+  id: int
+  created_at: datetime
+  updated_at: datetime
+  user: UserBrief
+  
+  class Config:
+    from_attributes = True
