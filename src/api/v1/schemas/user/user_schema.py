@@ -83,9 +83,16 @@ class UserDetail(UserBase):
         "title": "자신의 사용자 정보 조회"
       },
       "projects": {
-        "href": f"/api/v1/projects?user_id={self.id}",
-        "method": "GET",
-        "title": "자신이 참여한 프로젝트 조회"
+        "my": {
+          "href": f"/api/v1/projects?user_id={self.id}",
+          "method": "GET",
+          "title": "자신이 참여한 프로젝트 조회"
+        },
+        "exclude_me": {
+          "href": f"/api/v1/projects/exclude?user_id={self.id}",
+          "method": "GET",
+          "title": "자신이 참여하지 않은 프로젝트 조회"
+        }
       },
       "collaboration_preferences": {
         "href": f"{base_url}/collaboration-preferences",

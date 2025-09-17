@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -74,3 +74,7 @@ class UserService:
           status_code=status.HTTP_404_NOT_FOUND,
           detail=f"User with id {user_id} not found"
         )
+        
+  def get_users_exclude_me(self, user_id: int) -> List[UserDetail]:
+    """Get all users except the current user"""
+    return self.repository.get_users_exclude_me(user_id)

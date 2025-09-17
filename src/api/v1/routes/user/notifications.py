@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from datetime import datetime
 
 from core.database.database import get_db
 from api.v1.schemas.user.notification_schema import (
@@ -11,11 +10,49 @@ from api.v1.schemas.user.notification_schema import (
 )
 from api.v1.services.user.notification_service import NotificationService
 from core.security.auth import get_current_user
+from fastapi import Request
+from fastapi.responses import StreamingResponse
+import json
+from core.utils.sse_manager import notification_sse_manager
 
 router = APIRouter(
   prefix="/api/v1/users/{user_id}/notifications",
   tags=["notifications"]
 )
+
+@router.get("/sse")
+async def notification_sse(
+  user_id: int,
+  request: Request,
+  db: Session = Depends(get_db),
+):
+  queue = await notification_sse_manager.connect(user_id)
+  
+  async def event_generator():
+    try:
+      service = NotificationService(db)
+      notifications = service.get_user_notifications(user_id=user_id)
+      notifications_dict = notification_sse_manager.convert_to_dict(notifications)
+      yield f"data: {json.dumps(notifications_dict)}\n\n"
+    finally:
+      db.close()
+      
+    async for event in notification_sse_manager.event_generator(user_id, queue):
+      if await request.is_disconnected():
+        await notification_sse_manager.disconnect(user_id, queue)
+        break
+      yield event
+
+  return StreamingResponse(
+    event_generator(),
+    media_type="text/event-stream",
+    headers={
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no",
+      "Access-Control-Allow-Origin": "*"  # Add CORS header
+    }
+  )
 
 @router.get("/", response_model=List[Notification])
 def list_notifications(

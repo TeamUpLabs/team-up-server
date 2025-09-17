@@ -197,3 +197,13 @@ class UserRepository:
     self.db.commit()
     self.db.refresh(user)
     return user
+  
+
+  def get_users_exclude_me(self, user_id: int) -> List[UserDetail]:
+    """Get all users except the current user"""
+    user = self.get(user_id)
+    if not user:
+      raise HTTPException(status_code=404, detail="User not found")
+    
+    other_users = self.db.query(User).filter(User.id != user_id).all()
+    return [UserDetail.model_validate(user, from_attributes=True) for user in other_users]
