@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 import os
 from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
+from api.v1.schemas.user.user_schema import UserDetail
 from core.security.oauth import get_github_user_info, get_google_user_info
 from core.security.jwt import create_access_token
 from fastapi import HTTPException, status
@@ -11,8 +12,6 @@ from api.v1.services.user.user_service import UserService
 from api.v1.services.user.session_service import SessionService
 from api.v1.models.user.session import UserSession
 from ua_parser import user_agent_parser
-import logging
-from api.v1.schemas.brief import UserBrief
 
 class AuthRepository:
   def __init__(self, db: Session):
@@ -37,25 +36,16 @@ class AuthRepository:
     OAuth 콜백 처리
     """
     try:
-      logging.info(f"[OAUTH_CALLBACK] Starting OAuth callback for provider: {form_data.provider}")
-      logging.info(f"[OAUTH_CALLBACK] Form data received: {form_data.dict()}")
       user_service = UserService(self.db)
       session_service = SessionService(self.db)
       if form_data.provider == "github":
         try:
-          logging.info(f"[OAUTH_CALLBACK] Getting GitHub user info with code: {form_data.code}")
           social_access_token, github_user, github_username = await get_github_user_info(form_data.code)
-          logging.info(f"[OAUTH_CALLBACK] GitHub user info received: {github_user}")
-          logging.info(f"[OAUTH_CALLBACK] GitHub username: {github_username}")
-          logging.info(f"[OAUTH_CALLBACK] GitHub access token: {'*' * 10}{social_access_token[-5:] if social_access_token else 'None'}")
         except Exception as e:
           raise HTTPException(status_code=500, detail=str(e))
       elif form_data.provider == "google":
         try:
-          logging.info("[OAUTH_CALLBACK] Getting Google user info")
           social_access_token, google_user = await get_google_user_info(form_data.code)
-          logging.info(f"[OAUTH_CALLBACK] Google user info received: {google_user}")
-          logging.info(f"[OAUTH_CALLBACK] Google access token: {'*' * 10}{social_access_token[-5:] if social_access_token else 'None'}")
         except Exception as e:
           raise HTTPException(status_code=500, detail=str(e))
       else:
@@ -63,16 +53,12 @@ class AuthRepository:
       
       if form_data.provider == "github" and (not github_user or not github_user.get("email")):
         error_msg = "Could not retrieve user email from GitHub. Please ensure your GitHub account has a verified email address and that you've granted email access permissions."
-        logging.error(f"[OAUTH_CALLBACK] {error_msg}")
-        logging.error(f"[OAUTH_CALLBACK] GitHub user data: {github_user}")
         raise HTTPException(
           status_code=400,
           detail=error_msg
         )
       if form_data.provider == "google" and (not google_user or not google_user.get("email")):
         error_msg = "Could not retrieve user email from Google. Please ensure your Google account has a verified email address and that you've granted email access permissions."
-        logging.error(f"[OAUTH_CALLBACK] {error_msg}")
-        logging.error(f"[OAUTH_CALLBACK] Google user data: {google_user}")
         raise HTTPException(
           status_code=400,
           detail=error_msg
@@ -81,17 +67,13 @@ class AuthRepository:
       if form_data.provider == "github":
         try:
           email = github_user.get("email")
-          logging.info(f"[OAUTH_CALLBACK] Looking for existing user with email: {email}")
           existing = user_service.get_user_by_email(email=email)
-          logging.info(f"[OAUTH_CALLBACK] Existing user found: {existing.id if existing else 'None'}")
         except Exception as e:
           raise HTTPException(status_code=500, detail=str(e))
       elif form_data.provider == "google":
         try:
           email = google_user.get("email")
-          logging.info(f"[OAUTH_CALLBACK] Looking for existing user with email: {email}")
           existing = user_service.get_user_by_email(email=email)
-          logging.info(f"[OAUTH_CALLBACK] Existing user found: {existing.id if existing else 'None'}")
         except Exception as e:
           raise HTTPException(status_code=500, detail=str(e))
       if existing:
@@ -101,7 +83,6 @@ class AuthRepository:
           existing.auth_provider_access_token = social_access_token
           self.db.commit()
           self.db.refresh(existing)
-          logging.info(f"Existing user updated: {existing}")
         except Exception as e:
           raise HTTPException(status_code=500, detail=str(e))
         
@@ -109,7 +90,6 @@ class AuthRepository:
         if existing_session:
           try:
             session_service.update_current_session(user_id=existing.id, session_id=form_data.session_id)
-            logging.info(f"Existing session updated: {existing_session}")
           except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
         else:
@@ -142,7 +122,6 @@ class AuthRepository:
             self.db.add(db_session)
             self.db.commit()
             self.db.refresh(db_session)
-            logging.info(f"New session created: {db_session}")
           except Exception as e:
             raise HTTPException(
               status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -161,23 +140,14 @@ class AuthRepository:
               }
             }
           )
-          logging.info(f"Access token created: {access_token}")
           
-          user_brief = UserBrief(
-            id=existing.id,
-            name=existing.name,
-            email=existing.email,
-            profile_image=existing.profile_image,
-            role=existing.role,
-            status=existing.status,
-            created_at=existing.created_at,
-            updated_at=existing.updated_at
-          )
+          user = user_service.get_user(existing.id)
+
           return {
             "status": "logged_in",
             "access_token": access_token,
             "token_type": "bearer",
-            "user_info": user_brief
+            "user_info": user
           }
         except Exception as e:
           raise HTTPException(status_code=500, detail=str(e))    

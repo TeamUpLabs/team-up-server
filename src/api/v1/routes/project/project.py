@@ -33,7 +33,7 @@ async def create_project(
     raise HTTPException(status_code=400, detail=str(e))
   
 @router.get("/", response_model=List[ProjectDetail])
-async def get_all_projects(
+async def get_all_projects_by_user(
   user_id: int,
   db: Session = Depends(get_db),
   current_user: dict = Depends(get_current_user)
