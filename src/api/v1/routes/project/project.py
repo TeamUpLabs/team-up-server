@@ -5,6 +5,10 @@ from api.v1.services.project.project_service import ProjectService
 from api.v1.schemas.project.project_schema import ProjectCreate, ProjectUpdate, ProjectDetail
 from core.security.auth import get_current_user
 from typing import List, Dict, Any
+from core.utils.sse_manager import project_sse_manager
+from fastapi.responses import StreamingResponse
+from fastapi import Request
+import json
 
 router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
 
@@ -169,3 +173,36 @@ async def get_project_members(
     raise e
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
+  
+@router.get("/{project_id}/sse")
+async def read_project_sse(project_id: str, request: Request, db: Session = Depends(get_db)):
+  """프로젝트 SSE 연결"""
+  queue = await project_sse_manager.connect(project_id)
+  
+  async def event_generator():
+    try:
+      service = ProjectService(db)
+      db_project = service.get_project(project_id)
+      if db_project:
+        project_dict = project_sse_manager.convert_to_dict(db_project)
+        yield f"data: {json.dumps(project_dict)}\n\n"
+    finally:
+      db.close()
+        
+    async for event in project_sse_manager.event_generator(project_id, queue):
+      if await request.is_disconnected():
+        await project_sse_manager.disconnect(project_id, queue)
+        break
+      yield event
+          
+  return StreamingResponse(
+    event_generator(),
+    media_type="text/event-stream",
+    headers={
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+      "X-Accel-Buffering": "no",
+      "Access-Control-Allow-Origin": "*"  # Add CORS header
+    }
+  )
+
