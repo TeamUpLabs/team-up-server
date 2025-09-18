@@ -6,7 +6,7 @@ from api.v1.schemas.project.participation_request_schema import ParticipationReq
 from core.security.auth import get_current_user
 from typing import List, Optional
 
-router = APIRouter(prefix="/api/v1/projects/{project_id}/participation-requests", tags=["participation-requests"])
+router = APIRouter(prefix="/api/v1/projects/{project_id}/participation_requests", tags=["participation_requests"])
 
 @router.post("/", response_model=ParticipationRequestDetail, status_code=status.HTTP_201_CREATED)
 def create_participation_request(

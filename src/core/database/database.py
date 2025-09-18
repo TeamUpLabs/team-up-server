@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.pool import StaticPool
 from dotenv import load_dotenv
 import os
 
@@ -11,10 +10,20 @@ DATABASE_URL = os.getenv("POSTGRES_URL")
 
 # SQLAlchemy 엔진 생성
 engine = create_engine(
-  DATABASE_URL,
-  poolclass=StaticPool,
-  pool_pre_ping=True,
-  echo=False  # SQL 쿼리 로깅을 원하면 True로 변경
+    DATABASE_URL,
+    pool_size=5,
+    max_overflow=10,
+    pool_timeout=30,
+    pool_pre_ping=True,
+    pool_recycle=1800,  # Recycle connections after 30 minutes
+    connect_args={
+        'connect_timeout': 10,
+        'keepalives': 1,
+        'keepalives_idle': 30,
+        'keepalives_interval': 10,
+        'keepalives_count': 5,
+    },
+    echo=False  # SQL 쿼리 로깅을 원하면 True로 변경
 )
 
 try:

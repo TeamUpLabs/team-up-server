@@ -10,6 +10,7 @@ from api.v1.models.user.interest import UserInterest
 from api.v1.models.user.social_link import UserSocialLink
 from api.v1.models.user.collaboration_preference import CollaborationPreference
 from api.v1.schemas.user.user_schema import UserCreate, UserUpdate, UserDetail
+from api.v1.schemas.brief import UserBrief
 
 class UserRepository:
   def __init__(self, db: Session):
@@ -44,6 +45,14 @@ class UserRepository:
     
     user_detail = UserDetail(**user_dict)
     return user_detail
+  
+  def get_user_brief(self, user_id: int) -> UserBrief:
+    db_user = self.db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+      raise HTTPException(status_code=404, detail="User not found")
+    
+    user_brief = UserBrief.model_validate(db_user, from_attributes=True)
+    return user_brief
   
   def get_by_email(self, email: str) -> User:
     return self.db.query(User).filter(User.email == email).first()

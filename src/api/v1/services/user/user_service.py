@@ -8,6 +8,7 @@ from api.v1.schemas.user.user_schema import (
     UserUpdate,
     UserDetail
 )
+from api.v1.schemas.brief import UserBrief
 
 class UserService:
   def __init__(self, db: Session):
@@ -17,6 +18,17 @@ class UserService:
     """Get a user by ID"""
     try:
       return self.repository.get(user_id)
+    except HTTPException as e:
+      if e.status_code == 404:
+        raise HTTPException(
+          status_code=status.HTTP_404_NOT_FOUND,
+          detail=f"User with id {user_id} not found"
+        )
+        
+  def get_user_brief(self, user_id: int) -> UserBrief:
+    """Get a user by ID with related resource URLs"""
+    try:
+      return self.repository.get_user_brief(user_id)
     except HTTPException as e:
       if e.status_code == 404:
         raise HTTPException(

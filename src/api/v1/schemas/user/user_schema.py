@@ -120,7 +120,7 @@ class UserDetail(UserBase):
         "title": "자신의 알림 조회"
       },
       "sessions": {
-        "href": f"{base_url}/sessions",
+        "href": f"{base_url}/sessions/all",
         "method": "GET",
         "title": "자신의 세션 조회"
       },
