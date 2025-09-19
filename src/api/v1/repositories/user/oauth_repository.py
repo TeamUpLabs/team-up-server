@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 import os
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from fastapi.responses import RedirectResponse
 from api.v1.schemas.user.user_schema import UserDetail
 from core.security.oauth import get_github_user_info, get_google_user_info
@@ -31,7 +31,7 @@ class AuthRepository:
       detail=f"{provider} 소셜 로그인은 아직 구현되지 않았습니다."
     )
     
-  async def oauth_callback(self, form_data: OauthRequest):
+  async def oauth_callback(self, form_data: OauthRequest, request: Request):
     """
     OAuth 콜백 처리
     """
@@ -94,7 +94,7 @@ class AuthRepository:
             raise HTTPException(status_code=500, detail=str(e))
         else:
           try:
-            ua_string = form_data.user_agent
+            ua_string = request.headers.get("user-agent", "")
             ua = user_agent_parser.Parse(ua_string)
             
             # 디바이스 유형 구분
@@ -110,14 +110,15 @@ class AuthRepository:
               user_id=existing.id,
               device_id=form_data.device_id,
               user_agent=ua_string,
-              ip_address=form_data.ip_address,
+              ip_address=request.client.host or "",
               device=ua["device"]["family"],
               device_type=device_type,
               os=ua["os"]["family"],
               browser=ua["user_agent"]["family"],
               last_active_at=datetime.now(),
               created_at=datetime.now(),
-              updated_at=datetime.now()
+              updated_at=datetime.now(),
+              is_current=True
             )
             self.db.add(db_session)
             self.db.commit()
@@ -182,10 +183,8 @@ class AuthRepository:
           }
 
     except HTTPException as he:
-      logging.error(f"[OAUTH_CALLBACK] HTTPException occurred: {str(he)}", exc_info=True)
       raise he
     except Exception as e:
-      logging.error(f"[OAUTH_CALLBACK] Unexpected error occurred: {str(e)}", exc_info=True)
       raise HTTPException(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail=f"소셜 로그인 중 오류가 발생했습니다: {str(e)}"

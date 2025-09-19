@@ -1,5 +1,6 @@
 from api.v1.repositories.user.oauth_repository import AuthRepository
 from sqlalchemy.orm import Session
+from fastapi import Request
 from api.v1.schemas.user.oauth_schema import OauthRequest
 
 class OauthService:
@@ -9,5 +10,5 @@ class OauthService:
   async def oauth_login(self, provider: str):
     return await self.repository.oauth_login(provider)
     
-  async def oauth_callback(self, form_data: OauthRequest):
-    return await self.repository.oauth_callback(form_data)
+  async def oauth_callback(self, form_data: OauthRequest, request: Request):
+    return await self.repository.oauth_callback(form_data, request)

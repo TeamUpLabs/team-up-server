@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 from api.v1.services.user.oauth_service import OauthService
 from api.v1.schemas.user.oauth_schema import OauthRequest
 from core.database.database import get_db
@@ -27,6 +27,7 @@ async def oauth_login(
 @router.post("/callback")
 async def oauth_callback(
   form_data: OauthRequest,
+  request: Request,
   db: Session = Depends(get_db)
 ):
   """
@@ -34,6 +35,6 @@ async def oauth_callback(
   """
   try:
     service = OauthService(db)
-    return await service.oauth_callback(form_data)
+    return await service.oauth_callback(form_data, request)
   except Exception as e:
     raise HTTPException(status_code=500, detail=str(e))
