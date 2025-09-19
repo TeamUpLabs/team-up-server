@@ -27,8 +27,20 @@ def format_member_details(db: Session, project_id: str, member: User) -> Dict[st
         }
     }
     
+    # Determine the role based on is_leader and is_manager flags
+    role = None
+    if assoc:
+        if assoc.is_leader == 1:
+            role = "leader"
+        elif assoc.is_manager == 1:
+            role = "manager"
+        else:
+            role = getattr(assoc, 'role', 'member')  # Default to 'member' if role is not set
+    
     return {
         "user": user_brief,
-        "role": getattr(assoc, 'role', None) if assoc else None,
+        "role": role,
+        "is_leader": bool(assoc.is_leader) if assoc else False,
+        "is_manager": bool(assoc.is_manager) if assoc else False,
         "joined_at": getattr(assoc, 'joined_at', None) if assoc else None
     }
