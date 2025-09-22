@@ -6,6 +6,7 @@ from api.v1.models.project.project import Project
 from api.v1.models.project.milestone import Milestone
 from api.v1.schemas.project.task_schema import CommentCreate, CommentUpdate, TaskDetail, TaskCreate, TaskUpdate
 from typing import List
+from datetime import datetime
 
 class TaskRepository:
   def __init__(self, db: Session):
@@ -102,10 +103,16 @@ class TaskRepository:
     관계 검증 및 처리
     """
     update_data = task.model_dump(exclude_unset=True)
-    old_milestone_id = task.milestone_id
+    
+    # Get the current task first to check the old milestone
+    db_task = self.db.query(Task).filter(Task.project_id == project_id, Task.id == task_id).first()
+    if not db_task:
+      raise HTTPException(status_code=404, detail="할 일을 찾을 수 없습니다.")
+      
+    old_milestone_id = db_task.milestone_id
     
     if "milestone_id" in update_data and update_data["milestone_id"] is not None:
-      milestone = self.db.query(Task).filter(Task.id == update_data["milestone_id"]).first()
+      milestone = self.db.query(Milestone).filter(Milestone.id == update_data["milestone_id"]).first()
       if not milestone:
         raise HTTPException(status_code=404, detail="마일스톤을 찾을 수 없습니다.")
       if milestone.project_id != project_id:
@@ -118,23 +125,20 @@ class TaskRepository:
         assignees = self.db.query(User).filter(User.id.in_(assignee_ids)).all()
         if len(assignees) != len(set(assignee_ids)):
           raise HTTPException(status_code=404, detail="일부 담당자를 찾을 수 없습니다.")
-        task.assignees = assignees
+        # Clear existing assignees and add new ones
+        db_task.assignees.clear()
+        db_task.assignees.extend(assignees)
         
     if "status" in update_data:
-      if update_data["status"] == "completed" and task.status != "completed":
+      if update_data["status"] == "completed" and db_task.status != "completed":
         update_data["completed_at"] = datetime.utcnow()
-      elif update_data["status"] != "completed" and task.status == "completed":
+      elif update_data["status"] != "completed" and db_task.status == "completed":
         update_data["completed_at"] = None
     
-    # Get the task first
-    db_task = self.db.query(Task).filter(Task.project_id == project_id, Task.id == task_id).first()
-    if not db_task:
-        raise HTTPException(status_code=404, detail="할 일을 찾을 수 없습니다.")
-    
-    # Update the task
     for key, value in update_data.items():
-        setattr(db_task, key, value)
+      setattr(db_task, key, value)
     
+    self.db.add(db_task)
     self.db.commit()
     self.db.refresh(db_task)
     
