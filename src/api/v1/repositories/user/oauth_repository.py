@@ -142,7 +142,7 @@ class AuthRepository:
             }
           )
           
-          user = user_service.get_user(existing.id)
+          user = user_service.get_user_brief(existing.id)
 
           return {
             "status": "logged_in",
