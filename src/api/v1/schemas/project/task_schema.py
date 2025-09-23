@@ -7,7 +7,7 @@ class CommentBase(BaseModel):
   content: str
   
 class CommentCreate(CommentBase):
-  pass
+  created_by: int
 
 class CommentUpdate(CommentBase):
   content: Optional[str] = None

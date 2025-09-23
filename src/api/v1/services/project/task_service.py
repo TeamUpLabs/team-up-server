@@ -57,6 +57,6 @@ class TaskService:
   def update_comment(self, project_id: str, task_id: int, comment_id: int, comment: CommentUpdate) -> Comment:
     return self.repository.update_comment(project_id, task_id, comment_id, comment)
     
-  def remove_comment(self, project_id: str, task_id: int, comment_id: int) -> Comment:
+  def delete_comment(self, project_id: str, task_id: int, comment_id: int) -> Comment:
     return self.repository.delete_comment(project_id, task_id, comment_id)
     

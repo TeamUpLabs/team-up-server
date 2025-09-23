@@ -210,7 +210,7 @@ async def get_task_comments(
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
   
-@router.post("/{task_id}/comments", response_model=CommentDetail)
+@router.post("/{task_id}/comments", response_model=CommentDetail, status_code=status.HTTP_201_CREATED)
 async def create_task_comment(
   project_id: str,
   task_id: int,
@@ -255,7 +255,7 @@ async def update_task_comment(
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
 
-@router.delete("/{task_id}/comments/{comment_id}", response_model=CommentDetail)
+@router.delete("/{task_id}/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task_comment(
   project_id: str,
   task_id: int,
@@ -271,7 +271,8 @@ async def delete_task_comment(
     
   try:
     service = TaskService(db)
-    return service.remove_comment(project_id, task_id, comment_id)
+    service.delete_comment(project_id, task_id, comment_id)
+    return None
   except HTTPException as e:
     raise e
   except Exception as e:
