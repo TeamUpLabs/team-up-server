@@ -37,14 +37,14 @@ class MilestoneRepository:
     self.db.refresh(db_obj)
     return db_obj
   
-  def update(self, project_id: str, db_obj: Milestone, obj_in: MilestoneUpdate) -> Milestone:
+  def update(self, project_id: str, milestone_id: int, obj_in: MilestoneUpdate) -> Milestone:
     """
     마일스톤 정보 업데이트
     관계 검증 및 처리
     """
-    project = self.db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-      raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
+    milestone = self.db.query(Milestone).filter(Milestone.project_id == project_id, Milestone.id == milestone_id).first()
+    if not milestone:
+      raise HTTPException(status_code=404, detail="마일스톤을 찾을 수 없습니다.")
     
     update_data = obj_in.model_dump(exclude_unset=True)
 
@@ -54,20 +54,20 @@ class MilestoneRepository:
         assignees = self.db.query(User).filter(User.id.in_(assignee_ids)).all()
         if len(assignees) != len(set(assignee_ids)):
           raise HTTPException(status_code=404, detail="일부 담당자를 찾을 수 없습니다.")
-        db_obj.assignees = assignees
+        milestone.assignees = assignees
         
     if "status" in update_data:
-      if update_data["status"] == "completed" and db_obj.status != "completed":
+      if update_data["status"] == "completed" and milestone.status != "completed":
         update_data["completed_at"] = datetime.utcnow()
-      elif update_data["status"] != "completed" and db_obj.status == "completed":
+      elif update_data["status"] != "completed" and milestone.status == "completed":
         update_data["completed_at"] = None
 
-    db_obj = self.db.query(Milestone).filter(Milestone.id == db_obj.id).update(update_data)
+    self.db.query(Milestone).filter(Milestone.project_id == project_id, Milestone.id == milestone_id).update(update_data)
     self.db.commit()
-    self.db.refresh(db_obj)
-    return db_obj
+    self.db.refresh(milestone)
+    return milestone
   
-  def remove(self, project_id: str, id: int) -> Milestone:
+  def delete(self, project_id: str, id: int) -> Milestone:
     """
     마일스톤 삭제
     관련 업무 검증
@@ -76,7 +76,7 @@ class MilestoneRepository:
     if not project:
       raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
     
-    milestone = self.db.query(Milestone).filter(Milestone.id == id).first()
+    milestone = self.db.query(Milestone).filter(Milestone.project_id == project_id, Milestone.id == id).first()
     if not milestone:
       raise HTTPException(status_code=404, detail="마일스톤을 찾을 수 없습니다.")
     
@@ -105,10 +105,6 @@ class MilestoneRepository:
     """
     프로젝트별 마일스톤 목록 조회
     """
-    project = self.db.query(Project).filter(Project.id == project_id).first()
-    if not project:
-      raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
-    
     milestones = self.db.query(Milestone).filter(Milestone.project_id == project_id).offset(skip).limit(limit).all()
     return [MilestoneDetail.model_validate(milestone, from_attributes=True) for milestone in milestones]
   

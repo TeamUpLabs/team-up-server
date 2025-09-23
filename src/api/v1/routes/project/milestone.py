@@ -10,11 +10,11 @@ from typing import List
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/milestones", tags=["milestones"])
 
-@router.post("/", response_model=MilestoneDetail)
+@router.post("/", response_model=MilestoneDetail, status_code=status.HTTP_201_CREATED)
 def create_milestone(
+  project_id: str,
+  milestone: MilestoneCreate,
   db: Session = Depends(get_db),
-  project_id: str = Path(..., title="Project ID"),
-  milestone: MilestoneCreate = Body(...),
   current_user: dict = Depends(get_current_user)
 ):
   if not current_user:
@@ -33,8 +33,8 @@ def create_milestone(
   
 @router.get("/", response_model=List[MilestoneDetail])
 def get_all_milestones(
+  project_id: str,
   db: Session = Depends(get_db),
-  project_id: str = Path(..., title="Project ID"),
   current_user: dict = Depends(get_current_user)
 ):
   if not current_user:
@@ -53,9 +53,9 @@ def get_all_milestones(
 
 @router.get("/{milestone_id}", response_model=MilestoneDetail)
 def get_milestone_by_id(
+  project_id: str,
+  milestone_id: int,
   db: Session = Depends(get_db),
-  project_id: str = Path(..., title="Project ID"),
-  milestone_id: int = Path(..., title="Milestone ID"),
   current_user: dict = Depends(get_current_user)
 ):
   if not current_user:
@@ -74,10 +74,10 @@ def get_milestone_by_id(
   
 @router.put("/{milestone_id}", response_model=MilestoneDetail)
 def update_milestone(
+  project_id: str,
+  milestone_id: int,
+  milestone: MilestoneUpdate,
   db: Session = Depends(get_db),
-  project_id: str = Path(..., title="Project ID"),
-  milestone_id: int = Path(..., title="Milestone ID"),
-  milestone: MilestoneUpdate = Body(...),
   current_user: dict = Depends(get_current_user)
 ):
   if not current_user:
@@ -94,11 +94,11 @@ def update_milestone(
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
   
-@router.delete("/{milestone_id}", response_model=MilestoneDetail)
+@router.delete("/{milestone_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_milestone(
+  project_id: str,
+  milestone_id: int,
   db: Session = Depends(get_db),
-  project_id: str = Path(..., title="Project ID"),
-  milestone_id: int = Path(..., title="Milestone ID"),
   current_user: dict = Depends(get_current_user)
 ):
   if not current_user:
@@ -109,7 +109,8 @@ def delete_milestone(
     
   try:
     service = MilestoneService(db)
-    return service.delete(project_id=project_id, milestone_id=milestone_id)
+    service.delete(project_id=project_id, milestone_id=milestone_id)
+    return None
   except HTTPException as e:
     raise e
   except Exception as e:

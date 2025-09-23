@@ -16,8 +16,8 @@ class MilestoneService:
   def update(self, project_id: str, milestone_id: int, milestone: MilestoneUpdate) -> Milestone:
     return self.repository.update(project_id, milestone_id, milestone)
     
-  def remove(self, project_id: str, milestone_id: int) -> Milestone:
-    return self.repository.remove(project_id, milestone_id)
+  def delete(self, project_id: str, milestone_id: int) -> Milestone:
+    return self.repository.delete(project_id, milestone_id)
   
   def get(self, project_id: str, milestone_id: int) -> MilestoneDetail:
     return self.repository.get(project_id, milestone_id)
