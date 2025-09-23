@@ -57,7 +57,7 @@ async def get_task_by_id(
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
   
-@router.post("/", response_model=TaskDetail)
+@router.post("/", response_model=TaskDetail, status_code=status.HTTP_201_CREATED)
 async def create_task(
   project_id: str,
   task: TaskCreate,
@@ -100,7 +100,7 @@ async def update_task(
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
   
-@router.delete("/{task_id}", response_model=TaskDetail)
+@router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_task(
   project_id: str,
   task_id: int,
@@ -115,7 +115,8 @@ async def delete_task(
     
   try:
     service = TaskService(db)
-    return service.delete(project_id, task_id)
+    service.delete(project_id, task_id)
+    return None
   except HTTPException as e:
     raise e
   except Exception as e:

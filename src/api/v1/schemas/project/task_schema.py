@@ -1,10 +1,10 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, validator
 from typing import Optional, List
 from datetime import datetime
 from api.v1.schemas.brief import UserBrief, MilestoneBrief
 
 class CommentBase(BaseModel):
-  content: str = Field(..., min_length=2, max_length=100)
+  content: str
   
 class CommentCreate(CommentBase):
   pass
@@ -23,7 +23,7 @@ class CommentDetail(CommentBase):
     from_attributes = True
   
 class SubTaskBase(BaseModel):
-  title: str = Field(..., min_length=2, max_length=100)
+  title: str
   is_completed: bool = False
   
 class SubTaskCreate(SubTaskBase):
@@ -42,7 +42,7 @@ class SubTaskDetail(SubTaskBase):
     from_attributes = True
 
 class TaskBase(BaseModel):
-  title: str = Field(..., min_length=2, max_length=100)
+  title: str
   description: Optional[str] = None
   status: str = "not_started"  # not_started, in_progress, completed, on_hold
   priority: str = "medium"  # low, medium, high, urgent
@@ -66,7 +66,7 @@ class TaskCreate(TaskBase):
   subtasks: Optional[List[SubTaskCreate]] = None
     
 class TaskUpdate(BaseModel):
-  title: Optional[str] = Field(None, min_length=2, max_length=100)
+  title: Optional[str] = None
   description: Optional[str] = None
   status: Optional[str] = None
   priority: Optional[str] = None

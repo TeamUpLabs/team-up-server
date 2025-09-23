@@ -90,13 +90,45 @@ class TaskRepository:
     self.db.commit()
     self.db.refresh(db_obj)
     
-    # 마일스톤의 진행도 업데이트
     if db_obj.milestone_id:
-      self._update_milestone_progress(self.db, milestone_id=db_obj.milestone_id)
+      self._update_milestone_progress(db_obj.milestone_id)
     
     return db_obj
     
   
+  def delete(self, project_id: str, task_id: int) -> bool:
+    """
+    업무 삭제
+    """
+    # 먼저 task와 milestone_id를 가져옵니다.
+    task = self.db.query(Task).filter(Task.project_id == project_id, Task.id == task_id).first()
+    if not task:
+      raise HTTPException(status_code=404, detail="할 일을 찾을 수 없습니다.")
+    
+    milestone_id = task.milestone_id
+    
+    try:
+      # 먼저 마일스톤 진행도 업데이트 (아직 task가 삭제되기 전이므로 정상적으로 계산됨)
+      if milestone_id:
+        self._update_milestone_progress(milestone_id)
+      
+      # 연관된 하위 작업 삭제
+      self.db.query(SubTask).filter(SubTask.task_id == task_id).delete()
+      
+      # 댓글 삭제
+      self.db.query(Comment).filter(Comment.task_id == task_id).delete()
+      
+      # 작업 삭제
+      self.db.delete(task)
+      
+      # 모든 변경사항을 한 번에 커밋
+      self.db.commit()
+      
+      return True
+    except Exception as e:
+      self.db.rollback()
+      raise HTTPException(status_code=500, detail=f"업무 삭제 중 오류가 발생했습니다: {str(e)}")
+    
   def update(self, project_id: str, task_id: int, task: TaskUpdate) -> Task:
     """
     업무 정보 업데이트
@@ -142,47 +174,37 @@ class TaskRepository:
     self.db.commit()
     self.db.refresh(db_task)
     
-    # Update milestone progress
     if old_milestone_id:
-        self._update_milestone_progress(self.db, milestone_id=old_milestone_id)
+        self._update_milestone_progress(old_milestone_id)
     if db_task.milestone_id and db_task.milestone_id != old_milestone_id:
-        self._update_milestone_progress(self.db, milestone_id=db_task.milestone_id)
+        self._update_milestone_progress(db_task.milestone_id)
     
     return db_task
   
-  def delete(self, project_id: str, task_id: int) -> Task:
-    """
-    업무 삭제
-    """
-    task = self.db.query(Task).filter(Task.project_id == project_id, Task.id == task_id).first()
-    if not task:
-      raise HTTPException(status_code=404, detail="할 일을 찾을 수 없습니다.")
-    self.db.delete(task)
-    self.db.commit()
-    return task
-  
-  def _update_milestone_progress(self, db: Session, *, milestone_id: int) -> None:
+  def _update_milestone_progress(self, milestone_id: int) -> None:
     """
     마일스톤의 진행도를 업데이트
     """
-    milestone = db.query(Milestone).filter(Milestone.id == milestone_id).first()
+    # 현재 세션의 변경사항을 플러시하여 데이터베이스에 반영
+    self.db.flush()
+    
+    milestone = self.db.query(Milestone).filter(Milestone.id == milestone_id).first()
     if not milestone:
       return
     
     # Get all tasks for this milestone
-    tasks = db.query(Task).filter(Task.milestone_id == milestone_id).all()
+    tasks = self.db.query(Task).filter(Task.milestone_id == milestone_id).all()
+    
     if not tasks:
       milestone.progress = 0
-      db.add(milestone)
-      db.commit()
-      return
+    else:
+      total_tasks = len(tasks)
+      completed_tasks = sum(1 for task in tasks if task.status == "completed")
+      milestone.progress = int((completed_tasks / total_tasks) * 100) if total_tasks > 0 else 0
     
-    total_tasks = len(tasks)
-    completed_tasks = sum(1 for task in tasks if task.status == "completed")
-    
-    milestone.progress = int((completed_tasks / total_tasks) * 100) if total_tasks > 0 else 0
-    db.add(milestone)
-    db.commit()
+    self.db.add(milestone)
+    # 여기서는 커밋하지 않고 호출한 쪽에서 커밋하도록 합니다.
+    self.db.flush()
     
   
   def add_assignee(self, project_id: str, task_id: int, user_id: int) -> Task:

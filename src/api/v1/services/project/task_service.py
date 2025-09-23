@@ -27,7 +27,7 @@ class TaskService:
   def update(self, project_id: str, task_id: int, task: TaskUpdate) -> Task:
     return self.repository.update(project_id, task_id, task)
     
-  def delete(self, project_id: str, task_id: int) -> Task:
+  def delete(self, project_id: str, task_id: int) -> bool:
     return self.repository.delete(project_id, task_id)
     
   def add_assignee(self, project_id: str, task_id: int, user_id: int) -> Task:
