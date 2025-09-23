@@ -4,7 +4,7 @@ from api.v1.models.project.task import Task, SubTask, Comment
 from api.v1.models.user.user import User
 from api.v1.models.project.project import Project
 from api.v1.models.project.milestone import Milestone
-from api.v1.schemas.project.task_schema import CommentCreate, CommentUpdate, TaskDetail, TaskCreate, TaskUpdate
+from api.v1.schemas.project.task_schema import CommentCreate, CommentUpdate, TaskDetail, TaskCreate, TaskUpdate, SubTaskCreate
 from typing import List
 from datetime import datetime
 
@@ -251,6 +251,25 @@ class TaskRepository:
     if not task:
       raise HTTPException(status_code=404, detail="할 일을 찾을 수 없습니다.")
     return self.is_project_manager(self.db, task_id=task_id, user_id=user_id)
+  
+  def add_subtask(self, project_id: str, task_id: int, user_id: int, subtask: SubTaskCreate) -> SubTask:
+    """하위 업무 추가"""
+    task = self.db.query(Task).filter(Task.project_id == project_id, Task.id == task_id).first()
+    if not task:
+      raise HTTPException(status_code=404, detail="할 일을 찾을 수 없습니다.")
+    
+    if task.created_by != user_id and user_id not in [a.id for a in task.assignees] and not self.is_manager(project_id, task_id, user_id):
+      raise HTTPException(status_code=403, detail="이 업무에 하위 업무를 추가할 권한이 없습니다.")
+    subtask = SubTask(
+      title=subtask.title,
+      task_id=task_id,
+      created_at=datetime.utcnow(),
+      updated_at=datetime.utcnow()
+    )
+    self.db.add(subtask)
+    self.db.commit()
+    self.db.refresh(subtask)
+    return subtask
   
   def get_comments(self, project_id: str, task_id: int, skip: int = 0, limit: int = 100) -> List[Comment]:
     """업무의 댓글 목록 조회"""

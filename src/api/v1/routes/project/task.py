@@ -5,7 +5,7 @@ from api.v1.services.project.task_service import TaskService
 from api.v1.schemas.project.task_schema import TaskCreate, TaskUpdate, CommentCreate, CommentUpdate
 from core.security.auth import get_current_user
 from typing import List, Optional
-from api.v1.schemas.project.task_schema import TaskDetail, CommentDetail
+from api.v1.schemas.project.task_schema import TaskDetail, CommentDetail, SubTaskDetail, SubTaskCreate
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/tasks", tags=["tasks"])
 
@@ -117,6 +117,28 @@ async def delete_task(
     service = TaskService(db)
     service.delete(project_id, task_id)
     return None
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+  
+@router.post("/{task_id}/subtasks", response_model=SubTaskDetail, status_code=status.HTTP_201_CREATED)
+async def add_subtask(
+  project_id: str,
+  task_id: int,
+  subtask: SubTaskCreate,
+  db: Session = Depends(get_db),
+  current_user: dict = Depends(get_current_user)
+):
+  if not current_user:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Not authorized to perform this action"
+    )
+    
+  try:
+    service = TaskService(db)
+    return service.add_subtask(project_id, task_id, current_user.id, subtask)
   except HTTPException as e:
     raise e
   except Exception as e:

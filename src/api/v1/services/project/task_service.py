@@ -1,6 +1,6 @@
 from api.v1.repositories.project.task_repository import TaskRepository
-from api.v1.schemas.project.task_schema import CommentCreate, CommentUpdate, TaskCreate, TaskUpdate
-from api.v1.models.project.task import Task, Comment
+from api.v1.schemas.project.task_schema import CommentCreate, CommentUpdate, SubTaskCreate, TaskCreate, TaskUpdate
+from api.v1.models.project.task import SubTask, Task, Comment
 from sqlalchemy.orm import Session
 from typing import List
 from api.v1.schemas.project.task_schema import TaskDetail, CommentDetail
@@ -38,6 +38,9 @@ class TaskService:
     
   def is_manager(self, project_id: str, task_id: int, user_id: int) -> bool:
     return self.repository.is_manager(project_id, task_id, user_id)
+  
+  def add_subtask(self, project_id: str, task_id: int, user_id: int, subtask: SubTaskCreate) -> SubTask:
+    return self.repository.add_subtask(project_id, task_id, user_id, subtask)
   
   def get_comments(self, project_id: str, task_id: int) -> List[CommentDetail]:
     return self.repository.get_comments(project_id, task_id)
