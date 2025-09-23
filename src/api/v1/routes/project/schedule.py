@@ -94,7 +94,7 @@ def update(
     raise HTTPException(status_code=400, detail=str(e))
 
 @router.delete("/{schedule_id}", status_code=status.HTTP_204_NO_CONTENT)
-def remove(
+def delete(
   project_id: str,
   schedule_id: int, 
   db: Session = Depends(get_db), 
@@ -108,7 +108,8 @@ def remove(
     
   try:
     service = ScheduleService(db)
-    return service.remove(project_id, schedule_id)
+    service.delete(project_id, schedule_id)
+    return None
   except HTTPException as e:
     raise e
   except Exception as e:

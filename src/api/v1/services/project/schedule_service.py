@@ -22,8 +22,8 @@ class ScheduleService:
   def update(self, project_id: str, schedule_id: int, obj_in: ScheduleUpdate) -> ScheduleDetail:
     return self.repository.update(project_id, schedule_id, obj_in)
     
-  def remove(self, project_id: str, schedule_id: int) -> ScheduleDetail:
-    return self.repository.remove(project_id, schedule_id)
+  def delete(self, project_id: str, schedule_id: int) -> ScheduleDetail:
+    return self.repository.delete(project_id, schedule_id)
   
   def is_project_manager(self, project_id: str, user_id: int) -> bool:
     return self.repository.is_project_manager(project_id, user_id)

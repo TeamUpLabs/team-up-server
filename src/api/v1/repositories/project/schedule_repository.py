@@ -88,7 +88,7 @@ class ScheduleRepository:
       self.db.rollback()
       raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
   
-  def remove(self, project_id: str, schedule_id: int) -> ScheduleDetail:
+  def delete(self, project_id: str, schedule_id: int) -> ScheduleDetail:
     """
     스케줄 삭제
     """
