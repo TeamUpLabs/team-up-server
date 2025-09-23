@@ -61,25 +61,29 @@ class ScheduleRepository:
     """
     스케줄 업데이트
     """
-    try:
-      db_schedule = self.get_by_id(project_id, schedule_id)
-      if not db_schedule:
-        raise HTTPException(status_code=404, detail="Schedule not found")
-    
-      schedule_data_for_db = obj_in.model_dump(exclude={"assignee_ids"})
-      for field in schedule_data_for_db:
-        setattr(db_schedule, field, schedule_data_for_db[field])
-    
-      if obj_in.assignee_ids:
-        db_schedule.assignees = []
-      for user_id in obj_in.assignee_ids:
-        user = self.db.query(User).filter(User.id == user_id).first()
-        if user:
-          db_schedule.assignees.append(user)
-    
+    try: 
+      obj = self.db.query(Schedule).filter(Schedule.id == schedule_id, Schedule.project_id == project_id).first()
+      if not obj:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found")
+      
+      obj_data = obj.__dict__
+      update_data = obj_in.model_dump(exclude_unset=True, exclude={"assignee_ids"})
+      
+      for field in obj_data:
+        if field in update_data:
+          setattr(obj, field, update_data[field])
+      
+      if hasattr(obj_in, "assignee_ids") and obj_in.assignee_ids is not None:
+        obj.assignees = []
+        for user_id in obj_in.assignee_ids:
+          user = self.db.query(User).filter(User.id == user_id).first()
+          if user:
+            obj.assignees.append(user)
+      
+      self.db.add(obj)
       self.db.commit()
-      self.db.refresh(db_schedule)
-      return ScheduleDetail.model_validate(db_schedule, from_attributes=True)
+      self.db.refresh(obj)
+      return ScheduleDetail.model_validate(obj, from_attributes=True)
     except Exception as e:
       self.db.rollback()
       raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
