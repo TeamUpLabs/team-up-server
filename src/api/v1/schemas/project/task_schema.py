@@ -29,7 +29,7 @@ class SubTaskBase(BaseModel):
 class SubTaskCreate(SubTaskBase):
   pass
 
-class SubTaskUpdate(SubTaskBase):
+class SubTaskUpdate(BaseModel):
   title: Optional[str] = None
   is_completed: Optional[bool] = None
 

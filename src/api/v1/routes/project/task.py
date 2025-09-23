@@ -2,10 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from core.database.database import get_db
 from api.v1.services.project.task_service import TaskService
-from api.v1.schemas.project.task_schema import TaskCreate, TaskUpdate, CommentCreate, CommentUpdate
+from api.v1.schemas.project.task_schema import TaskCreate, TaskUpdate, CommentCreate, CommentUpdate, SubTaskCreate, SubTaskUpdate, TaskDetail, CommentDetail, SubTaskDetail
 from core.security.auth import get_current_user
 from typing import List, Optional
-from api.v1.schemas.project.task_schema import TaskDetail, CommentDetail, SubTaskDetail, SubTaskCreate
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/tasks", tags=["tasks"])
 
@@ -139,6 +138,52 @@ async def add_subtask(
   try:
     service = TaskService(db)
     return service.add_subtask(project_id, task_id, current_user.id, subtask)
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+  
+@router.put("/{task_id}/subtasks/{subtask_id}", response_model=SubTaskDetail)
+async def update_subtask(
+  project_id: str,
+  task_id: int,
+  subtask_id: int,
+  subtask: SubTaskUpdate,
+  db: Session = Depends(get_db),
+  current_user: dict = Depends(get_current_user)
+):
+  if not current_user:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Not authorized to perform this action"
+    )
+    
+  try:
+    service = TaskService(db)
+    return service.update_subtask(project_id, task_id, subtask_id, current_user.id, subtask)
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+  
+@router.delete("/{task_id}/subtasks/{subtask_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_subtask(
+  project_id: str,
+  task_id: int,
+  subtask_id: int,
+  db: Session = Depends(get_db),
+  current_user: dict = Depends(get_current_user)
+):
+  if not current_user:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Not authorized to perform this action"
+    )
+    
+  try:
+    service = TaskService(db)
+    service.delete_subtask(project_id, task_id, subtask_id, current_user.id)
+    return None
   except HTTPException as e:
     raise e
   except Exception as e:

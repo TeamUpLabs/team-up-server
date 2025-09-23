@@ -4,7 +4,7 @@ from api.v1.models.project.task import Task, SubTask, Comment
 from api.v1.models.user.user import User
 from api.v1.models.project.project import Project
 from api.v1.models.project.milestone import Milestone
-from api.v1.schemas.project.task_schema import CommentCreate, CommentUpdate, TaskDetail, TaskCreate, TaskUpdate, SubTaskCreate
+from api.v1.schemas.project.task_schema import CommentCreate, CommentUpdate, TaskDetail, TaskCreate, TaskUpdate, SubTaskCreate, SubTaskUpdate
 from typing import List
 from datetime import datetime
 
@@ -269,6 +269,73 @@ class TaskRepository:
     self.db.add(subtask)
     self.db.commit()
     self.db.refresh(subtask)
+    return subtask
+  
+  def update_subtask(self, project_id: str, task_id: int, subtask_id: int, user_id: int, subtask_update: SubTaskUpdate) -> SubTask:
+    """하위 업무 수정"""
+    # Check if task exists
+    task = self.db.query(Task).filter(Task.project_id == project_id, Task.id == task_id).first()
+    if not task:
+      raise HTTPException(status_code=404, detail="할 일을 찾을 수 없습니다.")
+    
+    # Check if subtask exists and belongs to the task
+    subtask_to_update = self.db.query(SubTask).filter(
+      SubTask.id == subtask_id, 
+      SubTask.task_id == task_id
+    ).first()
+    
+    if not subtask_to_update:
+      raise HTTPException(status_code=404, detail="하위 업무를 찾을 수 없습니다.")
+    
+    # Check permissions - creator, assignee, or project manager can update
+    if (task.created_by != user_id and 
+        user_id not in [a.id for a in task.assignees] and 
+        not self.is_manager(project_id, task_id, user_id)):
+      raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN, 
+        detail="이 하위 업무를 수정할 권한이 없습니다."
+      )
+    
+    # Get update data, excluding unset fields and id
+    update_data = subtask_update.model_dump(exclude_unset=True, exclude={"id"})
+    
+    # Apply updates
+    for field, value in update_data.items():
+      setattr(subtask_to_update, field, value)
+    
+    # Update timestamp
+    subtask_to_update.updated_at = datetime.utcnow()
+    
+    try:
+      self.db.add(subtask_to_update)
+      self.db.commit()
+      self.db.refresh(subtask_to_update)
+      return subtask_to_update
+    except Exception as e:
+      self.db.rollback()
+      raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=f"하위 업무를 업데이트하는 중 오류가 발생했습니다: {str(e)}"
+      )
+  
+  def delete_subtask(self, project_id: str, task_id: int, subtask_id: int, user_id: int) -> SubTask:
+    """하위 업무 삭제"""
+    task = self.db.query(Task).filter(Task.project_id == project_id, Task.id == task_id).first()
+    if not task:
+      raise HTTPException(status_code=404, detail="할 일을 찾을 수 없습니다.")
+    
+    subtask = self.db.query(SubTask).filter(SubTask.id == subtask_id, SubTask.task_id == task_id).first()
+    if not subtask:
+      raise HTTPException(status_code=404, detail="하위 업무를 찾을 수 없습니다.")
+    
+    # 생성자, 담당자 또는 프로젝트 관리자만 삭제 가능
+    if (task.created_by != user_id and 
+      user_id not in [a.id for a in task.assignees] and 
+      not self.is_manager(project_id, task_id, user_id)):
+      raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="이 하위 업무를 삭제할 권한이 없습니다.")
+    
+    self.db.delete(subtask)
+    self.db.commit()
     return subtask
   
   def get_comments(self, project_id: str, task_id: int, skip: int = 0, limit: int = 100) -> List[Comment]:

@@ -1,5 +1,5 @@
 from api.v1.repositories.project.task_repository import TaskRepository
-from api.v1.schemas.project.task_schema import CommentCreate, CommentUpdate, SubTaskCreate, TaskCreate, TaskUpdate
+from api.v1.schemas.project.task_schema import CommentCreate, CommentUpdate, SubTaskCreate, SubTaskUpdate, TaskCreate, TaskUpdate
 from api.v1.models.project.task import SubTask, Task, Comment
 from sqlalchemy.orm import Session
 from typing import List
@@ -41,6 +41,12 @@ class TaskService:
   
   def add_subtask(self, project_id: str, task_id: int, user_id: int, subtask: SubTaskCreate) -> SubTask:
     return self.repository.add_subtask(project_id, task_id, user_id, subtask)
+  
+  def update_subtask(self, project_id: str, task_id: int, subtask_id: int, user_id: int, subtask: SubTaskUpdate) -> SubTask:
+    return self.repository.update_subtask(project_id, task_id, subtask_id, user_id, subtask)
+  
+  def delete_subtask(self, project_id: str, task_id: int, subtask_id: int, user_id: int) -> SubTask:
+    return self.repository.delete_subtask(project_id, task_id, subtask_id, user_id)
   
   def get_comments(self, project_id: str, task_id: int) -> List[CommentDetail]:
     return self.repository.get_comments(project_id, task_id)
