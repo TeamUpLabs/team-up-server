@@ -64,92 +64,98 @@ class UserRepository:
     return self.db.query(User).offset(skip).limit(limit).all()
     
   def create(self, user: UserCreate) -> User:
-    db_user = self.get_by_email(user.email)
-    if db_user:
-      raise HTTPException(status_code=400, detail="이미 존재하는 이메일입니다.")
-    
-    # 기본 알림 설정
-    default_notification_settings = {
-      "emailEnable": 1,
-      "taskNotification": 1,
-      "milestoneNotification": 1,
-      "scheduleNotification": 1,
-      "deadlineNotification": 1,
-      "weeklyReport": 1,
-      "pushNotification": 1,
-      "securityNotification": 1
-    }
-    
-    # 사용자가 제공한 알림 설정이 있으면 병합
-    if user.notification_settings:
-      default_notification_settings.update(user.notification_settings)
-    
-    # OAuth 사용자의 경우 비밀번호가 없을 수 있음
-    hashed_password = None
-    if user.password:
-      hashed_password = get_password_hash(user.password)
-    
-    db_obj = User(
-      email=user.email,
-      name=user.name,
-      hashed_password=hashed_password,
-      profile_image=user.profile_image,
-      bio=user.bio,
-      role=user.role,
-      status=user.status,
-      languages=user.languages,
-      phone=user.phone,
-      birth_date=user.birth_date,
-      auth_provider=user.auth_provider,
-      auth_provider_id=user.auth_provider_id,
-      auth_provider_access_token=user.auth_provider_access_token,
-      notification_settings=default_notification_settings,
-    )
-    self.db.add(db_obj)
-    self.db.flush()  # db_obj.id 확보
-    
-    # 협업 선호도
-    if user.collaboration_preference:
-      self.db.add(CollaborationPreference(
-        user_id=db_obj.id,
-        collaboration_style=user.collaboration_preference.collaboration_style,
-        preferred_project_type=user.collaboration_preference.preferred_project_type,
-        preferred_role=user.collaboration_preference.preferred_role,
-        available_time_zone=user.collaboration_preference.available_time_zone,
-        work_hours_start=user.collaboration_preference.work_hours_start,
-        work_hours_end=user.collaboration_preference.work_hours_end,
-        preferred_project_length=user.collaboration_preference.preferred_project_length
-      ))
-            
-    # 기술 스택
-    if user.tech_stacks:
-      for tech_stack in user.tech_stacks:
-        self.db.add(UserTechStack(
-          user_id=db_obj.id,
-          tech=tech_stack.tech,
-          level=tech_stack.level
-        ))
-            
-    # 관심분야
-    if user.interests:
-      for interest in user.interests:
-        self.db.add(UserInterest(
-          user_id=db_obj.id,
-          interest_category=interest.interest_category,
-          interest_name=interest.interest_name
-        ))
-    # 소셜링크
-    if user.social_links:
-      for link in user.social_links:
-        self.db.add(UserSocialLink(
-          user_id=db_obj.id,
-          platform=link.platform,
-          url=link.url
-        ))
+    # Prevent duplicate users by email
+    existing = self.get_by_email(user.email)
+    if existing:
+      raise HTTPException(status_code=400, detail=f"User with email {user.email} already exists")
 
-    self.db.commit()
-    self.db.refresh(db_obj)
-    return db_obj
+    try:
+      # 기본 알림 설정
+      default_notification_settings = {
+        "emailEnable": 1,
+        "taskNotification": 1,
+        "milestoneNotification": 1,
+        "scheduleNotification": 1,
+        "deadlineNotification": 1,
+        "weeklyReport": 1,
+        "pushNotification": 1,
+        "securityNotification": 1
+      }
+      
+      # 사용자가 제공한 알림 설정이 있으면 병합
+      if user.notification_settings:
+        default_notification_settings.update(user.notification_settings)
+      
+      # OAuth 사용자의 경우 비밀번호가 없을 수 있음
+      hashed_password = None
+      if user.password:
+        hashed_password = get_password_hash(user.password)
+      
+      db_obj = User(
+        email=user.email,
+        name=user.name,
+        hashed_password=hashed_password,
+        profile_image=user.profile_image,
+        bio=user.bio,
+        role=user.role,
+        status=user.status,
+        languages=user.languages,
+        phone=user.phone,
+        birth_date=user.birth_date,
+        auth_provider=user.auth_provider,
+        auth_provider_id=user.auth_provider_id,
+        auth_provider_access_token=user.auth_provider_access_token,
+        notification_settings=default_notification_settings,
+      )
+      self.db.add(db_obj)
+      self.db.flush()  # db_obj.id 확보
+      
+      # 협업 선호도
+      if user.collaboration_preference:
+        self.db.add(CollaborationPreference(
+          user_id=db_obj.id,
+          collaboration_style=user.collaboration_preference.collaboration_style,
+          preferred_project_type=user.collaboration_preference.preferred_project_type,
+          preferred_role=user.collaboration_preference.preferred_role,
+          available_time_zone=user.collaboration_preference.available_time_zone,
+          work_hours_start=user.collaboration_preference.work_hours_start,
+          work_hours_end=user.collaboration_preference.work_hours_end,
+          preferred_project_length=user.collaboration_preference.preferred_project_length
+        ))
+              
+      # 기술 스택
+      if user.tech_stacks:
+        for tech_stack in user.tech_stacks:
+          self.db.add(UserTechStack(
+            user_id=db_obj.id,
+            tech=tech_stack.tech,
+            level=tech_stack.level
+          ))
+              
+      # 관심분야
+      if user.interests:
+        for interest in user.interests:
+          self.db.add(UserInterest(
+            user_id=db_obj.id,
+            interest_category=interest.interest_category,
+            interest_name=interest.interest_name
+          ))
+      # 소셜링크
+      if user.social_links:
+        for link in user.social_links:
+          self.db.add(UserSocialLink(
+            user_id=db_obj.id,
+            platform=link.platform,
+            url=link.url
+          ))
+
+      self.db.commit()
+      self.db.refresh(db_obj)
+      
+      return db_obj
+    except Exception as e:
+      raise HTTPException(status_code=500, detail=str(e))
+    
     
   def update(self, user_id: int, user: UserUpdate) -> User:
     """사용자 정보 업데이트"""

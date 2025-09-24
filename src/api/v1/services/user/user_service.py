@@ -49,16 +49,15 @@ class UserService:
   
   def create_user(self, user_data: UserCreate) -> UserDetail:
     """Create a new user"""
-    try:
-      # Check if user with email already exists
-      self.repository.get_by_email(user_data.email)
+    # Check if user with email already exists
+    existing = self.repository.get_by_email(user_data.email)
+    if existing:
       raise HTTPException(
         status_code=status.HTTP_400_BAD_REQUEST,
         detail=f"User with email {user_data.email} already exists"
       )
-    except HTTPException as e:
-      if e.status_code == 404:  # User not found, safe to create
-        return self.repository.create(user_data)
+    # User not found, safe to create
+    return self.repository.create(user_data)
   
   def update_user(
       self, 
@@ -78,7 +77,7 @@ class UserService:
   def delete_user(self, user_id: int) -> dict:
     """Delete a user by ID"""
     try:
-      self.repository.delete(user_id)
+      self.repository.remove(user_id)
       return {"message": f"User with id {user_id} has been deleted"}
     except HTTPException as e:
       if e.status_code == 404:
