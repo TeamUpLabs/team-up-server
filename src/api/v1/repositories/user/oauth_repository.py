@@ -12,7 +12,7 @@ from api.v1.services.user.user_service import UserService
 from api.v1.services.user.session_service import SessionService
 from api.v1.models.user.session import UserSession
 from ua_parser import user_agent_parser
-import logging
+
 
 class AuthRepository:
   def __init__(self, db: Session):
@@ -42,31 +42,24 @@ class AuthRepository:
       if form_data.provider == "github":
         try:
           social_access_token, github_user, github_username = await get_github_user_info(form_data.code)
-          logging.info(f"Social access token: {social_access_token}")
-          logging.info(f"GitHub user: {github_user}")
-          logging.info(f"GitHub username: {github_username}")
         except Exception as e:
           raise HTTPException(status_code=500, detail=str(e))
       elif form_data.provider == "google":
         try:
           social_access_token, google_user = await get_google_user_info(form_data.code)
         except Exception as e:
-          logging.error(f"Error in oauth_callback: {str(e)}")
           raise HTTPException(status_code=500, detail=str(e))
       else:
-        logging.error(f"Unsupported social provider: {form_data.provider}")
         raise HTTPException(status_code=400, detail=f"Unsupported social provider: {form_data.provider}")
       
       if form_data.provider == "github" and (not github_user or not github_user.get("email")):
         error_msg = "Could not retrieve user email from GitHub. Please ensure your GitHub account has a verified email address and that you've granted email access permissions."
-        logging.error(f"Error in oauth_callback: {str(e)}")
         raise HTTPException(
           status_code=400,
           detail=error_msg
         )
       if form_data.provider == "google" and (not google_user or not google_user.get("email")):
         error_msg = "Could not retrieve user email from Google. Please ensure your Google account has a verified email address and that you've granted email access permissions."
-        logging.error(f"Error in oauth_callback: {str(e)}")
         raise HTTPException(
           status_code=400,
           detail=error_msg
@@ -77,14 +70,12 @@ class AuthRepository:
           email = github_user.get("email")
           existing = user_service.get_user_by_email(email=email)
         except Exception as e:
-          logging.error(f"Error in oauth_callback: {str(e)}")
           raise HTTPException(status_code=500, detail=str(e))
       elif form_data.provider == "google":
         try:
           email = google_user.get("email")
           existing = user_service.get_user_by_email(email=email)
         except Exception as e:
-          logging.error(f"Error in oauth_callback: {str(e)}")
           raise HTTPException(status_code=500, detail=str(e))
       if existing:
         try:
@@ -94,7 +85,6 @@ class AuthRepository:
           self.db.commit()
           self.db.refresh(existing)
         except Exception as e:
-          logging.error(f"Error in oauth_callback: {str(e)}")
           raise HTTPException(status_code=500, detail=str(e))
         
         existing_session = self.db.query(UserSession).filter(UserSession.session_id == form_data.session_id, UserSession.user_id == existing.id).first()
@@ -102,7 +92,6 @@ class AuthRepository:
           try:
             session_service.update_current_session(user_id=existing.id, session_id=form_data.session_id)
           except Exception as e:
-            logging.error(f"Error in oauth_callback: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
         else:
           try:
@@ -136,7 +125,6 @@ class AuthRepository:
             self.db.commit()
             self.db.refresh(db_session)
           except Exception as e:
-            logging.error(f"Error in oauth_callback: {str(e)}")
             raise HTTPException(
               status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
               detail="Failed to create session"
@@ -164,7 +152,6 @@ class AuthRepository:
             "user_info": user
           }
         except Exception as e:
-          logging.error(f"Error in oauth_callback: {str(e)}")
           raise HTTPException(status_code=500, detail=str(e))    
       else:
         try:
@@ -198,7 +185,6 @@ class AuthRepository:
               }
             }
         except Exception as e:
-          logging.error(f"Error in oauth_callback: {str(e)}")
           raise HTTPException(status_code=500, detail=str(e))
 
     except HTTPException as he:
