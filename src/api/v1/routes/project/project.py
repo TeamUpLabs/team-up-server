@@ -12,7 +12,7 @@ import json
 
 router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
 
-@router.post("/", response_model=ProjectDetail)
+@router.post("/", response_model=ProjectDetail, status_code=status.HTTP_201_CREATED)
 async def create_project(
   project: ProjectCreate,
   db: Session = Depends(get_db),
@@ -27,6 +27,25 @@ async def create_project(
   try:
     service = ProjectService(db)
     return service.create_project(project)
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+  
+@router.get("/ids", response_model=List[str])
+async def get_all_project_ids(
+  db: Session = Depends(get_db),
+  current_user: dict = Depends(get_current_user)
+):
+  if not current_user:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Not authorized to perform this action"
+    )
+    
+  try:
+    service = ProjectService(db)
+    return service.get_all_project_ids()
   except HTTPException as e:
     raise e
   except Exception as e:

@@ -1,6 +1,5 @@
 from api.v1.repositories.project.project_repository import ProjectRepository
 from api.v1.schemas.project.project_schema import ProjectDetail
-from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from api.v1.schemas.project.project_schema import ProjectCreate, ProjectUpdate
@@ -31,8 +30,8 @@ class ProjectService:
   def update_project(self, project_id: str, project: ProjectUpdate) -> Project:
     return self.repository.update(project_id, project)
     
-  def remove_project(self, project_id: str) -> Project:
-    return self.repository.remove(project_id)
+  def delete_project(self, project_id: str) -> Project:
+    return self.repository.delete(project_id)
   
   def get_project_members(self, project_id: str) -> List[Dict[str, Any]]:
     return self.repository.get_project_members(project_id)

@@ -8,6 +8,7 @@ from api.v1.models.association_tables import project_members
 from api.v1.models.user.user import User
 from core.utils.format_project_members import format_member_details
 from core.utils.calculate_project_stat import calculate_project_stat
+from fastapi import status
 
 class ProjectRepository:
   def __init__(self, db: Session):
@@ -69,8 +70,6 @@ class ProjectRepository:
       raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
     
     projects = self.db.query(Project).filter(Project.members.any(User.id == user_id)).all()
-    if not projects:
-      raise HTTPException(status_code=404, detail="사용자가 속한 프로젝트를 찾을 수 없습니다.")
     
     result = []
     for project in projects:
@@ -123,7 +122,8 @@ class ProjectRepository:
     """
     모든 프로젝트 ID 조회
     """
-    return self.db.query(Project.id).all()
+    rows = self.db.query(Project.id).all()
+    return [str(row[0]) for row in rows]
   
   def create(self, project: ProjectCreate) -> Project:
     """
@@ -176,7 +176,8 @@ class ProjectRepository:
     
     self.db.commit()
     self.db.refresh(db_obj)
-    return db_obj
+    # 생성된 프로젝트를 상세 스키마로 반환
+    return self.get(db_obj.id)
     
   def update(self, project_id: str, project: ProjectUpdate) -> Project:
     """
@@ -193,7 +194,7 @@ class ProjectRepository:
     self.db.refresh(update_data)
     return db_obj
   
-  def remove(self, project_id: str) -> Project:
+  def delete(self, project_id: str) -> Project:
     """
     프로젝트 삭제
     """
