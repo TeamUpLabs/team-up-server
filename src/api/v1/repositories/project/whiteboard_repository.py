@@ -6,6 +6,7 @@ from api.v1.models.project.whiteboard import (
   Attachment,
   WhiteboardReaction,
   WhiteboardReactionLike,
+  WhiteboardComment,
 )
 from api.v1.schemas.project.whiteboard_schema import (
   WhiteBoardDetail,
@@ -15,10 +16,11 @@ from api.v1.schemas.project.whiteboard_schema import (
   ReactionLikes,
   ReactionComments,
   Comment,
+  CommentCreate
 )
 from api.v1.schemas.brief import UserBrief
 from api.v1.models.project.project import Project
-from typing import List, Optional, Set
+from typing import List, Set
 from datetime import datetime
 
 class WhiteBoardRepository:
@@ -312,4 +314,71 @@ class WhiteBoardRepository:
       raise HTTPException(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail=f"화이트보드 조회수 업데이트 중 오류 발생: {str(e)}"
+      )
+      
+  def get_comments(self, project_id: str, whiteboard_id: int, skip: int = 0, limit: int = 100) -> List[Comment]:
+    """댓글 목록 조회"""
+    try:
+      whiteboard = self.db.query(WhiteBoard).filter(WhiteBoard.project_id == project_id, WhiteBoard.id == whiteboard_id).first()
+      if not whiteboard:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="화이트보드를 찾을 수 없습니다.")
+      reaction = self.db.query(WhiteboardReaction).filter(WhiteboardReaction.whiteboard_id == whiteboard_id).first()
+      if not reaction:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="화이트보드를 찾을 수 없습니다.")
+      comments = self.db.query(WhiteboardComment).filter(WhiteboardComment.reaction_id == reaction.id).offset(skip).limit(limit).all()
+      return [Comment.model_validate(c, from_attributes=True) for c in comments]
+    except Exception as e:
+      self.db.rollback()
+      raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=f"댓글 목록 조회 중 오류 발생: {str(e)}"
+      )
+      
+  def create_comment(self, project_id: str, whiteboard_id: int, comment: CommentCreate) -> Comment:
+    """댓글 생성"""
+    try:
+      whiteboard = self.db.query(WhiteBoard).filter(WhiteBoard.project_id == project_id, WhiteBoard.id == whiteboard_id).first()
+      if not whiteboard:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="화이트보드를 찾을 수 없습니다.")
+      reaction = self.db.query(WhiteboardReaction).filter(WhiteboardReaction.whiteboard_id == whiteboard_id).first()
+      if not reaction:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="화이트보드를 찾을 수 없습니다.")
+      comment = WhiteboardComment(
+        reaction_id=reaction.id,
+        whiteboard_id=whiteboard_id,
+        content=comment.content,
+        created_by=comment.created_by,
+      )
+      self.db.add(comment)
+      self.db.commit()
+      self.db.refresh(comment)
+      return Comment.model_validate(comment, from_attributes=True)
+    except Exception as e:
+      self.db.rollback()
+      raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=f"댓글 생성 중 오류 발생: {str(e)}"
+      )
+      
+  def delete_comment(self, project_id: str, whiteboard_id: int, comment_id: int) -> WhiteBoardDetail:
+    """댓글 삭제"""
+    try:
+      whiteboard = self.db.query(WhiteBoard).filter(WhiteBoard.project_id == project_id, WhiteBoard.id == whiteboard_id).first()
+      if not whiteboard:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="화이트보드를 찾을 수 없습니다.")
+      reaction = self.db.query(WhiteboardReaction).filter(WhiteboardReaction.whiteboard_id == whiteboard_id).first()
+      if not reaction:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="화이트보드를 찾을 수 없습니다.")
+      comment = self.db.query(WhiteboardComment).filter(WhiteboardComment.id == comment_id).first()
+      if not comment:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="댓글을 찾을 수 없습니다.")
+      self.db.delete(comment)
+      self.db.commit()
+      self.db.refresh(whiteboard)
+      return self._attach_reactions(whiteboard)
+    except Exception as e:
+      self.db.rollback()
+      raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=f"댓글 삭제 중 오류 발생: {str(e)}"
       )

@@ -36,10 +36,12 @@ class WhiteboardComment(Base, BaseModel):
   id = Column(Integer, primary_key=True, index=True)
   content = Column(Text, nullable=False)
   created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+  whiteboard_id = Column(Integer, ForeignKey("whiteboards.id"), nullable=False)
   reaction_id = Column(Integer, ForeignKey("whiteboard_reactions.id"), nullable=False)
   
   # Relationships
   creator = relationship("User")
+  whiteboard = relationship("WhiteBoard")
   reaction = relationship("WhiteboardReaction", back_populates="comments")
 
 class WhiteboardReaction(Base, BaseModel):
