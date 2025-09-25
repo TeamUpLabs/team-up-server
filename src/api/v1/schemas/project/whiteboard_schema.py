@@ -59,20 +59,28 @@ class Comment(CommentBase):
   class Config:
     from_attributes = True
     
-class ReactionUsers(BaseModel):
-    count: int
-    users: List[UserBrief] = []
+class ReactionLikes(BaseModel):
+  count: int = 0
+  users: List[UserBrief] = []
+    
+class ReactionComments(BaseModel):
+  count: int = 0
+  comments: List[Comment] = []
+  class Config:
+    from_attributes = True
 
 class ReactionBase(BaseModel):
-  likes: ReactionUsers = Field(default_factory=lambda: ReactionUsers(count=0, users=[]))
-  comments: List[Comment] = []
+  # Match ORM relationships so Pydantic can map directly
+  likes: ReactionLikes = Field(default_factory=ReactionLikes)
+  views: int = 0
+  comments: ReactionComments = Field(default_factory=ReactionComments)
 
 class ReactionCreate(ReactionBase):
-    pass
+  pass
 
 class Reaction(ReactionBase):
   class Config:
-      from_attributes = True
+    from_attributes = True
 
 class WhiteBoardBase(BaseModel):
   type: str
@@ -101,7 +109,7 @@ class WhiteBoardDetail(WhiteBoardBase):
   creator: Optional[UserBrief] = None
   updater: Optional[UserBrief] = None
   documents: List[Document] = []
-  # reactions: List[Reaction] = []
+  reactions: Reaction = None
   
   class Config:
     from_attributes = True

@@ -114,3 +114,45 @@ async def delete_whiteboard(
     raise e
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
+  
+@router.put("/{whiteboard_id}/like", response_model=WhiteBoardDetail)
+async def toggle_whiteboard_like(
+    project_id: str,
+    whiteboard_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+  if not current_user:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Not authorized to perform this action"
+    )
+    
+  try:
+    service = WhiteBoardService(db)
+    return service.update_like(project_id, whiteboard_id, current_user.id)
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+  
+@router.put("/{whiteboard_id}/view", response_model=WhiteBoardDetail)
+async def update_whiteboard_view(
+    project_id: str,
+    whiteboard_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+  if not current_user:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Not authorized to perform this action"
+    )
+    
+  try:
+    service = WhiteBoardService(db)
+    return service.update_view(project_id, whiteboard_id)
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))

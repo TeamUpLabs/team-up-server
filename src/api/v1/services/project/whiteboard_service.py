@@ -21,3 +21,9 @@ class WhiteBoardService:
     
   def delete(self, project_id: str, whiteboard_id: int) -> WhiteBoardDetail:
     return self.repository.delete(project_id, whiteboard_id)
+  
+  def update_like(self, project_id: str, whiteboard_id: int, user_id: int) -> WhiteBoardDetail:
+    return self.repository.update_like(project_id, whiteboard_id, user_id)
+  
+  def update_view(self, project_id: str, whiteboard_id: int) -> WhiteBoardDetail:
+    return self.repository.update_view(project_id, whiteboard_id)

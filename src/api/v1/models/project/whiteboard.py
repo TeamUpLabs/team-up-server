@@ -1,52 +1,22 @@
-# models/document.py
-from sqlalchemy import Column, Integer, String, Text, ForeignKey, JSON, DateTime
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON, Boolean, UniqueConstraint
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import text
-from core.database.database import Base
+from sqlalchemy.sql import func
 from api.v1.models.base import BaseModel
+from core.database.database import Base
 
-# Association table for user likes
-class UserWhiteBoardLike(Base):
-  __tablename__ = "user_whiteboard_likes"
+
+class Attachment(Base, BaseModel):
+  __tablename__ = "attachments"
   
-  user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
-  whiteboard_id = Column(Integer, ForeignKey("whiteboards.id", ondelete="CASCADE"), primary_key=True)
-  created_at = Column(DateTime, nullable=False, server_default=text("CURRENT_TIMESTAMP"))
-  
-  def __repr__(self):
-    return f"UserWhiteBoardLike(user_id={self.user_id}, whiteboard_id={self.whiteboard_id})"
-
-
-class WhiteBoard(Base, BaseModel):
-  __tablename__ = "whiteboards"
-
   id = Column(Integer, primary_key=True, index=True)
-  type = Column(String(50), nullable=False)  # document, canvas
-  project_id = Column(String(6), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-  title = Column(String(255), nullable=False)
+  filename = Column(String(255), nullable=False)
+  file_url = Column(String(500), nullable=False)
+  file_type = Column(String(100), nullable=False)
+  file_size = Column(Integer, nullable=False)
+  document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
   
-  # # 반응
-  likes = Column(Integer, default=0)
-  views = Column(Integer, default=0)
-  comments = relationship("WhiteBoardComment", back_populates="whiteboard", cascade="all, delete-orphan")
-  
-  # 생성자, 수정자
-  created_by = Column(Integer, ForeignKey("users.id"))
-  updated_by = Column(Integer, ForeignKey("users.id"))
-  
-  creator = relationship("User", foreign_keys=[created_by])
-  updater = relationship("User", foreign_keys=[updated_by])
-
-  project = relationship("Project", back_populates="whiteboards")
-  
-  documents = relationship("Document", back_populates="whiteboard", cascade="all, delete-orphan")
-  
-  # Users who liked this whiteboard
-  liked_by_users = relationship("User", secondary="user_whiteboard_likes", back_populates="liked_whiteboards", lazy="dynamic")
-  
-  def __repr__(self):
-    return f"WhiteBoard(id={self.id}, type={self.type}, project_id={self.project_id}, title={self.title})"
-    
+  # Relationships
+  document = relationship("Document", back_populates="attachments")
 
 class Document(Base, BaseModel):
   __tablename__ = "documents"
@@ -54,46 +24,74 @@ class Document(Base, BaseModel):
   id = Column(Integer, primary_key=True, index=True)
   content = Column(Text, nullable=False)
   tags = Column(JSON, nullable=True)
-  whiteboard_id = Column(Integer, ForeignKey("whiteboards.id", ondelete="CASCADE"), nullable=False)
+  whiteboard_id = Column(Integer, ForeignKey("whiteboards.id"), nullable=False)
   
+  # Relationships
   whiteboard = relationship("WhiteBoard", back_populates="documents")
   attachments = relationship("Attachment", back_populates="document", cascade="all, delete-orphan")
-  
-  def __repr__(self):
-    return f"Document(id={self.id}, content={self.content}, whiteboard_id={self.whiteboard_id})"
-      
 
-class Attachment(Base, BaseModel):
-  __tablename__ = "attachments"
-  
-  id = Column(Integer, primary_key=True, index=True)
-  filename = Column(String, nullable=False)
-  file_url = Column(String, nullable=False)
-  file_type = Column(String, nullable=False)
-  file_size = Column(Integer, nullable=False)
-  
-  document_id = Column(Integer, ForeignKey("documents.id", ondelete="CASCADE"), nullable=False)
-  
-  document = relationship("Document", back_populates="attachments")
-  
-  def __repr__(self):
-    return f"Attachment(id={self.id}, filename={self.filename}, document_id={self.document_id})"
-      
-class WhiteBoardComment(Base, BaseModel):
-  """댓글 모델"""
+class WhiteboardComment(Base, BaseModel):
   __tablename__ = "whiteboard_comments"
   
   id = Column(Integer, primary_key=True, index=True)
   content = Column(Text, nullable=False)
+  created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+  reaction_id = Column(Integer, ForeignKey("whiteboard_reactions.id"), nullable=False)
   
-  # 외래 키
-  whiteboard_id = Column(Integer, ForeignKey("whiteboards.id", ondelete="CASCADE"), nullable=False)
-  created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+  # Relationships
+  creator = relationship("User")
+  reaction = relationship("WhiteboardReaction", back_populates="comments")
+
+class WhiteboardReaction(Base, BaseModel):
+  __tablename__ = "whiteboard_reactions"
   
-  # 관계 정의
-  whiteboard = relationship("WhiteBoard", back_populates="comments")
+  id = Column(Integer, primary_key=True, index=True)
+  whiteboard_id = Column(Integer, ForeignKey("whiteboards.id"), nullable=False)
+  views = Column(Integer, default=0)
+  
+  # Relationships
+  whiteboard = relationship("WhiteBoard", back_populates="reactions")
+  comments = relationship("WhiteboardComment", back_populates="reaction", cascade="all, delete-orphan")
+  likes = relationship("WhiteboardReactionLike", back_populates="reaction", cascade="all, delete-orphan")
+
+class WhiteboardReactionLike(Base, BaseModel):
+  __tablename__ = "whiteboard_reaction_likes"
+  
+  id = Column(Integer, primary_key=True, index=True)
+  reaction_id = Column(Integer, ForeignKey("whiteboard_reactions.id"), nullable=False)
+  user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+  
+  # Relationships
+  reaction = relationship("WhiteboardReaction", back_populates="likes")
+  user = relationship("User")
+  
+  # Unique constraint to prevent duplicate likes
+  __table_args__ = (
+    UniqueConstraint("reaction_id", "user_id", name="uq_whiteboard_reaction_like_user"),
+    {"extend_existing": True},
+  )
+
+class WhiteBoard(Base, BaseModel):
+  __tablename__ = "whiteboards"
+  
+  id = Column(Integer, primary_key=True, index=True)
+  type = Column(String(50), nullable=False)
+  project_id = Column(String(6), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+  title = Column(String(255), nullable=False)
+  tags = Column(JSON, nullable=True)
+  created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+  updated_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+  
+  # Relationships
+  project = relationship("Project", back_populates="whiteboards")
   creator = relationship("User", foreign_keys=[created_by])
+  updater = relationship("User", foreign_keys=[updated_by])
+  documents = relationship("Document", back_populates="whiteboard", cascade="all, delete-orphan")
+  reactions = relationship("WhiteboardReaction", back_populates="whiteboard", cascade="all, delete-orphan")
   
-  def __repr__(self):
-    return f"WhiteBoardComment(id={self.id}, content='{self.content}')" 
-    
+  # Users who liked this whiteboard (reciprocal to User.liked_whiteboards)
+  liked_by_users = relationship(
+      "User",
+      secondary="user_whiteboard_likes",
+      back_populates="liked_whiteboards"
+  )

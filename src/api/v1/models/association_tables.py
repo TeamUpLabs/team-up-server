@@ -78,4 +78,15 @@ channel_members = Table(
   Column('joined_at', DateTime, nullable=False, server_default=func.now()),
   Column('role', String(50), default='member'),  # member, admin, moderator 등
   Index('idx_channel_members', 'channel_id', 'user_id')
-) 
+)
+
+# 사용자-화이트보드 좋아요 관계 테이블
+user_whiteboard_likes = Table(
+  'user_whiteboard_likes',
+  Base.metadata,
+  Column('user_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+  Column('whiteboard_id', Integer, ForeignKey('whiteboards.id', ondelete='CASCADE'), primary_key=True),
+  Column('created_at', DateTime, nullable=False, server_default=func.now()),
+  Index('idx_user_whiteboard_likes', 'user_id', 'whiteboard_id')
+)
+ 
