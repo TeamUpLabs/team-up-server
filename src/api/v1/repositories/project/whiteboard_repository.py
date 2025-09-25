@@ -22,6 +22,7 @@ from api.v1.schemas.brief import UserBrief
 from api.v1.models.project.project import Project
 from typing import List, Set
 from datetime import datetime
+import logging
 
 class WhiteBoardRepository:
   def __init__(self, db: Session):
@@ -168,36 +169,33 @@ class WhiteBoardRepository:
     화이트보드 업데이트
     """
     try:
-      whiteboard = self.db.query(WhiteBoard).filter(WhiteBoard.project_id == project_id, WhiteBoard.id == whiteboard_id).first()
-      if not whiteboard:
+      entity = self.db.query(WhiteBoard).filter(WhiteBoard.project_id == project_id, WhiteBoard.id == whiteboard_id).first()
+      if not entity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="화이트보드를 찾을 수 없습니다.")
       
       update_data = whiteboard.model_dump(exclude_unset=True)
       
-      if whiteboard.type == "document":
+      if entity.type == "document":
         document = self.db.query(Document).filter(Document.whiteboard_id == whiteboard_id).first()
         if document:
           if "content" in update_data:
             document.content = update_data.pop("content")
           document.updated_at = datetime.utcnow()
           self.db.add(document)
-          self.db.flush()
-      
+          
       for field, value in update_data.items():
-        if hasattr(whiteboard, field):
-          setattr(whiteboard, field, value)
+        if hasattr(entity, field):
+          setattr(entity, field, value)
       
-      whiteboard.updated_at = datetime.utcnow()
-      self.db.add(whiteboard)
+      entity.updated_at = datetime.utcnow()
+      self.db.add(entity)
       self.db.commit()
-      self.db.refresh(whiteboard)
-      
-      if whiteboard.type == "document":
-        document = self.db.query(Document).filter(Document.whiteboard_id == whiteboard_id).first()
-        if document:
-          whiteboard.content = document.content
+      self.db.refresh(entity)
+          
+      return self._attach_reactions(entity)
     except Exception as e:
       self.db.rollback()
+      logging.error(f"화이트보드 업데이트 중 오류 발생: {str(e)}")
       raise HTTPException(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail=f"화이트보드 업데이트 중 오류 발생: {str(e)}"
