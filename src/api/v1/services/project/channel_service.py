@@ -9,7 +9,7 @@ class ChannelService:
   def __init__(self, db: Session):
     self.channel_repository = ChannelRepository(db)
     
-  def create(self, project_id: str, channel: ChannelCreate) -> Channel:
+  def create(self, project_id: str, channel: ChannelCreate) -> ChannelDetail:
     return self.channel_repository.create(project_id, channel)
     
   def get(self, project_id: str, channel_id: str) -> ChannelDetail:

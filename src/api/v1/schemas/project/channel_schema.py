@@ -42,16 +42,15 @@ class ChannelMemberResponse(BaseModel):
   
 class ChannelDetail(ChannelBase):
   """채널 응답 스키마"""
-  id: int
   project_id: str
   channel_id: str
   created_at: datetime
   updated_at: datetime
-  created_by: int
-  updated_by: int
+  created_by: Optional[int]
+  updated_by: Optional[int]
   member_count: int = 0
-  members: List[ChannelMemberResponse] = []
-  chats: Dict[str, Any] = {}
+  members: List[ChannelMemberResponse] = Field(default_factory=list)
+  chats: Dict[str, Any] = Field(default_factory=dict)
   chats_count: int = 0
   
   def model_post_init(self, __context):

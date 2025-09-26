@@ -18,7 +18,7 @@ class Channel(Base, BaseModel):
   
   created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
   updated_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-  
+
   project = relationship("Project", foreign_keys=[project_id])
   creator = relationship("User", foreign_keys=[created_by])
   updater = relationship("User", foreign_keys=[updated_by])
@@ -28,4 +28,4 @@ class Channel(Base, BaseModel):
   chats = relationship("Chat", back_populates="channel", cascade="all, delete-orphan")
   
   def __repr__(self):
-    return f"<Channel(id={self.id}, name='{self.name}')>" 
+    return f"<Channel(channel_id={self.channel_id}, name='{self.name}')>" 
