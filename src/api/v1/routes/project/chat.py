@@ -1,10 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from core.database.database import get_db
 from api.v1.services.project.chat_service import ChatService
 from api.v1.schemas.project.chat_schema import ChatCreate, ChatUpdate, ChatDetail
 from core.security.auth import get_current_user
+from core.security.jwt import verify_token
+from core.utils.chat_websocket import websocket_handler
 from typing import List, Optional
+import logging
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/chats", tags=["chats"])
 
@@ -123,3 +126,29 @@ def delete_chat(
     raise e
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
+  
+@router.websocket("/ws")
+async def chat_endpoint(
+    websocket: WebSocket,
+    project_id: str,
+    channel_id: str,
+    user_id: int,
+    access_token: str,
+    db: Session = Depends(get_db)
+):
+  try:
+    verify_token(access_token)
+  except Exception as e:
+    raise HTTPException(status_code=401, detail="Invalid authentication token")
+  try:
+    await websocket_handler(websocket, channel_id, project_id, user_id, db)
+          
+  except WebSocketDisconnect:
+      logging.info(f"WebSocket disconnected for project: {project_id}, channel: {channel_id}")
+  except Exception as e:
+      logging.error(f"WebSocket error in project {project_id}, channel {channel_id}: {str(e)}")
+      try:
+          await websocket.close(code=status.WS_1011_INTERNAL_ERROR, reason="Internal server error")
+      except Exception:
+          pass
+    

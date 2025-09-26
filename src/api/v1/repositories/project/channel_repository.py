@@ -1,6 +1,8 @@
 from api.v1.models.project.channel import Channel
+from api.v1.models.project.chat import Chat
 from api.v1.models.user import User
 from api.v1.schemas.project.channel_schema import ChannelCreate, ChannelUpdate, ChannelDetail, ChannelMemberResponse
+from api.v1.schemas.project.chat_schema import ChatDetail
 from api.v1.schemas.brief import UserBrief
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -249,3 +251,14 @@ class ChannelRepository:
         )
     ).first()
     return member is not None
+  
+  def get_chats_by_channel(self, project_id: str, channel_id: str) -> List[ChatDetail]:
+    """
+    채널의 모든 채팅 조회
+    """
+    channel = self.db.query(Channel).filter(Channel.project_id == project_id, Channel.channel_id == channel_id).first()
+    if not channel:
+      raise HTTPException(status_code=404, detail="채널을 찾을 수 없습니다.")
+    
+    chats = self.db.query(Chat).filter(Chat.channel_id == channel_id).all()
+    return [ChatDetail.model_validate(chat, from_attributes=True) for chat in chats]

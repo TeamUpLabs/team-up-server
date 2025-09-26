@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from api.v1.models.project.channel import Channel
 from api.v1.repositories.project.channel_repository import ChannelRepository
 from api.v1.schemas.project.channel_schema import ChannelCreate, ChannelUpdate, ChannelDetail
+from api.v1.schemas.project.chat_schema import ChatDetail
 from api.v1.schemas.brief import UserBrief
 from typing import List
 
@@ -44,3 +45,6 @@ class ChannelService:
     
   def is_user_member_of_channel(self, project_id: str, channel_id: str, user_id: int) -> bool:
     return self.channel_repository.is_user_member_of_channel(project_id, channel_id, user_id)
+  
+  def get_chats_by_channel(self, project_id: str, channel_id: str) -> List[ChatDetail]:
+    return self.channel_repository.get_chats_by_channel(project_id, channel_id)

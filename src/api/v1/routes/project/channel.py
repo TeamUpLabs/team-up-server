@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from core.database.database import get_db
 from api.v1.services.project.channel_service import ChannelService
 from api.v1.schemas.project.channel_schema import ChannelCreate, ChannelUpdate, ChannelDetail
+from api.v1.schemas.project.chat_schema import ChatDetail
 from api.v1.schemas.brief import UserBrief
 from core.security.auth import get_current_user
 from typing import List
@@ -220,3 +221,25 @@ def is_user_member_of_channel(
     raise e
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
+  
+@router.get("/{channel_id}/chats", response_model=List[ChatDetail])
+def get_chats_by_channel(
+  project_id: str,
+  channel_id: str,
+  db: Session = Depends(get_db),
+  current_user: dict = Depends(get_current_user)
+):
+  if not current_user:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Not authorized to perform this action"
+    )
+    
+  try:
+    service = ChannelService(db)
+    return service.get_chats_by_channel(project_id, channel_id)
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+
