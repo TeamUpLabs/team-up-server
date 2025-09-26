@@ -184,21 +184,55 @@ class ProjectRepository:
     프로젝트 정보 업데이트
     기술 스택 관계 처리
     """
-    db_obj = self.db.get(Project, project_id)
-    if not db_obj:
-      raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
-    
-    update_data = project.model_dump(exclude_unset=True)
-    
-    self.db.commit()
-    self.db.refresh(update_data)
-    return db_obj
+    try:
+      db_project = self.db.query(Project).filter(Project.id == project_id).first()
+      if not db_project:
+        error_msg = f"프로젝트를 찾을 수 없습니다. ID: {project_id}"
+        raise HTTPException(status_code=404, detail=error_msg)
+      
+      update_data = project.model_dump(exclude_unset=True)
+      
+      try:
+        for key, value in update_data.items():
+          try:
+            setattr(db_project, key, value)
+          except Exception as attr_error:
+            error_msg = f"Failed to set attribute {key}: {str(attr_error)}"
+            raise ValueError(error_msg) from attr_error
+        
+        self.db.add(db_project)
+        self.db.commit()
+        self.db.refresh(db_project)
+        
+        return self.get(project_id)
+        
+      except HTTPException:
+        raise
+        
+      except Exception as e:
+        self.db.rollback()
+        error_msg = f"프로젝트 업데이트 중 오류가 발생했습니다: {str(e)}"
+        raise HTTPException(
+          status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+          detail=error_msg
+        )
+        
+    except HTTPException:
+      raise
+      
+    except Exception as e:
+      self.db.rollback()
+      error_msg = f"프로젝트 업데이트 처리 중 예상치 못한 오류가 발생했습니다: {str(e)}"
+      raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=error_msg
+      )
   
   def delete(self, project_id: str) -> Project:
     """
     프로젝트 삭제
     """
-    db_obj = self.db.get(Project, project_id)
+    db_obj = self.db.query(Project).filter(Project.id == project_id).first()
     if not db_obj:
       raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
     self.db.delete(db_obj)
