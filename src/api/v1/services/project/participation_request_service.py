@@ -27,3 +27,6 @@ class ParticipationRequestService:
   
   def check_existing_request(self, project_id: str, user_id: int) -> bool:
     return self.repository.check_existing_request(project_id, user_id)
+  
+  def accept(self, project_id: str, request_id: int) -> ParticipationRequestDetail:
+    return self.repository.accept(project_id, request_id)

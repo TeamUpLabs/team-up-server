@@ -119,3 +119,24 @@ def check_existing_participation_request(
     raise e
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
+
+@router.put("/accept/{request_id}", response_model=ParticipationRequestDetail)
+def accept_participation_request(
+  project_id: str,
+  request_id: int,
+  db: Session = Depends(get_db),
+  current_user: dict = Depends(get_current_user)
+):
+  if not current_user:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Not authorized to perform this action"
+    )
+    
+  try:
+    service = ParticipationRequestService(db)
+    return service.accept(project_id, request_id)
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))

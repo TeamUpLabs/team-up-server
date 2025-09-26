@@ -225,21 +225,21 @@ class ProjectRepository:
     """
     프로젝트에 멤버 추가
     """
-    project = self.get(project_id)
-    if not project:
+    orm_project = self.db.query(Project).filter(Project.id == project_id).first()
+    if not orm_project:
       raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
     
-    user = UserRepository(self.db).get(user_id)
-    if not user:
+    orm_user = self.db.query(User).filter(User.id == user_id).first()
+    if not orm_user:
       raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
     
-    if user in project.members:
+    if orm_user in orm_project.members:
       raise HTTPException(status_code=400, detail="이미 프로젝트의 멤버입니다.")
     
-    project.members.append(user)
+    orm_project.members.append(orm_user)
     self.db.commit()
-    self.db.refresh(project)
-    return project
+    self.db.refresh(orm_project)
+    return orm_project
   
   def remove_member(self, project_id: str, user_id: int) -> Project:
     """

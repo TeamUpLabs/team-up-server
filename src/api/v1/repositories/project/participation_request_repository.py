@@ -4,6 +4,7 @@ from api.v1.models.project.participation_request import ParticipationRequest
 from fastapi import HTTPException, status
 from typing import List
 from datetime import datetime
+from api.v1.services.project.project_service import ProjectService
 
 class ParticipationRequestRepository:
   def __init__(self, db: Session):
@@ -105,4 +106,30 @@ class ParticipationRequestRepository:
     except Exception as e:
       raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
+    
+  def accept(self, project_id: str, request_id: int) -> ParticipationRequestDetail:
+    """
+    참여 요청 수락
+    """
+    try:
+      db_participation_request = self.db.query(ParticipationRequest).filter(ParticipationRequest.id == request_id, ParticipationRequest.project_id == project_id).first()
+      if not db_participation_request:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Participation request not found")
+      
+      db_participation_request.status = "accepted"
+      db_participation_request.processed_at = datetime.now()
+      
+      project_service = ProjectService(self.db)
+      project_service.add_member(project_id, db_participation_request.user_id)
+      
+      self.db.commit()
+      self.db.refresh(db_participation_request)
+      return ParticipationRequestDetail.model_validate(db_participation_request, from_attributes=True)
+    except HTTPException as e:
+      # Keep transaction clean and propagate client/server error as-is
+      self.db.rollback()
+      raise e
+    except Exception as e:
+      self.db.rollback()
+      raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
