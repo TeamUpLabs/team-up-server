@@ -6,6 +6,7 @@ from .channel import router as channel_router
 from .whiteboard import router as whiteboard_router
 from .schedule import router as schedule_router
 from .participation_request import router as participation_request_router
+from .voice_call import router as voice_call_router
 
 routers = [
     project_router,
@@ -15,5 +16,6 @@ routers = [
     channel_router,
     whiteboard_router,
     schedule_router,
-    participation_request_router
+    participation_request_router,
+    voice_call_router,
 ]

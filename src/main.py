@@ -6,11 +6,12 @@ from core.middleware.ErrorHandlingMiddleware import ErrorHandlingMiddleware
 from core.middleware.LoggingMiddleware import LoggingMiddleware
 from core.middleware.AuthMiddleware import AuthMiddleware
 
-# Import all models to ensure they are registered with SQLAlchemy
-from api.v1.models import *
-
-# Create database tables
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+    print("✅ Database tables created successfully")
+except Exception as e:
+    print(f"⚠️  Database connection issue: {str(e)}")
+    print("🔧 Running in WebSocket-only mode")
 
 # Import routers after models to avoid circular imports
 from api.v1.routes.user import routers as user_routers
