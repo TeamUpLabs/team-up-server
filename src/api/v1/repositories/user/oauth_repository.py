@@ -13,7 +13,6 @@ from api.v1.services.user.session_service import SessionService
 from api.v1.models.user.session import UserSession
 from ua_parser import user_agent_parser
 
-
 class AuthRepository:
   def __init__(self, db: Session):
     self.db = db
@@ -81,7 +80,6 @@ class AuthRepository:
         try:
           existing.last_login = datetime.now()
           existing.status = "active"
-          existing.auth_provider_access_token = social_access_token
           self.db.commit()
           self.db.refresh(existing)
         except Exception as e:
@@ -160,15 +158,15 @@ class AuthRepository:
               "status": "need_additional_info",
               "user_info": {
                 "name": github_user.get("name"),
-              "email": github_user.get("email"),
-              "profile_image": github_user.get("avatar_url"),
-              "social_links": [{"platform": "github", "url": github_user.get("html_url")}],
-              "bio": github_user.get("bio"),
-              "auth_provider": "github",
-              "auth_provider_id": github_user.get("login"),
-              "auth_provider_access_token": social_access_token
+                "email": github_user.get("email"),
+                "profile_image": github_user.get("avatar_url"),
+                "social_links": [{"platform": "github", "url": github_user.get("html_url")}],
+                "bio": github_user.get("bio"),
+                "auth_provider": "github",
+                "auth_provider_id": github_user.get("login"),
+                "auth_provider_access_token": social_access_token
+              }
             }
-          }
             
           elif form_data.provider == "google":
             return {
