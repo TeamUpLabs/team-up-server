@@ -4,10 +4,13 @@ import logging
 from typing import Dict, Set
 from sqlalchemy.orm import Session
 from api.v1.services.project.chat_service import ChatService
-from api.v1.schemas.project.chat_schema import ChatCreate
+from api.v1.schemas.project.chat_schema import ChatCreate, ChatDetail
 from datetime import datetime
-from fastapi import WebSocket, WebSocketDisconnect, status
+from fastapi import WebSocket, WebSocketDisconnect, status, Depends
 from dotenv import load_dotenv
+from sqlalchemy.orm import Session
+from api.v1.services.user.user_service import UserService
+from core.database.database import get_db
 
 load_dotenv()
 
@@ -102,7 +105,7 @@ async def unregister_connection(project_id: str, channel_id: str, user_id: str) 
     except Exception as e:
         logger.error(f"연결 해제 오류: {e}")
 
-async def broadcast_message(new_chat) -> None:
+async def broadcast_message(new_chat: ChatDetail) -> None:
     """채널 내 모든 연결된 사용자에게 메시지를 브로드캐스트합니다."""
     if new_chat.project_id not in active_connections or new_chat.channel_id not in active_connections[new_chat.project_id]:
         return
@@ -112,14 +115,36 @@ async def broadcast_message(new_chat) -> None:
     # 메시지 브로드캐스트 및 연결 유효성 확인
     for user_id, websocket in list(active_connections[new_chat.project_id][new_chat.channel_id].items()):
         try:
-            # Chat 객체를 JSON으로 변환하여 전송
+            # Chat 객체를 JSON으로 변환하여 전송            
+            # Get user brief and convert to dict with serializable values
+            user_brief = UserService(db=next(get_db())).get_user_brief(user_id=new_chat.user_id)
+            
+            # Convert all datetime objects to ISO format strings
+            def convert_datetime(obj):
+                if hasattr(obj, 'isoformat'):
+                    return obj.isoformat()
+                elif isinstance(obj, dict):
+                    return {k: convert_datetime(v) for k, v in obj.items()}
+                elif isinstance(obj, (list, tuple)):
+                    return [convert_datetime(item) for item in obj]
+                return obj
+            
+            user_dict = None
+            if user_brief:
+                user_dict = user_brief.model_dump()
+                user_dict = convert_datetime(user_dict)
+            
+            # Get current timestamp in ISO format
+            current_time = datetime.now().isoformat()
+            
             chat_data = {
                 "id": new_chat.id,
                 "project_id": new_chat.project_id,
                 "channel_id": new_chat.channel_id,
                 "user_id": new_chat.user_id,
                 "message": new_chat.message,
-                "timestamp": new_chat.timestamp.isoformat() if new_chat.timestamp else None
+                "timestamp": current_time,
+                "user": user_dict
             }
             await websocket.send_text(json.dumps(chat_data))
         except Exception as e:
@@ -228,7 +253,7 @@ async def websocket_handler(websocket: WebSocket, channel_id: str, project_id: s
                             db_message = message_data.get("message", "")
                             
                             service = ChatService(db)
-                            new_chat = service.create(project_id, channel_id, db_user_id, ChatCreate(message=db_message))
+                            new_chat = service.create(project_id, channel_id, db_user_id, ChatCreate(project_id=db_project_id, channel_id=db_channel_id, message=db_message))
                             
                             # 메시지 직접 브로드캐스트
                             await broadcast_message(new_chat)
