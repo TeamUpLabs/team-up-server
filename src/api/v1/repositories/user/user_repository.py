@@ -216,9 +216,35 @@ class UserRepository:
 
   def get_users_exclude_me(self, user_id: int) -> List[UserDetail]:
     """Get all users except the current user"""
-    user = self.get(user_id)
+    user = self.db.query(User).filter(User.id == user_id).first()
     if not user:
       raise HTTPException(status_code=404, detail="User not found")
     
     other_users = self.db.query(User).filter(User.id != user_id).all()
-    return [UserDetail.model_validate(user, from_attributes=True) for user in other_users]
+    
+    # Create UserDetail objects and ensure links are properly initialized
+    result = []
+    for user in other_users:
+      user_dict = {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "profile_image": user.profile_image,
+        "bio": user.bio,
+        "role": user.role,
+        "languages": user.languages,
+        "phone": user.phone,
+        "birth_date": user.birth_date,
+        "status": user.status,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at,
+        "last_login": user.last_login,
+        "auth_provider": user.auth_provider,
+        "auth_provider_id": user.auth_provider_id,
+        "auth_provider_access_token": user.auth_provider_access_token,
+        "notification_settings": user.notification_settings,
+      }
+      user_detail = UserDetail(**user_dict)
+      result.append(user_detail)
+    
+    return result
