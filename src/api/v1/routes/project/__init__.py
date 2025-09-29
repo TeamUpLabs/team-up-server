@@ -7,15 +7,17 @@ from .whiteboard import router as whiteboard_router
 from .schedule import router as schedule_router
 from .participation_request import router as participation_request_router
 from .voice_call import router as voice_call_router
+from .video_call import router as video_call_router
 
 routers = [
-    project_router,
-    task_router,
-    milestone_router,
-    chat_router,
-    channel_router,
-    whiteboard_router,
-    schedule_router,
-    participation_request_router,
-    voice_call_router,
+  project_router,
+  task_router,
+  milestone_router,
+  chat_router,
+  channel_router,
+  whiteboard_router,
+  schedule_router,
+  participation_request_router,
+  voice_call_router,
+  video_call_router,
 ]
