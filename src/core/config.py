@@ -10,7 +10,7 @@ class Setting(BaseSettings):
   DEBUG: bool = False
   TITLE: str = "TeamUp API"
   SUMMARY: str = "TeamUp 프로젝트 관리를 위한 RESTful API"
-  STATUS: "active"
+  STATUS: str = "active"
   # DESCRIPTION: str = (BASE_DIR.parent() / "README.md").read_text(encoding="utf-8")
   VERSION: str = "1.0.0"
   
