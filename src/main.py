@@ -5,6 +5,7 @@ from core.database.database import engine, Base
 from core.middleware.ErrorHandlingMiddleware import ErrorHandlingMiddleware
 from core.middleware.LoggingMiddleware import LoggingMiddleware
 from core.middleware.AuthMiddleware import AuthMiddleware
+from core.config import setting
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -18,9 +19,9 @@ from api.v1.routes.user import routers as user_routers
 from api.v1.routes.project import routers as project_routers
 
 app = FastAPI(
-  title="TeamUp API",
-  description="프로젝트 관리를 위한 RESTful API",
-  version="1.0.0"
+  title=setting.TITLE,
+  description=setting.SUMMARY,
+  version=setting.VERSION
 )
 
 app.add_middleware(
@@ -47,9 +48,9 @@ for router in project_routers:
 async def root():
   """API 루트 엔드포인트"""
   return {
-    "name": "TeamUp API",
-    "version": "1.0.0",
-    "status": "active"
+    "name": setting.TITLE,
+    "version": setting.VERSION,
+    "status": setting.STATUS
   }
   
 if __name__ == "__main__":
