@@ -20,10 +20,11 @@ class ChannelCreate(ChannelBase):
     
 class ChannelUpdate(BaseModel):
   """채널 업데이트 스키마"""
-  name: Optional[str] = Field(None, min_length=1, max_length=100, description="채널 이름")
-  description: Optional[str] = Field(None, max_length=1000, description="채널 설명")
-  is_public: Optional[bool] = Field(None, description="공개 채널 여부")
-  member_ids: Optional[List[int]] = Field(None, description="채널 멤버 ID 목록")
+  name: Optional[str] = None
+  description: Optional[str] = None
+  is_public: Optional[bool] = None
+  member_ids: Optional[List[int]] = None
+  updated_by: int
   
 class ChannelMemberBase(BaseModel):
   """채널 멤버 기본 스키마"""

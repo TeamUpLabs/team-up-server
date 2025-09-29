@@ -149,7 +149,7 @@ class ChannelRepository:
     db_obj.updated_at = datetime.now()
     self.db.commit()
     self.db.refresh(db_obj)
-    return ChannelDetail.model_validate(db_obj, from_attributes=True)
+    return self._to_detail(db_obj)
   
   def delete(self, project_id: str, channel_id: str) -> bool:
     """
