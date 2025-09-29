@@ -96,9 +96,14 @@ class ProjectRepository:
     if not user:
       raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
     
-    # Get all projects that the user is NOT a member of
+    # 사용자가 속한 프로젝트 ID 목록을 가져옵니다.
+    user_projects = self.db.query(project_members.c.project_id).filter(
+        project_members.c.user_id == user_id
+    ).subquery()
+    
+    # 사용자가 속하지 않은 프로젝트만 조회
     projects = self.db.query(Project).filter(
-        Project.members.any(User.id != user_id)
+        ~Project.id.in_(self.db.query(user_projects))
     ).all()
     
     result = []
