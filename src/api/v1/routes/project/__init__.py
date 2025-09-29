@@ -8,6 +8,7 @@ from .schedule import router as schedule_router
 from .participation_request import router as participation_request_router
 from .voice_call import router as voice_call_router
 from .video_call import router as video_call_router
+from .github import router as github_router
 
 routers = [
   project_router,
@@ -20,4 +21,5 @@ routers = [
   participation_request_router,
   voice_call_router,
   video_call_router,
+  github_router,
 ]
