@@ -50,26 +50,23 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.sql.sqltypes import NullType
 
 # Resolve project root (this script is expected under <project_root>/scripts/)
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir))
+SRC_DIR = os.path.join(PROJECT_ROOT, 'src')
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
+if SRC_DIR not in sys.path:
+    sys.path.insert(0, SRC_DIR)
 
-# Import the app's database module and alias it as `database` for model imports that do `from database import Base`
+# Import the app's database module
 try:
-    db_mod = importlib.import_module("src.core.database.database")
+    from src.core.database.database import Base, engine
 except ModuleNotFoundError:
     # Fallback: some codebases reference it as just core.database.database
     try:
-        db_mod = importlib.import_module("core.database.database")
+        from core.database.database import Base, engine
     except ModuleNotFoundError:
         # Final fallback: try a top-level database module
-        db_mod = importlib.import_module("database")
-
-# Make it available as `database` to satisfy `from database import Base`
-sys.modules.setdefault("database", db_mod)
-
-Base = getattr(db_mod, "Base")
-engine: Engine = getattr(db_mod, "engine")
+        from database import Base, engine
 
 console = Console()
 app = typer.Typer(add_help_option=True)
@@ -77,22 +74,40 @@ app = typer.Typer(add_help_option=True)
 
 def import_all_models() -> None:
     """Import all modules in the models/ package so that Base.metadata is fully populated."""
-    # The models package should exist at <project_root>/models
-    models_pkg_name = "models"
-    try:
-        models_pkg = importlib.import_module(models_pkg_name)
-    except ModuleNotFoundError as e:
-        raise RuntimeError(
-            f"Could not import '{models_pkg_name}' package. Ensure it exists under project root and has __init__.py"
-        ) from e
+    # Add the src directory to path if not already there
+    src_dir = os.path.join(PROJECT_ROOT, 'src')
+    if src_dir not in sys.path:
+        sys.path.insert(0, src_dir)
 
-    pkg_path = os.path.dirname(models_pkg.__file__)  # type: ignore
-    for module_info in pkgutil.iter_modules([pkg_path]):
-        if module_info.ispkg:
-            # If there are subpackages inside models/, load them recursively
-            _import_package_recursive(f"{models_pkg_name}.{module_info.name}")
-        else:
-            importlib.import_module(f"{models_pkg_name}.{module_info.name}")
+    # Import models directly by manipulating the path
+    models_dir = os.path.join(src_dir, 'api', 'v1', 'models')
+    if models_dir not in sys.path:
+        sys.path.insert(0, models_dir)
+
+    # Import each model file manually
+    model_files = [
+        'user.user',
+        'user.collaboration_preference',
+        'user.user_tech_stack',
+        'user.user_interest',
+        'user.user_social_link',
+        'user.user_session',
+        'project.project',
+        'project.project_member',
+        'project.participation_request',
+        'community.post',
+        'community.whiteboard',
+        'community.notification',
+        'association_tables',
+        'base'
+    ]
+
+    for model_file in model_files:
+        try:
+            module_path = f'api.v1.models.{model_file}'
+            importlib.import_module(module_path)
+        except ImportError as e:
+            console.print(f"[yellow]Warning: Could not import {model_file}: {e}[/yellow]")
 
 
 def _import_package_recursive(pkg_name: str) -> None:

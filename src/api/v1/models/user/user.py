@@ -108,5 +108,12 @@ class User(Base, BaseModel):
     cascade="all, delete-orphan"
   )
   
+  # 사용자-게시물 관계 (일대다)
+  posts = relationship(
+    "Post",
+    back_populates="creator",
+    cascade="all, delete-orphan"
+  )
+  
   def __repr__(self):
     return f"<User(id={self.id}, name='{self.name}', email='{self.email}')>" 

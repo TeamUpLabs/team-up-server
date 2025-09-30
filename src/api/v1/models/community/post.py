@@ -20,8 +20,7 @@ class Post(Base, BaseModel):
   user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
   comments = relationship("PostComment", back_populates="post", cascade="all, delete-orphan")
       
-  creator = relationship("User", foreign_keys=[user_id])
-    
+  creator = relationship("User", foreign_keys=[user_id], back_populates="posts")
 
 class PostReaction(Base, BaseModel):
   """리액션 모델"""
