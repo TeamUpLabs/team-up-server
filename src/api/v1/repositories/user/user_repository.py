@@ -248,3 +248,30 @@ class UserRepository:
       result.append(user_detail)
     
     return result
+  
+  def _update_social_links(self, db: Session, user: User, social_links_data: List[UserSocialLink]):
+    for link in social_links_data:
+      db.query(UserSocialLink).filter(UserSocialLink.user_id == user.id, UserSocialLink.platform == link.platform).delete()
+      db.add(UserSocialLink(user_id=user.id, **link.model_dump(exclude_unset=True)))
+      db.commit()
+    return user
+  
+  def _update_tech_stacks(self, db: Session, user: User, tech_stacks_data: List[UserTechStack]):
+    for tech_stack in tech_stacks_data:
+      db.query(UserTechStack).filter(UserTechStack.user_id == user.id, UserTechStack.tech == tech_stack.tech).delete()
+      db.add(UserTechStack(user_id=user.id, **tech_stack.model_dump(exclude_unset=True)))
+      db.commit()
+    return user
+  
+  def _update_interests(self, db: Session, user: User, interests_data: List[UserInterest]):
+    for interest in interests_data:
+      db.query(UserInterest).filter(UserInterest.user_id == user.id, UserInterest.interest_category == interest.interest_category, UserInterest.interest_name == interest.interest_name).delete()
+      db.add(UserInterest(user_id=user.id, **interest.model_dump(exclude_unset=True)))
+      db.commit()
+    return user
+  
+  def _update_collaboration_preference(self, db: Session, user: User, collaboration_preference_data: CollaborationPreference):
+    db.query(CollaborationPreference).filter(CollaborationPreference.user_id == user.id).delete()
+    db.add(CollaborationPreference(user_id=user.id, **collaboration_preference_data.model_dump(exclude_unset=True)))
+    db.commit()
+    return user

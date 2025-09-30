@@ -39,6 +39,26 @@ async def get_current_user(
     raise e
   except Exception as e:
     raise HTTPException(status_code=404, detail=str(e))
+  
+@router.put("/me", response_model=UserDetail)
+async def update_current_user(
+  user: UserUpdate,
+  db: Session = Depends(get_db),
+  current_user: dict = Depends(get_current_user)
+):
+  if not current_user:
+    raise HTTPException(
+      status_code=status.HTTP_403_FORBIDDEN,
+      detail="Not authorized to perform this action"
+    )
+    
+  try:
+    service = UserService(db)
+    return service.update_user(current_user.id, user)
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/{user_id}", response_model=UserDetail)
 async def get_user(
