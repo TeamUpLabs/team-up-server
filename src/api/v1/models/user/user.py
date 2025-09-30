@@ -25,7 +25,7 @@ class User(Base, BaseModel):
   # OAuth 관련 필드
   auth_provider = Column(String(20), default="local")  # local, github, google 등
   auth_provider_id = Column(String(100), nullable=True)
-  auth_provider_access_token = Column(String(255), nullable=True)
+  auth_provider_access_token = Column(String(1000), nullable=True)
   
   # 알림 설정 (JSON 형태)
   notification_settings = Column(JSON, default={
