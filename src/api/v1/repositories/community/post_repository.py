@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from api.v1.schemas.community.post_schema import PostCreate, PostUpdate, PostDetail, CommentCreate
 from api.v1.models.community.post import Post, PostReaction, PostComment
 from api.v1.schemas.brief import UserBrief

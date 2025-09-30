@@ -89,4 +89,13 @@ user_whiteboard_likes = Table(
   Column('created_at', DateTime, nullable=False, server_default=func.now()),
   Index('idx_user_whiteboard_likes', 'user_id', 'whiteboard_id')
 )
- 
+
+# 사용자-사용자 팔로우 관계 테이블
+user_follows = Table(
+    'user_follows',
+    Base.metadata,
+    Column('follower_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    Column('followed_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    Column('created_at', DateTime, nullable=False, server_default=func.now()),
+    Index('idx_user_follows', 'follower_id', 'followed_id')
+)

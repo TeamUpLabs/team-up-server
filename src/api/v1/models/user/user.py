@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, func
 from sqlalchemy.orm import relationship
 from core.database.database import Base
 from api.v1.models.base import BaseModel
-from api.v1.models.association_tables import project_members
+from api.v1.models.association_tables import project_members, user_follows
 
 class User(Base, BaseModel):
   """사용자 모델"""
@@ -99,6 +99,25 @@ class User(Base, BaseModel):
     "Notification",
     back_populates="sender",
     foreign_keys="[Notification.sender_id]"
+  )
+  
+  # 팔로잉/팔로워 관계
+  following = relationship(
+    "User",
+    secondary=user_follows,
+    primaryjoin=("user_follows.c.follower_id == User.id"),
+    secondaryjoin=("user_follows.c.followed_id == User.id"),
+    back_populates="followers",
+    lazy="dynamic"
+  )
+  
+  followers = relationship(
+    "User",
+    secondary=user_follows,
+    primaryjoin=("user_follows.c.followed_id == User.id"),
+    secondaryjoin=("user_follows.c.follower_id == User.id"),
+    back_populates="following",
+    lazy="dynamic"
   )
   
   # 사용자-세션 관계 (일대다)
