@@ -11,6 +11,7 @@ from api.v1.models.user.social_link import UserSocialLink
 from api.v1.models.user.collaboration_preference import CollaborationPreference
 from api.v1.schemas.user.user_schema import UserCreate, UserUpdate, UserDetail
 from api.v1.schemas.brief import UserBrief
+from api.v1.schemas.user.follow_schema import FollowList
 
 class UserRepository:
   def __init__(self, db: Session):
@@ -22,7 +23,15 @@ class UserRepository:
     if not db_user:
       raise HTTPException(status_code=404, detail="User not found")
     
-    # Create user detail with related resource URLs
+    following_users = db_user.following.all()
+    followers_users = db_user.followers.all()
+    
+    following_briefs = [UserBrief.model_validate(user, from_attributes=True) for user in following_users]
+    followers_briefs = [UserBrief.model_validate(user, from_attributes=True) for user in followers_users]
+    
+    following_list = FollowList(count=len(following_briefs), users=following_briefs)
+    followers_list = FollowList(count=len(followers_briefs), users=followers_briefs)
+    
     user_dict = {
         "id": db_user.id,
         "name": db_user.name,
@@ -41,11 +50,12 @@ class UserRepository:
         "auth_provider_id": db_user.auth_provider_id,
         "auth_provider_access_token": db_user.auth_provider_access_token,
         "notification_settings": db_user.notification_settings,
+        "following": following_list,
+        "followers": followers_list,
     }
     
     user_detail = UserDetail(**user_dict)
     return user_detail
-  
   def get_user_brief(self, user_id: int) -> UserBrief:
     db_user = self.db.query(User).filter(User.id == user_id).first()
     if not db_user:
@@ -64,13 +74,11 @@ class UserRepository:
     return self.db.query(User).offset(skip).limit(limit).all()
     
   def create(self, user: UserCreate) -> User:
-    # Prevent duplicate users by email
     existing = self.get_by_email(user.email)
     if existing:
       raise HTTPException(status_code=400, detail=f"User with email {user.email} already exists")
 
     try:
-      # 기본 알림 설정
       default_notification_settings = {
         "emailEnable": 1,
         "taskNotification": 1,
@@ -82,11 +90,9 @@ class UserRepository:
         "securityNotification": 1
       }
       
-      # 사용자가 제공한 알림 설정이 있으면 병합
       if user.notification_settings:
         default_notification_settings.update(user.notification_settings)
       
-      # OAuth 사용자의 경우 비밀번호가 없을 수 있음
       hashed_password = None
       if user.password:
         hashed_password = get_password_hash(user.password)
@@ -222,9 +228,17 @@ class UserRepository:
     
     other_users = self.db.query(User).filter(User.id != user_id).all()
     
-    # Create UserDetail objects and ensure links are properly initialized
     result = []
     for user in other_users:
+      following_users = user.following.all()
+      followers_users = user.followers.all()
+      
+      following_briefs = [UserBrief.model_validate(u, from_attributes=True) for u in following_users]
+      followers_briefs = [UserBrief.model_validate(u, from_attributes=True) for u in followers_users]
+      
+      following_list = FollowList(count=len(following_briefs), users=following_briefs)
+      followers_list = FollowList(count=len(followers_briefs), users=followers_briefs)
+      
       user_dict = {
         "id": user.id,
         "name": user.name,
@@ -243,6 +257,8 @@ class UserRepository:
         "auth_provider_id": user.auth_provider_id,
         "auth_provider_access_token": user.auth_provider_access_token,
         "notification_settings": user.notification_settings,
+        "following": following_list,
+        "followers": followers_list,
       }
       user_detail = UserDetail(**user_dict)
       result.append(user_detail)

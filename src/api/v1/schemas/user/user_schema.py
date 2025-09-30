@@ -7,6 +7,7 @@ from api.v1.schemas.user.collaboration_preference_schema import CollaborationPre
 from api.v1.schemas.user.interest_schema import InterestCreate, InterestUpdate
 from api.v1.schemas.user.tech_stack_schema import TechStackCreate, TechStackUpdate
 from api.v1.schemas.user.social_link_schema import SocialLinkCreate, SocialLinkUpdate
+from api.v1.schemas.user.follow_schema import FollowList
 
 class UserBase(BaseModel):
   name: str = Field(..., min_length=2, max_length=100)
@@ -58,6 +59,8 @@ class UserDetail(UserBase):
   last_login: Optional[datetime] = None
   auth: Dict = {}
   notification_settings: Optional[Dict[str, int]] = None
+  following: Optional[FollowList] = None
+  followers: Optional[FollowList] = None
     
   # Related resource URLs
   links: Dict = {}
