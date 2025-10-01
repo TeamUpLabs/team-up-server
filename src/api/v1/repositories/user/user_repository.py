@@ -9,9 +9,10 @@ from api.v1.models.user.tech_stack import UserTechStack
 from api.v1.models.user.interest import UserInterest
 from api.v1.models.user.social_link import UserSocialLink
 from api.v1.models.user.collaboration_preference import CollaborationPreference
-from api.v1.schemas.user.user_schema import UserCreate, UserUpdate, UserDetail
+from api.v1.schemas.user.user_schema import UserCreate, UserUpdate, UserDetail, UserNolinks
 from api.v1.schemas.brief import UserBrief
 from api.v1.schemas.user.follow_schema import FollowList
+from api.v1.schemas.user.user_schema import UserNolinks
 
 class UserRepository:
   def __init__(self, db: Session):
@@ -264,6 +265,76 @@ class UserRepository:
       result.append(user_detail)
     
     return result
+  
+  def get_user_by_id_no_links(self, user_id: int) -> UserNolinks:
+    from api.v1.schemas.user.collaboration_preference_schema import CollaborationPreference
+    from api.v1.schemas.user.tech_stack_schema import TechStack
+    from api.v1.schemas.user.interest_schema import Interest
+    from api.v1.schemas.user.social_link_schema import SocialLink
+    from api.v1.services.project.project_service import ProjectService
+    from api.v1.services.user.collaboration_preference_service import CollaborationPreferenceService
+    from api.v1.services.user.tech_stack_service import TechStackService
+    from api.v1.services.user.interest_service import InterestService
+    from api.v1.services.user.social_link_service import SocialLinkService
+    
+    db_user = self.db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+      return None
+      
+    following_users = db_user.following.all()
+    followers_users = db_user.followers.all()
+    
+    following_briefs = [UserBrief.model_validate(u, from_attributes=True) for u in following_users]
+    followers_briefs = [UserBrief.model_validate(u, from_attributes=True) for u in followers_users]
+    
+    following_list = FollowList(count=len(following_briefs), users=following_briefs)
+    followers_list = FollowList(count=len(followers_briefs), users=followers_briefs)
+    
+    project_service = ProjectService(self.db)
+    projects = project_service.get_by_user_id(user_id)
+    
+    collaboration_preference_service = CollaborationPreferenceService(self.db)
+    collaboration_preference = collaboration_preference_service.get(user_id)
+    
+    tech_stack_service = TechStackService(self.db)
+    tech_stacks = tech_stack_service.get_user_tech_stacks(user_id)
+    
+    interest_service = InterestService(self.db)
+    interests = interest_service.get_user_interests(user_id)
+    
+    social_link_service = SocialLinkService(self.db)
+    social_links = social_link_service.get_user_social_links(user_id)
+    
+    user_dict = {
+      "id": db_user.id,
+      "name": db_user.name,
+      "email": db_user.email,
+      "profile_image": db_user.profile_image,
+      "bio": db_user.bio,
+      "role": db_user.role,
+      "languages": db_user.languages,
+      "phone": db_user.phone,
+      "birth_date": db_user.birth_date,
+      "status": db_user.status,
+      "created_at": db_user.created_at,
+      "updated_at": db_user.updated_at,
+      "last_login": db_user.last_login,
+      "auth_provider": db_user.auth_provider,
+      "auth_provider_id": db_user.auth_provider_id,
+      "auth_provider_access_token": db_user.auth_provider_access_token,
+      "notification_settings": db_user.notification_settings or {},
+      "following": following_list,
+      "followers": followers_list,
+      "projects": projects,
+      "collaboration_preference": collaboration_preference,
+      "tech_stacks": [{"id": ts.id, "user_id": ts.user_id, "tech": ts.tech} for ts in tech_stacks] if tech_stacks else [],
+      "interests": [{"id": i.id, "user_id": i.user_id, "interest_category": i.interest_category, "interest_name": i.interest_name} for i in interests] if interests else [],
+      "social_links": [{"id": sl.id, "user_id": sl.user_id, "platform": sl.platform, "url": sl.url} for sl in social_links] if social_links else [],
+      "notifications": db_user.received_notifications or [],
+      "sessions": db_user.sessions or [],
+    }
+    
+    return UserNolinks(**user_dict)
   
   def _update_social_links(self, db: Session, user: User, social_links_data: List[UserSocialLink]):
     for link in social_links_data:

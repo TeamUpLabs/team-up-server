@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from core.database.database import get_db
-from api.v1.schemas.user.user_schema import UserCreate, UserDetail, UserUpdate
+from api.v1.schemas.user.user_schema import UserCreate, UserDetail, UserUpdate, UserNolinks
 from api.v1.services.user.user_service import UserService
 from core.security.auth import get_current_user
 from typing import List
@@ -114,6 +114,19 @@ async def get_users_exclude_me(
     
     service = UserService(db)
     return service.get_users_exclude_me(current_user.id)
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+  
+@router.get("/no-links/{user_id}", response_model=UserNolinks)
+async def get_user_by_id_no_links(
+  user_id: int,
+  db: Session = Depends(get_db)
+):
+  try:
+    service = UserService(db)
+    return service.get_user_by_id_no_links(user_id)
   except HTTPException as e:
     raise e
   except Exception as e:

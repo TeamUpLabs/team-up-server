@@ -6,86 +6,40 @@ from api.v1.repositories.user.user_repository import UserRepository
 from api.v1.schemas.user.user_schema import (
     UserCreate,
     UserUpdate,
-    UserDetail
+    UserDetail,
+    UserNolinks
 )
 from api.v1.schemas.brief import UserBrief
+from api.v1.models.user.user import User
 
 class UserService:
   def __init__(self, db: Session):
     self.repository = UserRepository(db)
   
   def get_user(self, user_id: int) -> UserDetail:
-    """Get a user by ID"""
-    try:
-      return self.repository.get(user_id)
-    except HTTPException as e:
-      if e.status_code == 404:
-        raise HTTPException(
-          status_code=status.HTTP_404_NOT_FOUND,
-          detail=f"User with id {user_id} not found"
-        )
+    return self.repository.get(user_id)
         
   def get_user_brief(self, user_id: int) -> UserBrief:
-    """Get a user by ID with related resource URLs"""
-    try:
-      return self.repository.get_user_brief(user_id)
-    except HTTPException as e:
-      if e.status_code == 404:
-        raise HTTPException(
-          status_code=status.HTTP_404_NOT_FOUND,
-          detail=f"User with id {user_id} not found"
-        )
-  
+    return self.repository.get_user_brief(user_id)
+    
   def get_user_by_email(self, email: str) -> UserDetail:
-    """Get a user by email"""
-    try:
-      return self.repository.get_by_email(email)
-    except HTTPException as e:
-      if e.status_code == 404:
-        raise HTTPException(
-          status_code=status.HTTP_404_NOT_FOUND,
-          detail=f"User with email {email} not found"
-        )
-  
+    return self.repository.get_by_email(email)
+    
   def create_user(self, user_data: UserCreate) -> UserDetail:
-    """Create a new user"""
-    # Check if user with email already exists
-    existing = self.repository.get_by_email(user_data.email)
-    if existing:
-      raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=f"User with email {user_data.email} already exists"
-      )
-    # User not found, safe to create
     return self.repository.create(user_data)
-  
-  def update_user(
-      self, 
-      user_id: int, 
-      user_data: UserUpdate
-  ) -> UserDetail:
-    """Update an existing user"""
-    try:
-      return self.repository.update(user_id, user_data)
-    except HTTPException as e:
-      if e.status_code == 404:
-        raise HTTPException(
-          status_code=status.HTTP_404_NOT_FOUND,
-          detail=f"User with id {user_id} not found"
-        )
-
+    
+  def update_user(self, user_id: int, user_data: UserUpdate) -> UserDetail:
+    return self.repository.update(user_id, user_data)
+    
   def delete_user(self, user_id: int) -> dict:
-    """Delete a user by ID"""
-    try:
-      self.repository.remove(user_id)
-      return {"message": f"User with id {user_id} has been deleted"}
-    except HTTPException as e:
-      if e.status_code == 404:
-        raise HTTPException(
-          status_code=status.HTTP_404_NOT_FOUND,
-          detail=f"User with id {user_id} not found"
-        )
-        
+    return self.repository.remove(user_id)
+    
   def get_users_exclude_me(self, user_id: int) -> List[UserDetail]:
-    """Get all users except the current user"""
     return self.repository.get_users_exclude_me(user_id)
+    
+  def update_last_login(self, user_id: int) -> User:
+    return self.repository.update_last_login(user_id)
+  
+  def get_user_by_id_no_links(self, user_id: int) -> UserNolinks:
+    return self.repository.get_user_by_id_no_links(user_id)
+    

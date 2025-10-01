@@ -8,6 +8,14 @@ from api.v1.schemas.user.interest_schema import InterestCreate, InterestUpdate
 from api.v1.schemas.user.tech_stack_schema import TechStackCreate, TechStackUpdate
 from api.v1.schemas.user.social_link_schema import SocialLinkCreate, SocialLinkUpdate
 from api.v1.schemas.user.follow_schema import FollowList
+from api.v1.schemas.project.project_schema import ProjectDetail
+from api.v1.schemas.user.collaboration_preference_schema import CollaborationPreference
+from api.v1.schemas.user.tech_stack_schema import TechStack
+from api.v1.schemas.user.interest_schema import Interest
+from api.v1.schemas.user.social_link_schema import SocialLink
+from api.v1.schemas.user.notification_schema import Notification
+from api.v1.schemas.user.session_schema import SessionDetail
+
 
 class UserBase(BaseModel):
   name: str = Field(..., min_length=2, max_length=100)
@@ -128,6 +136,36 @@ class UserDetail(UserBase):
         "title": "자신의 세션 조회"
       },
     }
+    
+class UserNolinks(UserBase):
+  id: int
+  created_at: datetime
+  updated_at: datetime
+  last_login: Optional[datetime] = None
+  auth: Dict = {}
+  notification_settings: Optional[Dict[str, int]] = None
+  following: Optional[FollowList] = None
+  followers: Optional[FollowList] = None
+  
+  projects: Optional[List[ProjectDetail]] = None
+  collaboration_preference: Optional[CollaborationPreference] = None
+  tech_stacks: Optional[List[TechStack]] = None
+  interests: Optional[List[Interest]] = None
+  social_links: Optional[List[SocialLink]] = None
+  notifications: Optional[List[Notification]] = None
+  sessions: Optional[List[SessionDetail]] = None
+  
+  def __init__(self, **data):
+    super().__init__(**data)
+    
+    self.auth = {
+      "provider": data.get("auth_provider"),
+      "provider_id": data.get("auth_provider_id"),
+      "provider_access_token": data.get("auth_provider_access_token")
+    }
+  
+  class Config:
+    from_attributes = True
     
 class Token(BaseModel):
   access_token: str
