@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, func
 from sqlalchemy.orm import relationship
 from core.database.database import Base
 from api.v1.models.base import BaseModel
-from api.v1.models.association_tables import project_members, user_follows
+from api.v1.models.association_tables import project_members, user_follows, user_post_bookmarks
 
 class User(Base, BaseModel):
   """사용자 모델"""
@@ -132,6 +132,12 @@ class User(Base, BaseModel):
     "Post",
     back_populates="creator",
     cascade="all, delete-orphan"
+  )
+  
+  bookmarked_posts = relationship(
+    "Post",
+    secondary=user_post_bookmarks,
+    back_populates="bookmarked_users"
   )
   
   def __repr__(self):

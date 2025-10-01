@@ -25,6 +25,9 @@ class PostService:
 
   def get_all(self, skip: int = 0, limit: int = 100) -> List[PostDetail]:
     return self.repository.get_all(skip, limit)
+  
+  def get_bookmarked_posts(self, user_id: int, skip: int = 0, limit: int = 100) -> List[PostDetail]:
+    return self.repository.get_bookmarked_posts(user_id, skip, limit)
 
   def like(self, post_id: int, user_id: int) -> PostDetail:
     return self.repository.like(post_id, user_id)
@@ -49,4 +52,10 @@ class PostService:
 
   def delete_comment(self, post_id: int, user_id: int, comment_id: int) -> PostDetail:
     return self.repository.delete_comment(post_id, user_id, comment_id)
+  
+  def bookmark(self, post_id: int, user_id: int) -> PostDetail:
+    return self.repository.bookmark(post_id, user_id)
+  
+  def delete_bookmark(self, post_id: int, user_id: int) -> PostDetail:
+    return self.repository.delete_bookmark(post_id, user_id)
     

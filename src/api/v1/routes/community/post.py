@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from api.v1.services.community.post_service import PostService
-from api.v1.schemas.community.post_schema import PostCreate, PostUpdate, CommentCreate
+from api.v1.schemas.community.post_schema import PostCreate, PostUpdate, CommentCreate, PostDetail
 from core.security.auth import get_current_user
 from sqlalchemy.orm import Session
 from core.database.database import get_db
@@ -55,7 +55,22 @@ def get_all_posts(
     raise e
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
-
+  
+@router.get("/bookmarks")
+def get_bookmarked_posts(
+  current_user: dict = Depends(get_current_user),
+  db: Session = Depends(get_db)
+):
+  if not current_user:
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+  
+  try:
+    post_service = PostService(db)
+    return post_service.get_bookmarked_posts(current_user.id)
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/{post_id}")
 def get_post(
@@ -225,6 +240,40 @@ def delete_comment_post(
   try:
     post_service = PostService(db)
     return post_service.delete_comment(post_id, current_user.id, comment_id)
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/{post_id}/bookmarks", response_model=PostDetail)
+def bookmark_post(
+  post_id: int,
+  current_user: dict = Depends(get_current_user),
+  db: Session = Depends(get_db)
+):
+  if not current_user:
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+  
+  try:
+    post_service = PostService(db)
+    return post_service.bookmark(post_id, current_user.id)
+  except HTTPException as e:
+    raise e
+  except Exception as e:
+    raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/{post_id}/bookmarks", response_model=PostDetail)
+def delete_bookmark_post(
+  post_id: int,
+  current_user: dict = Depends(get_current_user),
+  db: Session = Depends(get_db)
+):
+  if not current_user:
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+  
+  try:
+    post_service = PostService(db)
+    return post_service.delete_bookmark(post_id, current_user.id)
   except HTTPException as e:
     raise e
   except Exception as e:

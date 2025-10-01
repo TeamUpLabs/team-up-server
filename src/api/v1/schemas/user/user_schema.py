@@ -135,6 +135,11 @@ class UserDetail(UserBase):
         "method": "GET",
         "title": "자신의 세션 조회"
       },
+      "bookmarked_posts": {
+        "href": f"/api/v1/community/posts/bookmarks",
+        "method": "GET",
+        "title": "자신이 북마크한 게시물 조회"
+      }
     }
     
 class UserNolinks(UserBase):

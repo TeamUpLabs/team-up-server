@@ -80,7 +80,6 @@ class AuthRepository:
         try:
           existing.last_login = datetime.now()
           existing.status = "active"
-          existing.auth_provider_access_token = social_access_token
           self.db.commit()
           self.db.refresh(existing)
         except Exception as e:

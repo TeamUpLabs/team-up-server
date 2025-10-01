@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Text, ForeignKey, JSON
 from core.database.database import Base
 from api.v1.models.base import BaseModel
 from sqlalchemy.orm import relationship
+from api.v1.models.association_tables import user_post_bookmarks
 
 class Post(Base, BaseModel):
   """게시글 모델"""
@@ -21,6 +22,7 @@ class Post(Base, BaseModel):
   comments = relationship("PostComment", back_populates="post", cascade="all, delete-orphan")
       
   creator = relationship("User", foreign_keys=[user_id], back_populates="posts")
+  bookmarked_users = relationship("User", secondary=user_post_bookmarks, back_populates="bookmarked_posts")
 
 class PostReaction(Base, BaseModel):
   """리액션 모델"""

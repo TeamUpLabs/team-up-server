@@ -99,3 +99,13 @@ user_follows = Table(
     Column('created_at', DateTime, nullable=False, server_default=func.now()),
     Index('idx_user_follows', 'follower_id', 'followed_id')
 )
+
+# 사용자-게시물 북마크 관계 테이블
+user_post_bookmarks = Table(
+    'user_post_bookmarks',
+    Base.metadata,
+    Column('user_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    Column('post_id', Integer, ForeignKey('posts.id', ondelete='CASCADE'), primary_key=True),
+    Column('created_at', DateTime, nullable=False, server_default=func.now()),
+    Index('idx_user_post_bookmarks', 'user_id', 'post_id')
+)
