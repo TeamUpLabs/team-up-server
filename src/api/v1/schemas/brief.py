@@ -8,7 +8,7 @@ class UserBrief(BaseModel):
   name: str
   email: str
   profile_image: Optional[str] = None
-  role: Optional[str] = None
+  job: Optional[str] = None
   status: Optional[str] = None
   created_at: datetime
   updated_at: datetime

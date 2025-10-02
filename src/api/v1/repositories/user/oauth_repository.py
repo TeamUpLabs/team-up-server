@@ -135,7 +135,7 @@ class AuthRepository:
               "user_info": {
                 "id": existing.id,
                 "email": existing.email,
-                "role": existing.role,
+                "job": existing.job,
                 "status": existing.status
               }
             }

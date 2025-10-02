@@ -14,7 +14,7 @@ class User(Base, BaseModel):
   hashed_password = Column(String(255), nullable=True)
   profile_image = Column(String(255), nullable=True)
   bio = Column(Text, nullable=True)
-  role = Column(String(50), nullable=True)  # developer, designer, PM 등
+  job = Column(String(50), nullable=True)  # developer, designer, PM 등
   status = Column(String(20), default="active")  # active, inactive
   languages = Column(JSON, nullable=True)
   phone = Column(String(20), nullable=True)

@@ -22,7 +22,7 @@ class UserBase(BaseModel):
   email: EmailStr = Field(...)
   profile_image: Optional[str] = None
   bio: Optional[str] = None
-  role: Optional[str] = None
+  job: Optional[str] = None
   languages: Optional[List[str]] = None
   phone: Optional[str] = None
   birth_date: Optional[str] = None
@@ -47,7 +47,7 @@ class UserUpdate(BaseModel):
   email: Optional[EmailStr] = Field(None)
   profile_image: Optional[str] = None
   bio: Optional[str] = None
-  role: Optional[str] = None
+  job: Optional[str] = None
   languages: Optional[List[str]] = None
   phone: Optional[str] = None
   birth_date: Optional[str] = None
