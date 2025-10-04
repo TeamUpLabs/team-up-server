@@ -18,6 +18,7 @@ except Exception as e:
 from api.v1.routes.user import routers as user_routers
 from api.v1.routes.project import routers as project_routers
 from api.v1.routes.community import routers as community_routers
+from api.v1.routes.mentoring import routers as mentoring_routers
 
 app = FastAPI(
   title=setting.TITLE,
@@ -47,6 +48,10 @@ for router in project_routers:
 
 # Include all community routers
 for router in community_routers:
+    app.include_router(router)
+
+# Include all mentoring routers
+for router in mentoring_routers:
     app.include_router(router)
 
 @app.get("/")
