@@ -8,7 +8,7 @@ from core.security.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/mentors/sessions", tags=["Mentor Session"])
 
-@router.post("/")
+@router.post("/", status_code=status.HTTP_201_CREATED)
 def create_mentor_session(
   mentor_session_create: MentorSessionCreate,
   db: Session = Depends(get_db),

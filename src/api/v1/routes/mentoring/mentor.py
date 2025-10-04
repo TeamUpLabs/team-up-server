@@ -8,7 +8,7 @@ from typing import List
 
 router = APIRouter(prefix="/api/v1/mentors", tags=["Mentor"])
 
-@router.post("/")
+@router.post("/", status_code=status.HTTP_201_CREATED)
 def create_mentor(
   mentor_create: MentorCreate,
   db: Session = Depends(get_db),

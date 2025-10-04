@@ -50,7 +50,7 @@ class MentorRepository:
     
   def delete(self, user_id: int) -> bool:
     try:
-      mentor = self.get(user_id)
+      mentor = self.db.query(Mentor).filter(Mentor.user_id == user_id).first()
       if not mentor:
         raise HTTPException(status_code=404, detail="Mentor not found")
       self.db.delete(mentor)
