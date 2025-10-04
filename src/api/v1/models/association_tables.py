@@ -109,3 +109,15 @@ user_post_bookmarks = Table(
     Column('created_at', DateTime, nullable=False, server_default=func.now()),
     Index('idx_user_post_bookmarks', 'user_id', 'post_id')
 )
+
+# 멘토-멘티 관계 테이블 (User-User 관계)
+mentor_mentees = Table(
+    'mentor_mentees',
+    Base.metadata,
+    Column('mentor_user_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    Column('mentee_user_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True),
+    Column('created_at', DateTime, nullable=False, server_default=func.now()),
+    Column('status', String(50), default='active', nullable=False),  # active, inactive, completed
+    Index('idx_mentor_mentees', 'mentor_user_id', 'mentee_user_id')
+)
+

@@ -15,6 +15,10 @@ from api.v1.models.project.participation_request import ParticipationRequest
 from api.v1.models.project.schedule import Schedule
 from api.v1.models.project.channel import Channel
 from api.v1.models.project.chat import Chat
+from api.v1.models.mentoring.mentor import Mentor
+from api.v1.models.mentoring.mentor_review import MentorReview
+from api.v1.models.mentoring.mentor_session import MentorSession
+from api.v1.models.community.post import Post, PostReaction, PostComment
 
 __all__ = [
     'User',
@@ -32,6 +36,12 @@ __all__ = [
     'Schedule',
     'Channel',
     'Chat',
+    'Mentor',
+    'MentorReview',
+    'MentorSession',
+    'Post',
+    'PostReaction',
+    'PostComment',
     'BaseModel',
     # Add other models here
 ]

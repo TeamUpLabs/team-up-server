@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, func
 from sqlalchemy.orm import relationship
 from core.database.database import Base
 from api.v1.models.base import BaseModel
-from api.v1.models.association_tables import project_members, user_follows, user_post_bookmarks
+from api.v1.models.association_tables import project_members, user_follows, user_post_bookmarks, mentor_mentees
 
 class User(Base, BaseModel):
   """사용자 모델"""
@@ -138,6 +138,47 @@ class User(Base, BaseModel):
     "Post",
     secondary=user_post_bookmarks,
     back_populates="bookmarked_users"
+  )
+  
+  # 멘토 프로필 관계 (일대다)
+  mentor_profiles = relationship(
+    "Mentor",
+    back_populates="user",
+    cascade="all, delete-orphan"
+  )
+  
+  # 멘토 리뷰 관계 (일대다 - 사용자가 작성한 리뷰)
+  mentor_reviews = relationship(
+    "MentorReview",
+    back_populates="user",
+    cascade="all, delete-orphan"
+  )
+  
+  # 멘토 세션 관계 (일대다 - 사용자가 참여한 세션)
+  mentor_sessions = relationship(
+    "MentorSession",
+    back_populates="user",
+    cascade="all, delete-orphan"
+  )
+  
+  # 사용자가 멘토로 활동하는 관계 (내가 멘토인 멘티들)
+  my_mentees = relationship(
+    "User",
+    secondary=mentor_mentees,
+    primaryjoin=("mentor_mentees.c.mentor_user_id == User.id"),
+    secondaryjoin=("mentor_mentees.c.mentee_user_id == User.id"),
+    back_populates="my_mentors",
+    lazy="dynamic"
+  )
+  
+  # 사용자가 멘티로 활동하는 관계 (나의 멘토들)
+  my_mentors = relationship(
+    "User",
+    secondary=mentor_mentees,
+    primaryjoin=("mentor_mentees.c.mentee_user_id == User.id"),
+    secondaryjoin=("mentor_mentees.c.mentor_user_id == User.id"),
+    back_populates="my_mentees",
+    lazy="dynamic"
   )
   
   def __repr__(self):
