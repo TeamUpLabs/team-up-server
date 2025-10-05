@@ -157,7 +157,7 @@ class User(Base, BaseModel):
   # 멘토 세션 관계 (일대다 - 사용자가 참여한 세션)
   mentor_sessions = relationship(
     "MentorSession",
-    back_populates="user",
+    back_populates="mentee",
     cascade="all, delete-orphan"
   )
   

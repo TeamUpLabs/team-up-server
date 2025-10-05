@@ -9,7 +9,7 @@ class MentorSession(Base, BaseModel):
   
   id = Column(Integer, primary_key=True, index=True)
   mentor_id = Column(Integer, ForeignKey("mentors.id", ondelete="CASCADE"), nullable=False)
-  user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+  mentee_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
   
   title = Column(String(100), nullable=False)
   description = Column(Text, nullable=False)
@@ -19,7 +19,7 @@ class MentorSession(Base, BaseModel):
   
   # 관계 정의
   mentor = relationship("Mentor", back_populates="sessions")
-  user = relationship("User", back_populates="mentor_sessions")
+  mentee = relationship("User", back_populates="mentor_sessions")
   
   def __repr__(self):
-    return f"<MentorSession(id={self.id}, mentor_id={self.mentor_id}, user_id={self.user_id})>"
+    return f"<MentorSession(id={self.id}, mentor_id={self.mentor_id}, mentee_id={self.mentee_id})>"

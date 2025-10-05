@@ -14,7 +14,7 @@ class MentorSessionBase(BaseModel):
 
 class MentorSessionCreate(MentorSessionBase):
   mentor_id: int
-  user_id: int
+  mentee_id: int
   
   class Config:
     from_attributes = True
@@ -28,7 +28,7 @@ class MentorSessionUpdate(MentorSessionBase):
 class MentorSessionDetail(MentorSessionBase):
   id: int
   mentor: Optional[UserBrief] = None
-  user: Optional[UserBrief] = None
+  mentee: Optional[UserBrief] = None
   
   class Config:
     from_attributes = True
