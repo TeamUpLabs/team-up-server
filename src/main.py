@@ -4,7 +4,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from core.database.database import engine, Base
 from core.middleware.ErrorHandlingMiddleware import ErrorHandlingMiddleware
 from core.middleware.LoggingMiddleware import LoggingMiddleware
-from core.middleware.AuthMiddleware import AuthMiddleware
 from core.config import setting
 
 try:
