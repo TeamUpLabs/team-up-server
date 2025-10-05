@@ -31,5 +31,8 @@ class MentorSessionDetail(MentorSessionBase):
   mentor: MentorDetail
   mentee: UserBrief
   
+  created_at: datetime
+  updated_at: datetime
+  
   class Config:
     from_attributes = True

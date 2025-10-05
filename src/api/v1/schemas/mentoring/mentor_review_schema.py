@@ -1,6 +1,7 @@
 from pydantic import BaseModel
-from typing import Optional
 from api.v1.schemas.brief import UserBrief
+from api.v1.schemas.mentoring.mentor_schema import MentorDetail
+from datetime import datetime
 
 class MentorReviewBase(BaseModel):
   rating: int
@@ -24,8 +25,11 @@ class MentorReviewUpdate(MentorReviewBase):
 
 class MentorReviewDetail(MentorReviewBase):
   id: int
-  mentor: Optional[UserBrief] = None
-  user: Optional[UserBrief] = None
+  mentor: MentorDetail
+  user: UserBrief
+  
+  created_at: datetime
+  updated_at: datetime
   
   class Config:
     from_attributes = True
