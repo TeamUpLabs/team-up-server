@@ -28,7 +28,7 @@ def create_mentor_session(
 def get_mentor_session(
   session_id: Optional[int] = None,
   mentor_id: Optional[int] = None,
-  user_id: Optional[int] = None,
+  mentee_id: Optional[int] = None,
   db: Session = Depends(get_db),
   current_user: dict = Depends(get_current_user)
 ) -> List[MentorSessionDetail]:
@@ -39,8 +39,8 @@ def get_mentor_session(
     
     if mentor_id:
       return mentoring_service.get_by_mentor_id(mentor_id)
-    elif user_id:
-      return mentoring_service.get_by_user_id(user_id)
+    elif mentee_id:
+      return mentoring_service.get_by_mentee_id(mentee_id)
     else:
       return mentoring_service.get_by_id(session_id)
   except HTTPException as e:

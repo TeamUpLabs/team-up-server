@@ -7,7 +7,7 @@ from typing import List
 class MentorSessionRepository:
   def __init__(self, db: Session):
     self.db = db
-    
+
   def create(self, mentor_session_create: MentorSessionCreate) -> MentorSession:
     try:
       mentor_session = MentorSession(**mentor_session_create.model_dump())
@@ -32,9 +32,9 @@ class MentorSessionRepository:
     except Exception as e:
       raise HTTPException(status_code=500, detail=str(e))
     
-  def get_by_user_id(self, user_id: int) -> List[MentorSessionDetail]:
+  def get_by_mentee_id(self, mentee_id: int) -> List[MentorSessionDetail]:
     try:
-      mentor_sessions = self.db.query(MentorSession).filter(MentorSession.user_id == user_id).all()
+      mentor_sessions = self.db.query(MentorSession).filter(MentorSession.mentee_id == mentee_id).all()
       return [MentorSessionDetail.model_validate(session, from_attributes=True) for session in mentor_sessions]
     except Exception as e:
       raise HTTPException(status_code=500, detail=str(e))
