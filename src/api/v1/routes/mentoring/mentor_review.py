@@ -45,7 +45,7 @@ def get_mentor_review(
   except HTTPException as e:
     raise e
 
-@router.put("/")
+@router.put("/{review_id}")
 def update_mentor_review(
   review_id: int,
   mentor_review_update: MentorReviewUpdate,
@@ -62,7 +62,7 @@ def update_mentor_review(
   except Exception as e:
     raise HTTPException(status_code=400, detail=str(e))
   
-@router.delete("/")
+@router.delete("/{review_id}")
 def delete_mentor_review(
   review_id: int,
   db: Session = Depends(get_db),
