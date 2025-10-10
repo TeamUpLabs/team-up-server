@@ -6,13 +6,8 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  build-and-test:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      deployments: write
-      actions: read
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -33,18 +28,35 @@ jobs:
         run: |
           pytest tests/ --maxfail=1 --disable-warnings -q
 
+  deploy:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    permissions:
+      deployments: write
+      contents: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        
       - name: Create GitHub Deployment
         id: deployment
-        uses: octokit/request-action@v2.x
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/github-script@v7
         with:
-          route: POST /repos/{owner}/{repo}/deployments
-          owner: ${{ github.repository_owner }}
-          repo: ${{ github.event.repository.name }}
-          ref: ${{ github.sha }}
-          environment: production
-
+          script: |
+            const { data: deployment } = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.sha,
+              auto_merge: false,
+              required_contexts: [],
+              environment: 'production',
+              transient_environment: false,
+              production_environment: true
+            });
+            
+            return deployment.id;
+          
       - name: Trigger Render Deploy
         run: |
           curl -X POST "https://api.render.com/deploy/srv-d3gisdvfte5s73c6obl0" \
