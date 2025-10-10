@@ -10,6 +10,7 @@ class TechStackCreate(TechStackBase):
 
 class TechStackUpdate(TechStackBase):
     tech: Optional[str]
+    level: Optional[int]
 
 class TechStackInDB(TechStackBase):
     id: int
