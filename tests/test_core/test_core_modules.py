@@ -13,7 +13,7 @@ class TestDatabase:
 
         # 엔진이 정상적으로 생성되었는지 확인
         assert engine is not None
-        assert str(engine.url).startswith("postgresql")  # 테스트용 SQLite
+        assert str(engine.url).startswith("sqlite")  # 테스트용 SQLite
 
     def test_database_tables_creation(self):
         """데이터베이스 테이블 생성 테스트"""

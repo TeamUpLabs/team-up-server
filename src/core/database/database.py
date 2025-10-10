@@ -8,6 +8,21 @@ load_dotenv()
 # 데이터베이스 URL
 DATABASE_URL = os.getenv("POSTGRES_URL", "sqlite:///./test.db")
 
+# 데이터베이스 타입 확인
+is_postgresql = DATABASE_URL.startswith("postgresql")
+
+# 연결 인자 설정 (PostgreSQL과 SQLite에서 다르게 설정)
+if is_postgresql:
+    connect_args = {
+        'connect_timeout': 10,
+        'keepalives': 1,
+        'keepalives_idle': 30,
+        'keepalives_interval': 10,
+        'keepalives_count': 5,
+    }
+else:
+    connect_args = {"check_same_thread": False}
+
 # SQLAlchemy 엔진 생성
 engine = create_engine(
     DATABASE_URL,
@@ -16,13 +31,7 @@ engine = create_engine(
     pool_timeout=30,
     pool_pre_ping=True,
     pool_recycle=1800,  # Recycle connections after 30 minutes
-    connect_args={
-        'connect_timeout': 10,
-        'keepalives': 1,
-        'keepalives_idle': 30,
-        'keepalives_interval': 10,
-        'keepalives_count': 5,
-    },
+    connect_args=connect_args,
     echo=False  # SQL 쿼리 로깅을 원하면 True로 변경
 )
 

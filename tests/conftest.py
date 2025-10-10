@@ -180,10 +180,15 @@ def set_test_env():
     """테스트 환경 변수 설정"""
     os.environ["TESTING"] = "true"
     os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+    os.environ["POSTGRES_URL"] = TEST_DATABASE_URL  # 테스트용 SQLite 데이터베이스
     yield
     # 테스트 후 환경 변수 정리
     if "TESTING" in os.environ:
         del os.environ["TESTING"]
+    if "DATABASE_URL" in os.environ:
+        del os.environ["DATABASE_URL"]
+    if "POSTGRES_URL" in os.environ:
+        del os.environ["POSTGRES_URL"]
 
 
 # 테스트 데이터 정리 fixture
