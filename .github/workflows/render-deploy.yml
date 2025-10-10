@@ -40,7 +40,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           route: POST /repos/{owner}/{repo}/deployments
-          mediaType: application/vnd.github.v3+json
+          owner: ${{ github.repository_owner }}
+          repo: ${{ github.event.repository.name }}
           ref: ${{ github.sha }}
           environment: production
 
@@ -58,4 +59,3 @@ jobs:
           route: POST /repos/{owner}/{repo}/deployments/{deployment_id}/statuses
           deployment_id: ${{ steps.deployment.outputs.id }}
           state: success
-          mediaType: application/vnd.github.v3+json
