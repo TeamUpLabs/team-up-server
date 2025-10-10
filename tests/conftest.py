@@ -51,29 +51,53 @@ def db_session(test_db) -> Generator[Session, None, None]:
 
 
 @pytest.fixture
-def client() -> TestClient:
+def client(db_session) -> TestClient:
     """FastAPI 테스트 클라이언트 fixture"""
     from main import app
+    from src.core.database.database import get_db
 
     # 테스트용 설정 오버라이드
     test_app = app
 
-    # 의존성 오버라이드 (필요시)
-    # test_app.dependency_overrides[get_db] = lambda: db_session
+    # 데이터베이스 의존성 오버라이드
+    def override_get_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    test_app.dependency_overrides[get_db] = override_get_db
 
     return TestClient(test_app)
 
 
 @pytest.fixture
-def mock_user():
-    """모의 사용자 데이터 fixture"""
-    return {
-        "id": 1,
-        "email": "test@example.com",
-        "nickname": "테스트사용자",
-        "is_active": True,
-        "created_at": "2024-01-01T00:00:00"
-    }
+def test_user(db_session, test_db):
+    """테스트용 사용자 생성 fixture"""
+    from src.api.v1.models.user.user import User
+
+    # 이미 사용자가 존재하는지 확인
+    existing_user = db_session.query(User).filter(User.id == 1).first()
+    if existing_user:
+        return existing_user
+
+    # 테스트 사용자 생성
+    try:
+        test_user = User(
+            name="테스트사용자",
+            email="test@example.com",
+            bio="테스트 사용자입니다",
+            status="active",
+            auth_provider="local"
+        )
+        db_session.add(test_user)
+        db_session.commit()
+        db_session.refresh(test_user)
+        return test_user
+    except Exception as e:
+        # 사용자 생성 실패시 None 반환
+        db_session.rollback()
+        return None
 
 
 @pytest.fixture
