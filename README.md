@@ -1,246 +1,313 @@
-# 🚀 Team-Up Server
+# 🚀 TeamUp API
 
-[![Made with Supabase](https://supabase.com/badge-made-with-supabase-dark.svg)](https://supabase.com)
-[![Python](https://img.shields.io/badge/3776AB?style=flat-square&logo=Python&logoColor=white")](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-005571?logo=fastapi)](https://fastapi.tiangolo.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+<div align="center">
+  <h3>팀 프로젝트 협업과 멘토링을 위한 플랫폼</h3>
+  <p><strong>FastAPI 기반의 현대적인 REST API 서비스</strong></p>
 
-## 📌 프로젝트 개요
+  ![Render Deploy](https://deploy-badge.vercel.app/?url=https%3A%2F%2Fteam-up-server.onrender.com%2F&logo=Render&name=Render)
+  [![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
+  [![FastAPI](https://img.shields.io/badge/FastAPI-0.115.12-green.svg)](https://fastapi.tiangolo.com)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](/LICENSE)
+</div>
 
-### 문제 해결
-Team-Up Server는 현대적인 팀 협업 환경에서 발생하는 프로젝트 관리의 복잡성을 해결하기 위해 설계된 백엔드 서버입니다. 분산된 팀원들 간의 효율적인 의사소통, 작업 추적, 일정 관리를 한 곳에서 가능하게 합니다.
+---
 
-### 비즈니스 가치
-- **생산성 향상**: 팀원들의 업무 효율성을 극대화하는 통합 협업 환경 제공
-- **비용 절감**: 여러 도구를 통합하여 라이선스 비용 절감
-- **확장성**: 스타트업의 성장에 따라 유연하게 확장 가능한 아키텍처
+## 📋 목차
 
-### 차별점
-- 실시간 협업 기능 (채팅, 영상/음성 통화, 화이트보드)
-- GitHub 연동을 통한 개발 워크플로우 최적화
-- 모듈화된 아키텍처로 필요한 기능만 선택적 배포 가능
+- [✨ 주요 기능](#-주요-기능)
+- [🏗️ 프로젝트 구조](#️-프로젝트-구조)
+- [🛠️ 기술 스택](#️-기술-스택)
+- [🚀 빠른 시작](#-빠른-시작)
+- [📚 API 문서](#-api-문서)
+- [🔧 환경 설정](#-환경-설정)
+- [🧪 테스트](#-테스트)
+- [📖 사용 예시](#-사용-예시)
+- [🤝 기여하기](#-기여하기)
+- [📄 라이선스](#-라이선스)
 
-## 🚀 주요 기능
+## ✨ 주요 기능
 
-### 1. 프로젝트 관리
-- 프로젝트 생성 및 관리
-- 작업(Task) 할당 및 진행 상황 추적
-- 마일스톤 설정 및 관리
+### 👥 사용자 관리
+- **🔐 인증 시스템**: JWT 토큰 기반 인증
+- **🌐 소셜 로그인**: GitHub, Google OAuth 지원
+- **👤 프로필 관리**: 사용자 정보, 기술스택, 관심분야 관리
+- **📱 알림 설정**: 이메일, 푸시 알림 커스터마이징
 
-### 2. 실시간 협업
-- 그룹/개인 채팅
-- 영상/음성 통화
-- 실시간 화이트보드
+### 📋 프로젝트 관리
+- **🏗️ 프로젝트 생성 및 관리**: 다양한 프로젝트 타입 지원
+- **👥 팀 멤버 관리**: 멤버 초대, 권한 설정
+- **✅ 태스크 관리**: 칸반 보드 스타일 태스크 관리
+- **🎯 마일스톤 설정**: 프로젝트 진행 상황 추적
+- **📅 일정 관리**: 공유 캘린더 및 데드라인 관리
 
-### 3. 개발자 도구
-- GitHub 연동
-- 코드 리뷰 시스템
-- 이슈 트래킹
+### 🌍 커뮤니티 기능
+- **👥 팔로우 시스템**: 관심 사용자 팔로우
+- **📝 게시물 및 댓글**: 지식 공유 및 토론
+- **❤️ 좋아요 및 북마크**: 유용한 콘텐츠 저장
+- **🔍 검색 및 추천**: 관련 콘텐츠 추천
 
-### 4. 일정 관리
-- 공유 캘린더
-- 회의 일정 조율
-- 알림 시스템
+### 🎓 멘토링 시스템
+- **🤝 멘토-멘티 매칭**: 기술 기반 매칭 알고리즘
+- **📚 학습 계획 관리**: 개인별 학습 로드맵
+- **💬 1:1 멘토링 세션**: 실시간 화상/채팅 멘토링
+- **📊 진행 상황 추적**: 멘토링 성과 측정
 
-## 🛠 설치 및 실행
+### 💬 실시간 커뮤니케이션
+- **⚡ WebSocket 기반 채팅**: 실시간 메시징
+- **📢 채널별 대화방**: 프로젝트별 커뮤니케이션
+- **🔗 파일 공유**: 문서, 이미지 실시간 공유
 
-### 요구사항
-- Python 3.12 이상
-- PostgreSQL 13+
-- Redis (캐싱 및 WebSocket용)
-- Supabase 계정
+### 🎨 협업 도구
+- **📱 화이트보드**: 실시간 협업 드로잉
+- **📎 파일 관리**: 프로젝트 문서 중앙화
+- **🌍 위치 기반 매칭**: 지역별 협업자 찾기
 
-### 1. 저장소 복제
-```bash
-git clone https://github.com/your-org/team-up-server.git
-cd team-up-server
-```
-
-### 2. 가상환경 설정
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/macOS
-# 또는
-# .\venv\Scripts\activate  # Windows
-```
-
-### 3. 의존성 설치
-```bash
-pip install -r requirements.txt
-```
-
-### 4. 환경 변수 설정
-`.env` 파일을 생성하고 다음 변수들을 설정하세요:
-```env
-# 애플리케이션 설정
-SECRET_KEY=your_secure_secret_key
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-# 데이터베이스
-DATABASE_URL=postgresql://user:password@localhost:5432/teamup
-
-# Supabase
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_KEY=your_supabase_service_role_key
-
-# Redis
-REDIS_URL=redis://localhost:6379/0
-```
-
-### 5. 데이터베이스 마이그레이션
-```bash
-alembic upgrade head
-```
-
-### 6. 서버 실행
-```bash
-uvicorn main:app --reload
-```
-
-## 🏗 아키텍처 개요
-
-```
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   클라이언트    │ ◄──►│    API 서버     │ ◄──►│   데이터베이스  │
-│  (React/Next.js)│     │   (FastAPI)     │     │   (PostgreSQL)  │
-└─────────────────┘     └────────┬────────┘     └─────────────────┘
-        ▲                        │
-        │                 ┌──────▼──────┐
-        └────────────────►│  WebSocket  │
-                          │   서버      │
-                          └─────────────┘
-```
-
-## 📁 디렉터리 구조
+## 🏗️ 프로젝트 구조
 
 ```
 team-up-server/
-├── .github/                  # GitHub Actions 워크플로우
-├── crud/                     # 데이터베이스 CRUD 연산
-├── models/                   # SQLAlchemy 모델
-├── routers/                  # FastAPI 라우터
-├── schemas/                  # Pydantic 모델
-├── utils/                    # 유틸리티 함수
-├── websocket/                # WebSocket 핸들러
-├── .env.example              # 환경 변수 예시
-├── alembic/                  # 데이터베이스 마이그레이션
-├── main.py                   # 애플리이션 진입점
-├── requirements.txt          # Python 의존성
-└── README.md                 # 이 파일
+├── 📁 src/
+│   ├── 📁 api/v1/                 # API 버전 1
+│   │   ├── 📁 models/             # 데이터베이스 모델
+│   │   │   ├── 📁 user/           # 사용자 관련 모델
+│   │   │   ├── 📁 project/        # 프로젝트 관련 모델
+│   │   │   ├── 📁 community/      # 커뮤니티 관련 모델
+│   │   │   └── 📁 mentoring/      # 멘토링 관련 모델
+│   │   ├── 📁 routes/             # API 엔드포인트
+│   │   ├── 📁 schemas/            # Pydantic 스키마
+│   │   ├── 📁 services/           # 비즈니스 로직
+│   │   └── 📁 repositories/       # 데이터 접근 계층
+│   └── 📁 core/                   # 핵심 설정 및 유틸리티
+│       ├── 📁 database/           # 데이터베이스 연결
+│       ├── 📁 middleware/         # 커스텀 미들웨어
+│       ├── 📁 security/           # 보안 관련 유틸리티
+│       └── 📁 utils/              # 공통 유틸리티
+├── 📁 .github/
+│   └── 📁 ISSUE_TEMPLATE/         # GitHub 이슈 템플릿
+├── 📄 main.py                     # 애플리케이션 진입점
+├── 📄 requirements.txt            # Python 의존성
+├── 📄 .env                        # 환경 변수 (예시)
+└── 📄 README.md                   # 프로젝트 문서
 ```
 
-## 📦 의존성
+## 🛠️ 기술 스택
 
-### 주요 의존성
-- **FastAPI**: 고성능 웹 프레임워크
-- **SQLAlchemy**: ORM
-- **Alembic**: 데이터베이스 마이그레이션
-- **Pydantic**: 데이터 유효성 검사
-- **Jinja2**: 템플릿 엔진
-- **WebSockets**: 실시간 통신
-- **Redis**: 캐싱 및 메시지 브로커
+### 백엔드
+- **⚡ FastAPI** - 고성능 비동기 웹 프레임워크
+- **🐍 Python 3.8+** - 현대적인 Python 버전 지원
 
-### 개발 의존성
-- **pytest**: 테스트 프레임워크
-- **black**: 코드 포맷터
-- **isort**: import 정렬
-- **mypy**: 정적 타입 검사
+### 데이터베이스
+- **🐘 PostgreSQL** - 안정적인 관계형 데이터베이스
+- **🔗 SQLAlchemy** - 강력한 ORM 도구
+- **📦 Supabase** - 백엔드 서비스 (DB, 인증, 실시간)
+
+### 캐싱 및 실시간
+- **🔴 Redis** - 고성능 인메모리 데이터 저장소
+- **⚡ WebSocket** - 실시간 양방향 통신
+
+### 인증 및 보안
+- **🔐 JWT** - stateless 토큰 인증
+- **🔒 bcrypt** - 안전한 비밀번호 해싱
+- **🛡️ OAuth** - 소셜 로그인 (GitHub, Google)
+
+### 개발 도구
+- **🧪 Pytest** - 강력한 테스트 프레임워크
+- **🎨 Rich** - 아름다운 터미널 출력
+- **📍 GeoIP2** - 위치 기반 서비스
+
+### 배포
+- **🚀 Uvicorn** - 고성능 ASGI 서버
+- **🐎 Gunicorn** - WSGI HTTP 서버
+
+## 🚀 빠른 시작
+
+### 1️⃣ 사전 요구사항
+
+```bash
+# Python 3.8 이상이 설치되어 있어야 합니다
+python --version
+
+# Git이 설치되어 있어야 합니다
+git --version
+```
+
+### 2️⃣ 프로젝트 클론
+
+```bash
+git clone https://github.com/your-username/team-up-server.git
+cd team-up-server
+```
+
+### 3️⃣ 가상환경 설정
+
+```bash
+# 가상환경 생성 및 활성화
+python -m venv .venv
+source .venv/bin/activate  # macOS/Linux
+# 또는
+.venv\Scripts\activate     # Windows
+
+# 의존성 설치
+pip install -r requirements.txt
+```
+
+### 4️⃣ 환경 변수 설정
+
+`.env` 파일을 생성하고 다음 내용을 추가하세요:
+
+```env
+# 데이터베이스 설정
+POSTGRES_URL=postgresql://username:password@localhost:5432/teamup
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-supabase-anon-key
+
+# JWT 설정
+SECRET_KEY=your-secret-key-here
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# OAuth 설정 (선택사항)
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+```
+
+### 5️⃣ 데이터베이스 초기화
+
+```bash
+# 데이터베이스 테이블 생성 (자동)
+python main.py
+```
+
+### 6️⃣ 서버 실행
+
+```bash
+# 개발 모드 실행
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+# 또는 프로덕션 모드
+gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+```
+
+서버가 성공적으로 시작되면 `http://localhost:8000`에서 API 문서를 확인할 수 있습니다.
+
+## 📚 API 문서
+
+서버 실행 후 다음 URL에서 자동 생성된 API 문서를 확인하세요:
+
+- **📖 Swagger UI**: http://localhost:8000/docs
+- **🔍 ReDoc**: http://localhost:8000/redoc
+- **🚀 OpenAPI 스펙**: http://localhost:8000/openapi.json
+
+## 🔧 환경 설정
+
+### 개발 환경
+
+```bash
+export DEBUG=True
+export LOG_LEVEL=DEBUG
+```
+
+### 프로덕션 환경
+
+```bash
+export DEBUG=False
+export LOG_LEVEL=INFO
+export SECRET_KEY=your-production-secret-key
+```
 
 ## 🧪 테스트
 
-### 유닛 테스트 실행
 ```bash
-pytest tests/unit
+# 모든 테스트 실행
+pytest
+
+# 특정 테스트 파일 실행
+pytest tests/test_user.py
+
+# 커버리지 리포트 생성
+pytest --cov=src --cov-report=html
 ```
 
-### 통합 테스트 실행
+## 📖 사용 예시
+
+### 사용자 등록
+
 ```bash
-pytest tests/integration
+curl -X POST "http://localhost:8000/api/v1/users/register" \
+     -H "Content-Type: application/json" \
+     -d '{
+       "name": "홍길동",
+       "email": "hong@example.com",
+       "password": "securepassword"
+     }'
 ```
 
-### 코드 커버리지 확인
+### 프로젝트 생성
+
 ```bash
-pytest --cov=app tests/
+curl -X POST "http://localhost:8000/api/v1/projects" \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     -d '{
+       "title": "새 프로젝트",
+       "description": "프로젝트 설명",
+       "team_size": 5,
+       "project_type": "web"
+     }'
 ```
 
-## 🚀 배포
+### 실시간 채팅
 
-### 1. Docker를 사용한 배포
-```bash
-docker-compose up -d --build
+```javascript
+// WebSocket 연결
+const ws = new WebSocket('ws://localhost:8000/api/v1/chat/ROOM_ID');
+
+// 메시지 전송
+ws.send(JSON.stringify({
+  type: 'message',
+  content: '안녕하세요!',
+  user_id: 'user123'
+}));
 ```
 
-### 2. Kubernetes 배포 (GKE/EKS/AKS)
-```bash
-kubectl apply -f k8s/
-```
+## 🤝 기여하기
 
-### 모니터링
-- Prometheus & Grafana를 사용한 메트릭 수집
-- Sentry를 통한 에러 추적
-- ELK 스택을 활용한 로그 관리
+프로젝트 발전에 관심이 있으시다면 언제든지 환영합니다! 🤗
 
-## 🔒 보안
+### 기여 방법
 
-### 인증 & 권한
-- JWT 기반 인증
-- OAuth 2.0 및 OIDC 지원
-- 역할 기반 접근 제어(RBAC)
+1. **🍴 Fork** 프로젝트
+2. **🌿 Feature 브랜치** 생성 (`git checkout -b feature/amazing-feature`)
+3. **💾 변경사항** 커밋 (`git commit -m 'Add amazing feature'`)
+4. **📤 브랜치** 푸시 (`git push origin feature/amazing-feature`)
+5. **🔄 Pull Request** 생성
 
-### 데이터 보호
-- 모든 통신은 HTTPS/TLS 암호화
-- 민감한 데이터는 암호화되어 저장
-- 정기적인 보안 감사
+### 개발 가이드라인
 
-## 🤝 팀 협업 가이드라인
+- 📝 **이슈 템플릿 사용**: 새로운 기능이나 버그 리포트 시 제공된 템플릿 사용
+- 🧪 **테스트 작성**: 새로운 기능에는 반드시 테스트 코드 작성
+- 📚 **문서 업데이트**: API 변경 시 문서 업데이트
+- 🔍 **코드 리뷰**: 모든 변경사항은 코드 리뷰를 거침
 
-### 브랜치 전략
-- `main`: 안정적인 배포 버전
-- `develop`: 개발 중인 기능 통합
-- `feature/`: 새로운 기능 개발
-- `bugfix/`: 버그 수정
-- `release/`: 릴리즈 준비
+## 📧 연락처
 
-### 코드 리뷰
-- 모든 PR은 최소 1명 이상의 리뷰 필요
-- 코드 스타일 준수 (black, isort, flake8)
-- 테스트 커버리지 80% 이상 유지
-
-### 커밋 메시지 컨벤션
-```
-type(scope): 제목
-
-- 변경 사항에 대한 상세 설명
-- 관련 이슈 번호 #123
-
-[optional footer]
-```
-
-## 🗺 향후 로드맵
-
-### 단기 (3개월)
-- [ ] 모바일 앱 출시
-- [ ] 추가적인 통합 (Slack, Jira)
-- [ ] 고급 분석 대시보드
-
-### 중장기 (6-12개월)
-- [ ] AI 기반 작업 추천
-- [ ] 음성 명령 지원
-- [ ] 확장된 API 연동
+**👨‍💻 개발자**: 이석민 (Seokmin Lee)
+- 📧 Email: dltjrals13@naver.com
+- 🐙 GitHub: [seokmin](https://github.com/lee-seokmin)
 
 ## 📄 라이선스
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
-
-## ✨ 기여하기
-
-기여를 환영합니다! [기여 가이드라인](CONTRIBUTING.md)을 확인해주세요.
+이 프로젝트는 **MIT 라이선스**를 따릅니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
 ---
 
 <div align="center">
-  <h3>Team-Up Server로 더 나은 협업을 경험해보세요! 🚀</h3>
-  <p>문의: teamup.team2025@gmail.com</p>
+  <p><strong>Built with ❤️ by 이석민</strong></p>
+  <p>
+    <a href="#-주요-기능">기능 살펴보기</a> •
+    <a href="#-빠른-시작">시작하기</a> •
+    <a href="#-기술-스택">기술 스택</a> •
+    <a href="#-기여하기">기여하기</a>
+  </p>
 </div>
-```
