@@ -117,15 +117,15 @@ jobs:
             
             echo "Deploy status: $STATUS"
             
-            if [ "$STATUS" = "succeeded" ] || [ "$STATUS" = "live" ]; then
+            if [ "$STATUS" = "live" ]; then
               echo "Deploy completed successfully!"
               echo "deploy_success=true" >> $GITHUB_OUTPUT
               break
-            elif [ "$STATUS" = "failed" ] || [ "$STATUS" = "cancelled" ]; then
+            elif [ "$STATUS" = "build_failed" ] || [ "$STATUS" = "update_failed" ] || [ "$STATUS" = "pre_deploy_failed" ] || [ "$STATUS" = "canceled" ] || [ "$STATUS" = "deactivated" ]; then
               echo "Deploy failed with status: $STATUS"
               echo "deploy_success=false" >> $GITHUB_OUTPUT
               exit 1
-            elif [ "$STATUS" = "building" ] || [ "$STATUS" = "created" ] || [ "$STATUS" = "in_progress" ]; then
+            elif [ "$STATUS" = "created" ] || [ "$STATUS" = "queued" ] || [ "$STATUS" = "build_in_progress" ] || [ "$STATUS" = "update_in_progress" ] || [ "$STATUS" = "pre_deploy_in_progress" ]; then
               echo "Deploy still in progress..."
             else
               echo "Unknown deploy status: $STATUS"
