@@ -20,6 +20,8 @@ class Setting(BaseSettings):
   INFO_LOG_PATH: Path = BASE_DIR / "logs" / "info.log"
   WARNING_LOG_PATH: Path = BASE_DIR / "logs" / "warning.log"
   ERROR_LOG_PATH: Path = BASE_DIR / "logs" / "error.log"
+  
+  DATABASE_URL: str = ""
 
   # OAuth Configuration
   GITHUB_CLIENT_ID: str = ""

@@ -1,0 +1,133 @@
+[tool.pytest.ini_options]
+# 테스트 설정
+minversion = "6.0"
+addopts = "-ra -q --strict-markers --strict-config"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+# 마커 설정
+markers = [
+    "slow: 느린 테스트 마커",
+    "integration: 통합 테스트 마커",
+    "unit: 단위 테스트 마커",
+    "api: API 테스트 마커",
+    "database: 데이터베이스 테스트 마커",
+    "auth: 인증 관련 테스트 마커",
+    "mentor: 멘토링 관련 테스트 마커",
+    "community: 커뮤니티 관련 테스트 마커",
+    "project: 프로젝트 관련 테스트 마커",
+]
+
+# 로그 설정
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)8s] %(name)s: %(message)s (%(filename)s:%(lineno)s)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+
+# 실패 시 정보 출력
+# tb = "short"
+
+# 병렬 실행 설정 (가능한 경우)
+# addopts = "--numprocesses=auto"
+
+[tool.coverage.run]
+# 커버리지 측정 대상
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/migrations/*",
+    "*/conftest.py",
+    "src/core/database/*",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+# 커버리지 리포트 설정
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.black]
+# 코드 포맷팅 설정
+line-length = 88
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.git
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | migrations
+)/
+'''
+
+[tool.isort]
+# import 정렬 설정
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.mypy]
+# 타입 체크 설정
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+    "src.core.database.*",
+    "src.core.scripts.*",
+    "tests.*",
+]
+ignore_errors = true
+
+[tool.bandit]
+# 보안 검사 설정
+exclude_dirs = ["tests", "migrations", ".venv"]
+skips = ["B101", "B601"]  # assert 사용, shell=True 허용
+
+[tool.flake8]
+# 코드 린팅 설정
+max-line-length = 88
+extend-ignore = ["E203", "W503", "E501"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "migrations",
+    ".pytest_cache",
+    ".venv",
+    "dist",
+    "build",
+]
