@@ -29,7 +29,7 @@ jobs:
 
       - name: Create GitHub Deployment
         id: deployment
-        uses: octokit/request-action@v5
+        uses: octokit/request-action@v2
         with:
           route: POST /repos/{owner}/{repo}/deployments
           owner: ${{ github.repository_owner }}
@@ -45,7 +45,7 @@ jobs:
           -H "Accept: application/json"
 
       - name: Mark deployment as success
-        uses: octokit/request-action@v5
+        uses: octokit/request-action@v2
         with:
           route: PATCH /repos/{owner}/{repo}/deployments/{deployment_id}/statuses
           owner: ${{ github.repository_owner }}
