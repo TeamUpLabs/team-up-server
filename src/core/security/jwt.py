@@ -1,11 +1,12 @@
 import os
 from dotenv import load_dotenv
 from jose import JWTError, jwt
+from src.core.config import setting
 
 load_dotenv()
 
 ALGORITHM = "HS256"
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = setting.SECRET_KEY or os.getenv("SECRET_KEY") or "fallback-secret-key-for-development"
 
 def serialize_data(data):
     """Recursively convert non-serializable objects to dictionaries."""

@@ -10,7 +10,7 @@ load_dotenv()
 
 GITHUB_CLIENT_ID = setting.GITHUB_CLIENT_ID or os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = setting.GITHUB_CLIENT_SECRET or os.getenv("GITHUB_CLIENT_SECRET")
-JWT_SECRET = os.getenv("SECRET_KEY")
+JWT_SECRET = setting.SECRET_KEY or os.getenv("SECRET_KEY")
 
 async def get_github_access_token(code: str) -> str:
   if not all([GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, code]):

@@ -12,6 +12,7 @@ from src.api.v1.services.user.user_service import UserService
 from src.api.v1.services.user.session_service import SessionService
 from src.api.v1.models.user.session import UserSession
 from ua_parser import user_agent_parser
+from src.core.config import setting
 
 class AuthRepository:
   def __init__(self, db: Session):
@@ -23,9 +24,9 @@ class AuthRepository:
     """
     # GitHub, Google, Apple 등 소셜 로그인 구현 예정
     if provider == "github":
-      return RedirectResponse(f"https://github.com/login/oauth/authorize?client_id={os.getenv('GITHUB_CLIENT_ID')}&scope=user:email,repo,admin:org")
+      return RedirectResponse(f"https://github.com/login/oauth/authorize?client_id={setting.GITHUB_CLIENT_ID}&scope=user:email,repo,admin:org")
     if provider == "google":
-      return RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?client_id={os.getenv('GOOGLE_CLIENT_ID')}&redirect_uri={os.getenv('GOOGLE_REDIRECT_URI')}&response_type=code&scope=openid%20email%20profile")
+      return RedirectResponse(f"https://accounts.google.com/o/oauth2/v2/auth?client_id={setting.GOOGLE_CLIENT_ID}&redirect_uri={setting.GOOGLE_REDIRECT_URI}&response_type=code&scope=openid%20email%20profile")
     raise HTTPException(
       status_code=status.HTTP_501_NOT_IMPLEMENTED,
       detail=f"{provider} 소셜 로그인은 아직 구현되지 않았습니다."

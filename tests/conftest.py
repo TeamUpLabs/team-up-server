@@ -181,6 +181,12 @@ def set_test_env():
     os.environ["TESTING"] = "true"
     os.environ["DATABASE_URL"] = TEST_DATABASE_URL
     os.environ["POSTGRES_URL"] = TEST_DATABASE_URL  # 테스트용 SQLite 데이터베이스
+    os.environ["SECRET_KEY"] = "test-secret-key-for-jwt-tokens"
+    os.environ["GITHUB_CLIENT_ID"] = "test-github-client-id"
+    os.environ["GITHUB_CLIENT_SECRET"] = "test-github-client-secret"
+    os.environ["GOOGLE_CLIENT_ID"] = "test-google-client-id"
+    os.environ["GOOGLE_CLIENT_SECRET"] = "test-google-client-secret"
+    os.environ["GOOGLE_REDIRECT_URI"] = "http://localhost:8000/auth/google/callback"
     yield
     # 테스트 후 환경 변수 정리
     if "TESTING" in os.environ:
@@ -189,6 +195,18 @@ def set_test_env():
         del os.environ["DATABASE_URL"]
     if "POSTGRES_URL" in os.environ:
         del os.environ["POSTGRES_URL"]
+    if "SECRET_KEY" in os.environ:
+        del os.environ["SECRET_KEY"]
+    if "GITHUB_CLIENT_ID" in os.environ:
+        del os.environ["GITHUB_CLIENT_ID"]
+    if "GITHUB_CLIENT_SECRET" in os.environ:
+        del os.environ["GITHUB_CLIENT_SECRET"]
+    if "GOOGLE_CLIENT_ID" in os.environ:
+        del os.environ["GOOGLE_CLIENT_ID"]
+    if "GOOGLE_CLIENT_SECRET" in os.environ:
+        del os.environ["GOOGLE_CLIENT_SECRET"]
+    if "GOOGLE_REDIRECT_URI" in os.environ:
+        del os.environ["GOOGLE_REDIRECT_URI"]
 
 
 # 테스트 데이터 정리 fixture
