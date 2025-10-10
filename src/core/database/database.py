@@ -6,7 +6,7 @@ import os
 load_dotenv()
 
 # 데이터베이스 URL
-DATABASE_URL = os.getenv("POSTGRES_URL")
+DATABASE_URL = os.getenv("POSTGRES_URL", "sqlite:///./test.db")
 
 # SQLAlchemy 엔진 생성
 engine = create_engine(
