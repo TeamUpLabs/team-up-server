@@ -31,7 +31,7 @@ class NotificationInDB(NotificationBase):
     read_at: Optional[datetime] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class Notification(NotificationInDB):
     pass

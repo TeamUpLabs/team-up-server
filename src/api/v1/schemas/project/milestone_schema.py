@@ -51,4 +51,4 @@ class MilestoneDetail(MilestoneBase):
   completed_task_count: int = len([task for task in tasks if task.status == "completed"])
   
   class Config:
-    orm_mode = True
+    from_attributes = True

@@ -17,7 +17,7 @@ class TechStackInDB(TechStackBase):
     user_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class TechStack(TechStackInDB):
     pass

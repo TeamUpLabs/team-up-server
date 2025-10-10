@@ -23,7 +23,7 @@ class ParticipationRequestDetail(ParticipationRequestBase):
   user: UserBrief
   
   class Config:
-    orm_mode = True
+    from_attributes = True
   
 class ParticipationRequestList(BaseModel):
   items: List[ParticipationRequestDetail]

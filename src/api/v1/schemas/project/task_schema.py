@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
 from src.api.v1.schemas.brief import UserBrief, MilestoneBrief
@@ -54,13 +54,7 @@ class TaskBase(BaseModel):
   project_id: str
   milestone_id: Optional[int] = None
   
-class TaskCreate(TaskBase):
-  @validator("milestone_id", pre=True)
-  def empty_str_to_none(cls, v):
-    if v == 0:
-      return None
-    return v
-    
+class TaskCreate(TaskBase):    
   assignee_ids: Optional[List[int]] = None
   created_by: Optional[int] = None
   subtasks: Optional[List[SubTaskCreate]] = None

@@ -17,7 +17,7 @@ class SocialLinkInDB(SocialLinkBase):
     user_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class SocialLink(SocialLinkInDB):
     pass
