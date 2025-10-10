@@ -75,7 +75,7 @@ jobs:
             exit 1
           fi
           
-          DEPLOY_ID=$(echo "$DEPLOY_BODY" | jq -r '.id // empty')
+          DEPLOY_ID=$(echo "$DEPLOY_BODY" | jq -r '.deploy.id // empty')
           if [ -z "$DEPLOY_ID" ]; then
             echo "Failed to extract deploy ID from response"
             echo "Response: $DEPLOY_BODY"
