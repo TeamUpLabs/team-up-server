@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from core.database.database import get_db
-from api.v1.services.project.whiteboard_service import WhiteBoardService
-from api.v1.schemas.project.whiteboard_schema import WhiteBoardCreate, WhiteBoardUpdate, WhiteBoardDetail, Comment, CommentCreate
-from core.security.auth import get_current_user
+from src.core.database.database import get_db
+from src.api.v1.services.project.whiteboard_service import WhiteBoardService
+from src.api.v1.schemas.project.whiteboard_schema import WhiteBoardCreate, WhiteBoardUpdate, WhiteBoardDetail, Comment, CommentCreate
+from src.core.security.auth import get_current_user
 from typing import List
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/whiteboards", tags=["whiteboards"])

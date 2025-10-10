@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
-from api.v1.schemas.brief import UserBrief
+from src.api.v1.schemas.brief import UserBrief
 from datetime import datetime
 
 class PostBase(BaseModel):

@@ -1,6 +1,6 @@
-from api.v1.repositories.project.chat_repository import ChatRepository
+from src.api.v1.repositories.project.chat_repository import ChatRepository
 from sqlalchemy.orm import Session
-from api.v1.schemas.project.chat_schema import ChatCreate, ChatDetail, ChatUpdate
+from src.api.v1.schemas.project.chat_schema import ChatCreate, ChatDetail, ChatUpdate
 from typing import List
 from datetime import datetime
 

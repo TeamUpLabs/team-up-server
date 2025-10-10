@@ -1,9 +1,9 @@
 from typing import Dict, Any, List
 from collections import Counter
 from sqlalchemy.orm import Session
-from api.v1.repositories.community.post_repository import PostRepository
-from api.v1.repositories.community.recommendation_repository import RecommendationRepository
-from api.v1.models.community.post import Post
+from src.api.v1.repositories.community.post_repository import PostRepository
+from src.api.v1.repositories.community.recommendation_repository import RecommendationRepository
+from src.api.v1.models.community.post import Post
 
 class CommunityRepository:
   def __init__(self, db: Session):

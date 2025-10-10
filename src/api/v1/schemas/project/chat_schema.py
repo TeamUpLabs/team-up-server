@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
-from api.v1.schemas.brief import UserBrief
+from src.api.v1.schemas.brief import UserBrief
 
 class ChatBase(BaseModel):
   """채팅 기본 스키마"""

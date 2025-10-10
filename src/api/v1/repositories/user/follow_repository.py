@@ -2,9 +2,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 from fastapi import status
-from api.v1.models.association_tables import user_follows
-from api.v1.models.user import User
-from api.v1.schemas.user.follow_schema import FollowList, FollowCreate, FollowResponse
+from src.api.v1.models.association_tables import user_follows
+from src.api.v1.models.user import User
+from src.api.v1.schemas.user.follow_schema import FollowList, FollowCreate, FollowResponse
 
 class FollowRepository:
   def __init__(self, db: Session):

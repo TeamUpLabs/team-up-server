@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
-from core.database.database import Base
-from api.v1.models.base import BaseModel
-from api.v1.models.association_tables import channel_members
+from src.core.database.database import Base
+from src.api.v1.models.base import BaseModel
+from src.api.v1.models.association_tables import channel_members
 
 class Channel(Base, BaseModel):
   __tablename__ = "channels"

@@ -1,15 +1,15 @@
-from api.v1.models.project.channel import Channel
-from api.v1.models.project.chat import Chat
-from api.v1.models.user import User
-from api.v1.schemas.project.channel_schema import ChannelCreate, ChannelUpdate, ChannelDetail, ChannelMemberResponse
-from api.v1.schemas.project.chat_schema import ChatDetail
-from api.v1.schemas.brief import UserBrief
+from src.api.v1.models.project.channel import Channel
+from src.api.v1.models.project.chat import Chat
+from src.api.v1.models.user import User
+from src.api.v1.schemas.project.channel_schema import ChannelCreate, ChannelUpdate, ChannelDetail, ChannelMemberResponse
+from src.api.v1.schemas.project.chat_schema import ChatDetail
+from src.api.v1.schemas.brief import UserBrief
 from sqlalchemy.orm import Session
 from datetime import datetime
 from fastapi import HTTPException
 from typing import List
 from sqlalchemy import and_
-from api.v1.models.association_tables import channel_members
+from src.api.v1.models.association_tables import channel_members
 
 class ChannelRepository:
   def __init__(self, db: Session):

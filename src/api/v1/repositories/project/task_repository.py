@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from api.v1.models.project.task import Task, SubTask, Comment
-from api.v1.models.user.user import User
-from api.v1.models.project.project import Project
-from api.v1.models.project.milestone import Milestone
-from api.v1.schemas.project.task_schema import CommentCreate, CommentUpdate, TaskDetail, TaskCreate, TaskUpdate, SubTaskCreate, SubTaskUpdate
+from src.api.v1.models.project.task import Task, SubTask, Comment
+from src.api.v1.models.user.user import User
+from src.api.v1.models.project.project import Project
+from src.api.v1.models.project.milestone import Milestone
+from src.api.v1.schemas.project.task_schema import CommentCreate, CommentUpdate, TaskDetail, TaskCreate, TaskUpdate, SubTaskCreate, SubTaskUpdate
 from typing import List
 from datetime import datetime
 

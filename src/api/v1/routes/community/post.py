@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from api.v1.services.community.post_service import PostService
-from api.v1.schemas.community.post_schema import PostCreate, PostUpdate, CommentCreate, PostDetail
-from core.security.auth import get_current_user
+from src.api.v1.services.community.post_service import PostService
+from src.api.v1.schemas.community.post_schema import PostCreate, PostUpdate, CommentCreate, PostDetail
+from src.core.security.auth import get_current_user
 from sqlalchemy.orm import Session
-from core.database.database import get_db
+from src.core.database.database import get_db
 
 router = APIRouter(prefix="/api/v1/community/posts", tags=["community_posts"])
 

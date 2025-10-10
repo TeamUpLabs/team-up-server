@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, func
 from sqlalchemy.orm import relationship
-from core.database.database import Base
-from api.v1.models.base import BaseModel
+from src.core.database.database import Base
+from src.api.v1.models.base import BaseModel
 
 class UserSession(Base, BaseModel):
   """사용자 세션 모델"""

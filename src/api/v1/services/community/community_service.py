@@ -1,6 +1,6 @@
 from typing import Dict, Any, List
 from sqlalchemy.orm import Session
-from api.v1.repositories.community.community_repository import CommunityRepository
+from src.api.v1.repositories.community.community_repository import CommunityRepository
 
 class CommunityService:
   def __init__(self, db: Session):

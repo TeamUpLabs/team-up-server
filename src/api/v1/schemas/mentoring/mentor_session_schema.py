@@ -1,8 +1,7 @@
 from pydantic import BaseModel
-from typing import Optional
-from api.v1.schemas.brief import UserBrief
+from src.api.v1.schemas.brief import UserBrief
 from datetime import datetime
-from api.v1.schemas.mentoring.mentor_schema import MentorDetail
+from src.api.v1.schemas.mentoring.mentor_schema import MentorDetail
 
 class MentorSessionBase(BaseModel):
   title: str

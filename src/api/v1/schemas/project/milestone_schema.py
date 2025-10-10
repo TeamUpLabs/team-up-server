@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
-from api.v1.schemas.brief import UserBrief, TaskBrief
+from src.api.v1.schemas.brief import UserBrief, TaskBrief
 
 class MilestoneBase(BaseModel):
   title: str = Field(..., min_length=2, max_length=100)

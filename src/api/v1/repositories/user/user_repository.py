@@ -3,16 +3,16 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
 
-from core.security.password import get_password_hash
-from api.v1.models.user.user import User
-from api.v1.models.user.tech_stack import UserTechStack
-from api.v1.models.user.interest import UserInterest
-from api.v1.models.user.social_link import UserSocialLink
-from api.v1.models.user.collaboration_preference import CollaborationPreference
-from api.v1.schemas.user.user_schema import UserCreate, UserUpdate, UserDetail, UserNolinks
-from api.v1.schemas.brief import UserBrief
-from api.v1.schemas.user.follow_schema import FollowList
-from api.v1.schemas.user.user_schema import UserNolinks
+from src.core.security.password import get_password_hash
+from src.api.v1.models.user.user import User
+from src.api.v1.models.user.tech_stack import UserTechStack
+from src.api.v1.models.user.interest import UserInterest
+from src.api.v1.models.user.social_link import UserSocialLink
+from src.api.v1.models.user.collaboration_preference import CollaborationPreference
+from src.api.v1.schemas.user.user_schema import UserCreate, UserUpdate, UserDetail, UserNolinks
+from src.api.v1.schemas.brief import UserBrief
+from src.api.v1.schemas.user.follow_schema import FollowList
+from src.api.v1.schemas.user.user_schema import UserNolinks
 
 class UserRepository:
   def __init__(self, db: Session):

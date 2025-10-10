@@ -1,12 +1,12 @@
 from typing import List
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from api.v1.schemas.user.tech_stack_schema import (
+from src.api.v1.schemas.user.tech_stack_schema import (
     TechStackCreate,
     TechStackUpdate,
     TechStackInDB
 )
-from api.v1.repositories.user.tech_stack_repository import TechStackRepository
+from src.api.v1.repositories.user.tech_stack_repository import TechStackRepository
 
 class TechStackService:
   def __init__(self, db: Session):

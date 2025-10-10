@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from sqlalchemy.orm import Session
-from api.v1.repositories.community.recommendation_repository import RecommendationRepository
+from src.api.v1.repositories.community.recommendation_repository import RecommendationRepository
 
 class RecommendationService:
   def __init__(self, db: Session):

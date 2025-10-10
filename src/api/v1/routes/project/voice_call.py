@@ -1,5 +1,5 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, HTTPException
-from core.security.jwt import verify_token
+from src.core.security.jwt import verify_token
 import logging
 import json
 from typing import Dict

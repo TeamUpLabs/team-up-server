@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from core.database.database import get_db
-from api.v1.services.project.task_service import TaskService
-from api.v1.schemas.project.task_schema import TaskCreate, TaskUpdate, CommentCreate, CommentUpdate, SubTaskCreate, SubTaskUpdate, TaskDetail, CommentDetail, SubTaskDetail
-from core.security.auth import get_current_user
+from src.core.database.database import get_db
+from src.api.v1.services.project.task_service import TaskService
+from src.api.v1.schemas.project.task_schema import TaskCreate, TaskUpdate, CommentCreate, CommentUpdate, SubTaskCreate, SubTaskUpdate, TaskDetail, CommentDetail, SubTaskDetail
+from src.core.security.auth import get_current_user
 from typing import List, Optional
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/tasks", tags=["tasks"])

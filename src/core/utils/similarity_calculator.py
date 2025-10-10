@@ -3,12 +3,8 @@
 collaboration preference, tech_stacks, interests를 기반으로 유사도를 계산합니다.
 """
 
-from typing import List, Dict, Optional, Tuple
-from api.v1.models.user.user import User
-from api.v1.models.user.collaboration_preference import CollaborationPreference
-from api.v1.models.user.tech_stack import UserTechStack
-from api.v1.models.user.interest import UserInterest
-import math
+from typing import List, Tuple
+from src.api.v1.models.user.user import User
 
 
 class UserSimilarityCalculator:

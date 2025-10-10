@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from core.database.database import get_db
-from api.v1.services.project.project_service import ProjectService
-from api.v1.schemas.project.project_schema import ProjectCreate, ProjectUpdate, ProjectDetail
-from core.security.auth import get_current_user
+from src.core.database.database import get_db
+from src.api.v1.services.project.project_service import ProjectService
+from src.api.v1.schemas.project.project_schema import ProjectCreate, ProjectUpdate, ProjectDetail
+from src.core.security.auth import get_current_user
 from typing import List, Dict, Any
-from core.utils.sse_manager import project_sse_manager
+from src.core.utils.sse_manager import project_sse_manager
 from fastapi.responses import StreamingResponse
 from fastapi import Request
 import json

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, status
-from api.v1.models.project.whiteboard import (
+from src.api.v1.models.project.whiteboard import (
   WhiteBoard,
   Document,
   Attachment,
@@ -8,7 +8,7 @@ from api.v1.models.project.whiteboard import (
   WhiteboardReactionLike,
   WhiteboardComment,
 )
-from api.v1.schemas.project.whiteboard_schema import (
+from src.api.v1.schemas.project.whiteboard_schema import (
   WhiteBoardDetail,
   WhiteBoardCreate,
   WhiteBoardUpdate,
@@ -18,8 +18,8 @@ from api.v1.schemas.project.whiteboard_schema import (
   Comment,
   CommentCreate
 )
-from api.v1.schemas.brief import UserBrief
-from api.v1.models.project.project import Project
+from src.api.v1.schemas.brief import UserBrief
+from src.api.v1.models.project.project import Project
 from typing import List, Set
 from datetime import datetime
 import logging

@@ -1,8 +1,8 @@
-from schemas.notification import NotificationCreate
-from src.core.utils.see_manager import notification_sse_manager
+from src.api.v1.schemas.user import NotificationCreate
+from src.core.utils.sse_manager import notification_sse_manager
 import json
 from sqlalchemy.orm import Session
-from models.user import User as UserModel
+from src.api.v1.models.user.user import User as UserModel
 import logging
 
 async def send_notification(

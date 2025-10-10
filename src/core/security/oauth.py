@@ -4,11 +4,12 @@ import logging
 from fastapi import HTTPException
 from dotenv import load_dotenv
 import requests
+from src.core.config import setting
 
 load_dotenv()
 
-GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
-GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
+GITHUB_CLIENT_ID = setting.GITHUB_CLIENT_ID or os.getenv("GITHUB_CLIENT_ID")
+GITHUB_CLIENT_SECRET = setting.GITHUB_CLIENT_SECRET or os.getenv("GITHUB_CLIENT_SECRET")
 JWT_SECRET = os.getenv("SECRET_KEY")
 
 async def get_github_access_token(code: str) -> str:
@@ -132,9 +133,9 @@ async def get_google_access_token(code: str) -> str:
     url = "https://www.googleapis.com/oauth2/v3/token"
     payload={
       'code': code,
-      'client_id': os.getenv('GOOGLE_CLIENT_ID'),
-      'client_secret': os.getenv('GOOGLE_CLIENT_SECRET'),
-      'redirect_uri': os.getenv('GOOGLE_REDIRECT_URI'),
+      'client_id': setting.GOOGLE_CLIENT_ID or os.getenv('GOOGLE_CLIENT_ID'),
+      'client_secret': setting.GOOGLE_CLIENT_SECRET or os.getenv('GOOGLE_CLIENT_SECRET'),
+      'redirect_uri': setting.GOOGLE_REDIRECT_URI or os.getenv('GOOGLE_REDIRECT_URI'),
       'grant_type': 'authorization_code'
     }
     headers = {}

@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
-from core.database.database import Base
-from api.v1.models.base import BaseModel
+from src.core.database.database import Base
+from src.api.v1.models.base import BaseModel
 
 class MentorSession(Base, BaseModel):
   """멘토 세션 모델"""

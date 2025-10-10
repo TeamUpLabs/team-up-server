@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-from core.database.database import engine, Base
-from core.middleware.ErrorHandlingMiddleware import ErrorHandlingMiddleware
-from core.middleware.LoggingMiddleware import LoggingMiddleware
-from core.config import setting
+from src.core.database.database import engine, Base
+from src.core.middleware.ErrorHandlingMiddleware import ErrorHandlingMiddleware
+from src.core.middleware.LoggingMiddleware import LoggingMiddleware
+from src.core.config import setting
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -14,10 +14,10 @@ except Exception as e:
     print("🔧 Running in WebSocket-only mode")
 
 # Import routers after models to avoid circular imports
-from api.v1.routes.user import routers as user_routers
-from api.v1.routes.project import routers as project_routers
-from api.v1.routes.community import routers as community_routers
-from api.v1.routes.mentoring import routers as mentoring_routers
+from src.api.v1.routes.user import routers as user_routers
+from src.api.v1.routes.project import routers as project_routers
+from src.api.v1.routes.community import routers as community_routers
+from src.api.v1.routes.mentoring import routers as mentoring_routers
 
 app = FastAPI(
   title=setting.TITLE,

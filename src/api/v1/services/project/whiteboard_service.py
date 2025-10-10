@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from api.v1.repositories.project.whiteboard_repository import WhiteBoardRepository
-from api.v1.schemas.project.whiteboard_schema import WhiteBoardCreate, WhiteBoardUpdate, WhiteBoardDetail, Comment, CommentCreate
+from src.api.v1.repositories.project.whiteboard_repository import WhiteBoardRepository
+from src.api.v1.schemas.project.whiteboard_schema import WhiteBoardCreate, WhiteBoardUpdate, WhiteBoardDetail, Comment, CommentCreate
 from typing import List
 
 class WhiteBoardService:

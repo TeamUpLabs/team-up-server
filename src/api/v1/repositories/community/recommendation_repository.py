@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 from fastapi import HTTPException
-from core.utils.similarity_calculator import similarity_calculator
-from api.v1.models.user import User
+from src.core.utils.similarity_calculator import similarity_calculator
+from src.api.v1.models.user import User
 
 class RecommendationRepository:
   def __init__(self, db: Session):

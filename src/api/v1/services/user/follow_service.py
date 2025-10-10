@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from api.v1.repositories.user.follow_repository import FollowRepository
-from api.v1.schemas.user.follow_schema import FollowCreate, FollowList, FollowResponse
+from src.api.v1.repositories.user.follow_repository import FollowRepository
+from src.api.v1.schemas.user.follow_schema import FollowCreate, FollowList, FollowResponse
 
 class FollowService:
   def __init__(self, db: Session):

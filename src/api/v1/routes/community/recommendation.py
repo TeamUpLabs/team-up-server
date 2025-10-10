@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from api.v1.services.community.recommendation_service import RecommendationService
-from api.v1.schemas.community.recommendation_schema import FollowRecommendationResponse, RecommendationRequest, SimilarityBreakdownResponse, SimilarityAnalysisRequest, RecommendationStatsResponse
+from src.api.v1.services.community.recommendation_service import RecommendationService
+from src.api.v1.schemas.community.recommendation_schema import FollowRecommendationResponse, RecommendationRequest, SimilarityBreakdownResponse, SimilarityAnalysisRequest, RecommendationStatsResponse
 from typing import List
-from core.security.auth import get_current_user
-from core.database.database import get_db
+from src.core.security.auth import get_current_user
+from src.core.database.database import get_db
 
 router = APIRouter(prefix="/api/v1/community/recommendation", tags=["recommendation"])
 

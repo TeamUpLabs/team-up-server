@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from api.v1.repositories.project.github_repository import GitHubRepository
-from api.v1.schemas.project.github_schema import CreateOrgRepo
+from src.api.v1.repositories.project.github_repository import GitHubRepository
+from src.api.v1.schemas.project.github_schema import CreateOrgRepo
 
 class GitHubService:
   def __init__(self, db: Session):

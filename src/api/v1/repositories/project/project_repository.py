@@ -1,13 +1,13 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
-from api.v1.models.project.project import Project
-from api.v1.schemas.project.project_schema import ProjectDetail, ProjectCreate, ProjectUpdate
-from api.v1.repositories.user.user_repository import UserRepository
-from api.v1.models.association_tables import project_members
-from api.v1.models.user.user import User
-from core.utils.format_project_members import format_member_details
-from core.utils.calculate_project_stat import calculate_project_stat
+from src.api.v1.models.project.project import Project
+from src.api.v1.schemas.project.project_schema import ProjectDetail, ProjectCreate, ProjectUpdate
+from src.api.v1.repositories.user.user_repository import UserRepository
+from src.api.v1.models.association_tables import project_members
+from src.api.v1.models.user.user import User
+from src.core.utils.format_project_members import format_member_details
+from src.core.utils.calculate_project_stat import calculate_project_stat
 from fastapi import status
 
 class ProjectRepository:

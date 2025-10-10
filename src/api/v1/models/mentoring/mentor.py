@@ -1,5 +1,5 @@
-from core.database.database import Base
-from api.v1.models.base import BaseModel
+from src.core.database.database import Base
+from src.api.v1.models.base import BaseModel
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, JSON, DateTime
 from sqlalchemy.orm import relationship
 

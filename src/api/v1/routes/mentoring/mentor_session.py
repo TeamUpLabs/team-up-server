@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from api.v1.services.mentoring.mentor_session_service import MentorSessionService
-from api.v1.schemas.mentoring.mentor_session_schema import MentorSessionCreate, MentorSessionDetail, MentorSessionUpdate
+from src.api.v1.services.mentoring.mentor_session_service import MentorSessionService
+from src.api.v1.schemas.mentoring.mentor_session_schema import MentorSessionCreate, MentorSessionDetail, MentorSessionUpdate
 from typing import List, Optional
-from core.database.database import get_db
-from core.security.auth import get_current_user
+from src.core.database.database import get_db
+from src.core.security.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/mentors/sessions", tags=["Mentor Session"])
 

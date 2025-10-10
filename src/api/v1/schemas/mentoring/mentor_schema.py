@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
-from api.v1.schemas.brief import UserBrief
+from src.api.v1.schemas.brief import UserBrief
 
 class MentorBase(BaseModel):
   location: List[str]

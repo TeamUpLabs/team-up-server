@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from api.v1.repositories.mentoring.mentor_repository import MentorRepository
-from api.v1.schemas.mentoring.mentor_schema import MentorCreate, MentorDetail, MentorUpdate
-from api.v1.models.mentoring.mentor import Mentor
+from src.api.v1.repositories.mentoring.mentor_repository import MentorRepository
+from src.api.v1.schemas.mentoring.mentor_schema import MentorCreate, MentorDetail, MentorUpdate
+from src.api.v1.models.mentoring.mentor import Mentor
 from typing import List
 
 class MentoringService:

@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON
 from sqlalchemy.orm import relationship
-from core.database.database import Base
-from api.v1.models.base import BaseModel
-from api.v1.models.association_tables import milestone_assignees
+from src.core.database.database import Base
+from src.api.v1.models.base import BaseModel
+from src.api.v1.models.association_tables import milestone_assignees
 
 class Milestone(Base, BaseModel):
   """마일스톤 모델"""

@@ -1,8 +1,8 @@
 from typing import List
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from api.v1.models.user.tech_stack import UserTechStack as DBTechStack
-from api.v1.schemas.user.tech_stack_schema import (
+from src.api.v1.models.user.tech_stack import UserTechStack as DBTechStack
+from src.api.v1.schemas.user.tech_stack_schema import (
     TechStackCreate,
     TechStackUpdate
 )

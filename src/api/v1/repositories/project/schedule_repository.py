@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
-from api.v1.schemas.project.schedule_schema import ScheduleCreate, ScheduleUpdate, ScheduleDetail
-from api.v1.models.project.schedule import Schedule
-from api.v1.models.association_tables import project_members
-from api.v1.models.project import Project
-from api.v1.models.user import User
+from src.api.v1.schemas.project.schedule_schema import ScheduleCreate, ScheduleUpdate, ScheduleDetail
+from src.api.v1.models.project.schedule import Schedule
+from src.api.v1.models.association_tables import project_members
+from src.api.v1.models.project import Project
+from src.api.v1.models.user import User
 from fastapi import HTTPException, status
 from typing import List
 

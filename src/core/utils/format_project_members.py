@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
-from api.v1.models.association_tables import project_members
-from api.v1.models.user.user import User
+from src.api.v1.models.association_tables import project_members
+from src.api.v1.models.user.user import User
 from typing import Dict, Any
-from api.v1.schemas.brief import UserBrief
+from src.api.v1.schemas.brief import UserBrief
 
 def format_member_details(db: Session, project_id: str, member: User) -> Dict[str, Any]:
     """

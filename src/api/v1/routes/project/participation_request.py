@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from core.database.database import get_db
-from api.v1.services.project.participation_request_service import ParticipationRequestService
-from api.v1.schemas.project.participation_request_schema import ParticipationRequestCreate, ParticipationRequestUpdate, ParticipationRequestDetail
-from core.security.auth import get_current_user
+from src.core.database.database import get_db
+from src.api.v1.services.project.participation_request_service import ParticipationRequestService
+from src.api.v1.schemas.project.participation_request_schema import ParticipationRequestCreate, ParticipationRequestUpdate, ParticipationRequestDetail
+from src.core.security.auth import get_current_user
 from typing import List, Optional
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/participation_requests", tags=["participation_requests"])

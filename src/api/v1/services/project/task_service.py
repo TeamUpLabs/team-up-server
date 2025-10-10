@@ -1,9 +1,9 @@
-from api.v1.repositories.project.task_repository import TaskRepository
-from api.v1.schemas.project.task_schema import CommentCreate, CommentUpdate, SubTaskCreate, SubTaskUpdate, TaskCreate, TaskUpdate
-from api.v1.models.project.task import SubTask, Task, Comment
+from src.api.v1.repositories.project.task_repository import TaskRepository
+from src.api.v1.schemas.project.task_schema import CommentCreate, CommentUpdate, SubTaskCreate, SubTaskUpdate, TaskCreate, TaskUpdate
+from src.api.v1.models.project.task import SubTask, Task, Comment
 from sqlalchemy.orm import Session
 from typing import List
-from api.v1.schemas.project.task_schema import TaskDetail, CommentDetail
+from src.api.v1.schemas.project.task_schema import TaskDetail, CommentDetail
 
 class TaskService:
   def __init__(self, db: Session):

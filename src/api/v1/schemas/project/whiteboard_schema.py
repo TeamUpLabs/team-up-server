@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Union
 from datetime import datetime
-from api.v1.schemas.brief import UserBrief
+from src.api.v1.schemas.brief import UserBrief
 
 class AttachmentBase(BaseModel):
   filename: str

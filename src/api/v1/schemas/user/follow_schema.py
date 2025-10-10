@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List
-from api.v1.schemas.brief import UserBrief
+from src.api.v1.schemas.brief import UserBrief
 
 class FollowBase(BaseModel):
   follower_id: int

@@ -3,14 +3,14 @@ import asyncio
 import logging
 from typing import Dict, Set
 from sqlalchemy.orm import Session
-from api.v1.services.project.chat_service import ChatService
-from api.v1.schemas.project.chat_schema import ChatCreate, ChatDetail
+from src.api.v1.services.project.chat_service import ChatService
+from src.api.v1.schemas.project.chat_schema import ChatCreate, ChatDetail
 from datetime import datetime
 from fastapi import WebSocket, WebSocketDisconnect, status, Depends
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
-from api.v1.services.user.user_service import UserService
-from core.database.database import get_db
+from src.api.v1.services.user.user_service import UserService
+from src.core.database.database import get_db
 
 load_dotenv()
 

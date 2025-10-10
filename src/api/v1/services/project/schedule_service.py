@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from api.v1.repositories.project.schedule_repository import ScheduleRepository
-from api.v1.schemas.project.schedule_schema import ScheduleCreate, ScheduleUpdate, ScheduleDetail
+from src.api.v1.repositories.project.schedule_repository import ScheduleRepository
+from src.api.v1.schemas.project.schedule_schema import ScheduleCreate, ScheduleUpdate, ScheduleDetail
 from typing import List
 
 class ScheduleService:

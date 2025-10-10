@@ -1,5 +1,5 @@
 from sqlalchemy import Table, Column, ForeignKey, Integer, String, DateTime, Index, func
-from core.database.database import Base
+from src.core.database.database import Base
 
 # 프로젝트-멤버 관계 테이블
 project_members = Table(

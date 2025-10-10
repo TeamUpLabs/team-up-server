@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, func
 from sqlalchemy.orm import relationship
-from core.database.database import Base
-from api.v1.models.base import BaseModel
-from api.v1.models.association_tables import project_members, user_follows, user_post_bookmarks, mentor_mentees
+from src.core.database.database import Base
+from src.api.v1.models.base import BaseModel
+from src.api.v1.models.association_tables import project_members, user_follows, user_post_bookmarks, mentor_mentees
 
 class User(Base, BaseModel):
   """사용자 모델"""

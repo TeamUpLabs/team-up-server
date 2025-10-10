@@ -1,9 +1,9 @@
 from fastapi import APIRouter
 from sqlalchemy.orm import Session
-from core.database.database import get_db
-from api.v1.services.project.schedule_service import ScheduleService
-from api.v1.schemas.project.schedule_schema import ScheduleCreate, ScheduleUpdate, ScheduleDetail
-from core.security.auth import get_current_user
+from src.core.database.database import get_db
+from src.api.v1.services.project.schedule_service import ScheduleService
+from src.api.v1.schemas.project.schedule_schema import ScheduleCreate, ScheduleUpdate, ScheduleDetail
+from src.core.security.auth import get_current_user
 from typing import List
 from fastapi import HTTPException, status, Depends
 

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, validator
 from typing import Optional, List
 from datetime import datetime
-from api.v1.schemas.brief import UserBrief, MilestoneBrief
+from src.api.v1.schemas.brief import UserBrief, MilestoneBrief
 
 class CommentBase(BaseModel):
   content: str

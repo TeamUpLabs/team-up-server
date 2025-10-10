@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from core.database.database import get_db
-from core.security.auth import get_current_user
-from api.v1.services.community.community_service import CommunityService
+from src.core.database.database import get_db
+from src.core.security.auth import get_current_user
+from src.api.v1.services.community.community_service import CommunityService
 
 router = APIRouter(prefix="/api/v1/community", tags=["community"])
 

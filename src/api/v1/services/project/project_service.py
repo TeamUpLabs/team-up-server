@@ -1,9 +1,9 @@
-from api.v1.repositories.project.project_repository import ProjectRepository
-from api.v1.schemas.project.project_schema import ProjectDetail
+from src.api.v1.repositories.project.project_repository import ProjectRepository
+from src.api.v1.schemas.project.project_schema import ProjectDetail
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
-from api.v1.schemas.project.project_schema import ProjectCreate, ProjectUpdate
-from api.v1.models.project.project import Project
+from src.api.v1.schemas.project.project_schema import ProjectCreate, ProjectUpdate
+from src.api.v1.models.project.project import Project
 
 class ProjectService:
   def __init__(self, db: Session):

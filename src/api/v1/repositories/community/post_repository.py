@@ -1,12 +1,12 @@
 from sqlalchemy.orm import Session, joinedload
-from api.v1.schemas.community.post_schema import PostCreate, PostUpdate, PostDetail, CommentCreate
-from api.v1.models.community.post import Post, PostReaction, PostComment
-from api.v1.models.user import User
-from api.v1.schemas.brief import UserBrief
+from src.api.v1.schemas.community.post_schema import PostCreate, PostUpdate, PostDetail, CommentCreate
+from src.api.v1.models.community.post import Post, PostReaction, PostComment
+from src.api.v1.models.user import User
+from src.api.v1.schemas.brief import UserBrief
 from collections import defaultdict
 from typing import Dict, Any, List
 from fastapi import HTTPException
-from api.v1.models.association_tables import user_post_bookmarks
+from src.api.v1.models.association_tables import user_post_bookmarks
 
 class PostRepository:
   def __init__(self, db: Session):

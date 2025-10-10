@@ -1,9 +1,8 @@
 from sqlalchemy.orm import Session
-from api.v1.models.project.channel import Channel
-from api.v1.repositories.project.channel_repository import ChannelRepository
-from api.v1.schemas.project.channel_schema import ChannelCreate, ChannelUpdate, ChannelDetail
-from api.v1.schemas.project.chat_schema import ChatDetail
-from api.v1.schemas.brief import UserBrief
+from src.api.v1.repositories.project.channel_repository import ChannelRepository
+from src.api.v1.schemas.project.channel_schema import ChannelCreate, ChannelUpdate, ChannelDetail
+from src.api.v1.schemas.project.chat_schema import ChatDetail
+from src.api.v1.schemas.brief import UserBrief
 from typing import List
 
 class ChannelService:

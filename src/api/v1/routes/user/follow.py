@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from api.v1.services.user.follow_service import FollowService
-from api.v1.schemas.user.follow_schema import FollowCreate, FollowList
-from core.security.auth import get_current_user
-from core.database.database import get_db
+from src.api.v1.services.user.follow_service import FollowService
+from src.api.v1.schemas.user.follow_schema import FollowCreate, FollowList
+from src.core.security.auth import get_current_user
+from src.core.database.database import get_db
 
 router = APIRouter(prefix="/api/v1/users/{user_id}/follow", tags=["follow"])
 

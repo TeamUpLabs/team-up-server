@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.orm import relationship
-from core.database.database import Base
-from api.v1.models.base import BaseModel
+from src.core.database.database import Base
+from src.api.v1.models.base import BaseModel
 
 class UserSocialLink(Base, BaseModel):
   """사용자 소셜링크 모델"""

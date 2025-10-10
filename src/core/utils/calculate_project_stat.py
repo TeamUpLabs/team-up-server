@@ -1,4 +1,4 @@
-from api.v1.models.project.project import Project
+from src.api.v1.models.project.project import Project
 from datetime import datetime
 from typing import Dict, Any
 

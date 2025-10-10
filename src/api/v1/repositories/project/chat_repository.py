@@ -1,5 +1,5 @@
-from api.v1.models.project.chat import Chat
-from api.v1.schemas.project.chat_schema import ChatCreate, ChatUpdate, ChatDetail
+from src.api.v1.models.project.chat import Chat
+from src.api.v1.schemas.project.chat_schema import ChatCreate, ChatUpdate, ChatDetail
 from sqlalchemy.orm import Session
 from datetime import datetime
 from fastapi import HTTPException

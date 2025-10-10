@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from core.database.database import Base
-from api.v1.models.base import BaseModel
-from api.v1.models.association_tables import schedule_assignees
+from src.core.database.database import Base
+from src.api.v1.models.base import BaseModel
+from src.api.v1.models.association_tables import schedule_assignees
 
 class Schedule(Base, BaseModel):
   __tablename__ = "schedules"

@@ -1,20 +1,20 @@
 from typing import Optional, List, Dict
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
-from api.v1.schemas.brief import UserBrief
-from api.v1.schemas.user.notification_schema import NotificationCreate, NotificationUpdate
-from api.v1.schemas.user.collaboration_preference_schema import CollaborationPreferenceCreate, CollaborationPreferenceUpdate
-from api.v1.schemas.user.interest_schema import InterestCreate, InterestUpdate
-from api.v1.schemas.user.tech_stack_schema import TechStackCreate, TechStackUpdate
-from api.v1.schemas.user.social_link_schema import SocialLinkCreate, SocialLinkUpdate
-from api.v1.schemas.user.follow_schema import FollowList
-from api.v1.schemas.project.project_schema import ProjectDetail
-from api.v1.schemas.user.collaboration_preference_schema import CollaborationPreference
-from api.v1.schemas.user.tech_stack_schema import TechStack
-from api.v1.schemas.user.interest_schema import Interest
-from api.v1.schemas.user.social_link_schema import SocialLink
-from api.v1.schemas.user.notification_schema import Notification
-from api.v1.schemas.user.session_schema import SessionDetail
+from src.api.v1.schemas.brief import UserBrief
+from src.api.v1.schemas.user.notification_schema import NotificationCreate, NotificationUpdate
+from src.api.v1.schemas.user.collaboration_preference_schema import CollaborationPreferenceCreate, CollaborationPreferenceUpdate
+from src.api.v1.schemas.user.interest_schema import InterestCreate, InterestUpdate
+from src.api.v1.schemas.user.tech_stack_schema import TechStackCreate, TechStackUpdate
+from src.api.v1.schemas.user.social_link_schema import SocialLinkCreate, SocialLinkUpdate
+from src.api.v1.schemas.user.follow_schema import FollowList
+from src.api.v1.schemas.project.project_schema import ProjectDetail
+from src.api.v1.schemas.user.collaboration_preference_schema import CollaborationPreference
+from src.api.v1.schemas.user.tech_stack_schema import TechStack
+from src.api.v1.schemas.user.interest_schema import Interest
+from src.api.v1.schemas.user.social_link_schema import SocialLink
+from src.api.v1.schemas.user.notification_schema import Notification
+from src.api.v1.schemas.user.session_schema import SessionDetail
 
 
 class UserBase(BaseModel):

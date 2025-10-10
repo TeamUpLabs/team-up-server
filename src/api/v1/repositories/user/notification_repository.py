@@ -2,8 +2,8 @@ from typing import List, Optional
 from datetime import datetime
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from api.v1.models.user.notification import Notification as DBNotification
-from api.v1.schemas.user.notification_schema import (
+from src.api.v1.models.user.notification import Notification as DBNotification
+from src.api.v1.schemas.user.notification_schema import (
     NotificationCreate,
     NotificationUpdate,
     NotificationType

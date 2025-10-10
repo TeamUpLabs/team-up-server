@@ -1,16 +1,15 @@
 from typing import List
-from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from api.v1.repositories.user.user_repository import UserRepository
-from api.v1.schemas.user.user_schema import (
+from src.api.v1.repositories.user.user_repository import UserRepository
+from src.api.v1.schemas.user.user_schema import (
     UserCreate,
     UserUpdate,
     UserDetail,
     UserNolinks
 )
-from api.v1.schemas.brief import UserBrief
-from api.v1.models.user.user import User
+from src.api.v1.schemas.brief import UserBrief
+from src.api.v1.models.user.user import User
 
 class UserService:
   def __init__(self, db: Session):

@@ -2,14 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from core.database.database import get_db
-from api.v1.schemas.user.interest_schema import (
+from src.core.database.database import get_db
+from src.api.v1.schemas.user.interest_schema import (
     Interest,
     InterestCreate,
     InterestUpdate
 )
-from api.v1.services.user.interest_service import InterestService
-from core.security.auth import get_current_user
+from src.api.v1.services.user.interest_service import InterestService
+from src.core.security.auth import get_current_user
 
 router = APIRouter(
   prefix="/api/v1/users/{user_id}/interests",

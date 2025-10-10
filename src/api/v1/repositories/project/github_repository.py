@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from api.v1.schemas.project.github_schema import CreateOrgRepo
+from src.api.v1.schemas.project.github_schema import CreateOrgRepo
 import requests
-from api.v1.models.project.project import Project
+from src.api.v1.models.project.project import Project
 from fastapi import HTTPException
 
 

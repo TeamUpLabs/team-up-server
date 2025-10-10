@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Path, Body
 from sqlalchemy.orm import Session
-from core.database.database import get_db
-from api.v1.services.project.milestone_service import MilestoneService
-from api.v1.schemas.project.milestone_schema import MilestoneCreate, MilestoneUpdate, MilestoneDetail
-from api.v1.schemas.project.task_schema import TaskDetail
-from api.v1.schemas.brief import UserBrief
-from core.security.auth import get_current_user
+from src.core.database.database import get_db
+from src.api.v1.services.project.milestone_service import MilestoneService
+from src.api.v1.schemas.project.milestone_schema import MilestoneCreate, MilestoneUpdate, MilestoneDetail
+from src.api.v1.schemas.project.task_schema import TaskDetail
+from src.api.v1.schemas.brief import UserBrief
+from src.core.security.auth import get_current_user
 from typing import List
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/milestones", tags=["milestones"])

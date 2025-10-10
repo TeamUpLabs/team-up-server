@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from api.v1.services.mentoring.mentor_review_service import MentorReviewService
-from api.v1.schemas.mentoring.mentor_review_schema import MentorReviewCreate, MentorReviewDetail, MentorReviewUpdate
+from src.api.v1.services.mentoring.mentor_review_service import MentorReviewService
+from src.api.v1.schemas.mentoring.mentor_review_schema import MentorReviewCreate, MentorReviewDetail, MentorReviewUpdate
 from typing import List, Optional
-from core.database.database import get_db
-from core.security.auth import get_current_user
+from src.core.database.database import get_db
+from src.core.security.auth import get_current_user
 
 router = APIRouter(prefix="/api/v1/mentors/reviews", tags=["Mentor Review"])
 

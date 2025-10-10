@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from api.v1.schemas.mentoring.mentor_review_schema import MentorReviewCreate, MentorReviewUpdate, MentorReviewDetail
-from api.v1.models.mentoring.mentor_review import MentorReview
+from src.api.v1.schemas.mentoring.mentor_review_schema import MentorReviewCreate, MentorReviewUpdate, MentorReviewDetail
+from src.api.v1.models.mentoring.mentor_review import MentorReview
 from fastapi import HTTPException
 from typing import List
 

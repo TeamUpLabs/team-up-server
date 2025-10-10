@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from core.database.database import get_db
-from api.v1.services.project.channel_service import ChannelService
-from api.v1.schemas.project.channel_schema import ChannelCreate, ChannelUpdate, ChannelDetail
-from api.v1.schemas.project.chat_schema import ChatDetail
-from api.v1.schemas.brief import UserBrief
-from core.security.auth import get_current_user
+from src.core.database.database import get_db
+from src.api.v1.services.project.channel_service import ChannelService
+from src.api.v1.schemas.project.channel_schema import ChannelCreate, ChannelUpdate, ChannelDetail
+from src.api.v1.schemas.project.chat_schema import ChatDetail
+from src.api.v1.schemas.brief import UserBrief
+from src.core.security.auth import get_current_user
 from typing import List
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/channels", tags=["channels"])

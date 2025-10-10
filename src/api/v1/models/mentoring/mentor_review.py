@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, Text, ForeignKey
 from sqlalchemy.orm import relationship
-from core.database.database import Base
-from api.v1.models.base import BaseModel
+from src.core.database.database import Base
+from src.api.v1.models.base import BaseModel
 
 class MentorReview(Base, BaseModel):
   """멘토 리뷰 모델"""

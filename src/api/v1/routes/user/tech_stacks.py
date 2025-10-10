@@ -2,14 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from core.database.database import get_db
-from api.v1.schemas.user.tech_stack_schema import (
+from src.core.database.database import get_db
+from src.api.v1.schemas.user.tech_stack_schema import (
     TechStack,
     TechStackCreate,
     TechStackUpdate
 )
-from api.v1.services.user.tech_stack_service import TechStackService
-from core.security.auth import get_current_user
+from src.api.v1.services.user.tech_stack_service import TechStackService
+from src.core.security.auth import get_current_user
 
 router = APIRouter(
   prefix="/api/v1/users/{user_id}/tech-stacks",

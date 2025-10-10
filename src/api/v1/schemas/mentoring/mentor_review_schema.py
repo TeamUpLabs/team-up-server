@@ -1,6 +1,6 @@
 from pydantic import BaseModel
-from api.v1.schemas.brief import UserBrief
-from api.v1.schemas.mentoring.mentor_schema import MentorDetail
+from src.api.v1.schemas.brief import UserBrief
+from src.api.v1.schemas.mentoring.mentor_schema import MentorDetail
 from datetime import datetime
 
 class MentorReviewBase(BaseModel):

@@ -2,15 +2,15 @@ from sqlalchemy.orm import Session
 import os
 from fastapi import HTTPException, Request
 from fastapi.responses import RedirectResponse
-from api.v1.schemas.user.user_schema import UserCreate, UserDetail
-from core.security.oauth import get_github_user_info, get_google_user_info
-from core.security.jwt import create_access_token
+from src.api.v1.schemas.user.user_schema import UserCreate, UserDetail
+from src.core.security.oauth import get_github_user_info, get_google_user_info
+from src.core.security.jwt import create_access_token
 from fastapi import HTTPException, status
 from datetime import datetime
-from api.v1.schemas.user.oauth_schema import OauthRequest
-from api.v1.services.user.user_service import UserService
-from api.v1.services.user.session_service import SessionService
-from api.v1.models.user.session import UserSession
+from src.api.v1.schemas.user.oauth_schema import OauthRequest
+from src.api.v1.services.user.user_service import UserService
+from src.api.v1.services.user.session_service import SessionService
+from src.api.v1.models.user.session import UserSession
 from ua_parser import user_agent_parser
 
 class AuthRepository:

@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
-from api.v1.schemas.project.milestone_schema import MilestoneCreate, MilestoneUpdate, MilestoneDetail
-from api.v1.schemas.project.task_schema import TaskDetail
-from api.v1.schemas.brief import UserBrief
-from api.v1.models.project.milestone import Milestone
-from api.v1.models.project.project import Project
-from api.v1.models.user.user import User
+from src.api.v1.schemas.project.milestone_schema import MilestoneCreate, MilestoneUpdate, MilestoneDetail
+from src.api.v1.schemas.project.task_schema import TaskDetail
+from src.api.v1.schemas.brief import UserBrief
+from src.api.v1.models.project.milestone import Milestone
+from src.api.v1.models.project.project import Project
+from src.api.v1.models.user.user import User
 from fastapi import HTTPException
 from datetime import datetime
 from typing import List

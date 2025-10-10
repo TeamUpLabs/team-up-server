@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel
 
 class UserBrief(BaseModel):
   """간략한 사용자 정보"""

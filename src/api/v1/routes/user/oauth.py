@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Request
-from api.v1.services.user.oauth_service import OauthService
-from api.v1.schemas.user.oauth_schema import OauthRequest
-from core.database.database import get_db
+from src.api.v1.services.user.oauth_service import OauthService
+from src.api.v1.schemas.user.oauth_schema import OauthRequest
+from src.core.database.database import get_db
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException
-from api.v1.schemas.user.user_schema import UserCreate
+from src.api.v1.schemas.user.user_schema import UserCreate
 
 router = APIRouter(
     prefix="/api/v1/user/oauth",

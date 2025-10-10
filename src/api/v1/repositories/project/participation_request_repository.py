@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
-from api.v1.schemas.project.participation_request_schema import ParticipationRequestCreate, ParticipationRequestDetail, ParticipationRequestUpdate
-from api.v1.models.project.participation_request import ParticipationRequest
+from src.api.v1.schemas.project.participation_request_schema import ParticipationRequestCreate, ParticipationRequestDetail, ParticipationRequestUpdate
+from src.api.v1.models.project.participation_request import ParticipationRequest
 from fastapi import HTTPException, status
 from typing import List
 from datetime import datetime
-from api.v1.services.project.project_service import ProjectService
+from src.api.v1.services.project.project_service import ProjectService
 
 class ParticipationRequestRepository:
   def __init__(self, db: Session):

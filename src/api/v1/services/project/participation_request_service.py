@@ -1,7 +1,7 @@
 from typing import List
 from sqlalchemy.orm import Session
-from api.v1.repositories.project.participation_request_repository import ParticipationRequestRepository
-from api.v1.schemas.project.participation_request_schema import ParticipationRequestCreate, ParticipationRequestUpdate, ParticipationRequestDetail
+from src.api.v1.repositories.project.participation_request_repository import ParticipationRequestRepository
+from src.api.v1.schemas.project.participation_request_schema import ParticipationRequestCreate, ParticipationRequestUpdate, ParticipationRequestDetail
 
 class ParticipationRequestService:
   def __init__(self, db: Session):

@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text, ForeignKey, JSON
-from core.database.database import Base
-from api.v1.models.base import BaseModel
+from src.core.database.database import Base
+from src.api.v1.models.base import BaseModel
 from sqlalchemy.orm import relationship
-from api.v1.models.association_tables import user_post_bookmarks
+from src.api.v1.models.association_tables import user_post_bookmarks
 
 class Post(Base, BaseModel):
   """게시글 모델"""

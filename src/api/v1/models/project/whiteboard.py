@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON, Boolean, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from api.v1.models.base import BaseModel
-from core.database.database import Base
+from src.api.v1.models.base import BaseModel
+from src.core.database.database import Base
 
 
 class Attachment(Base, BaseModel):

@@ -1,8 +1,8 @@
-from api.v1.repositories.user.oauth_repository import AuthRepository
 from sqlalchemy.orm import Session
 from fastapi import Request
-from api.v1.schemas.user.user_schema import UserCreate, UserDetail
-from api.v1.schemas.user.oauth_schema import OauthRequest
+from src.api.v1.schemas.user.user_schema import UserCreate, UserDetail
+from src.api.v1.schemas.user.oauth_schema import OauthRequest
+from src.api.v1.repositories.user.oauth_repository import AuthRepository
 
 class OauthService:
   def __init__(self, db: Session):

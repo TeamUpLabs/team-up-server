@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from api.v1.repositories.mentoring.mentor_review_repository import MentorReviewRepository
-from api.v1.schemas.mentoring.mentor_review_schema import MentorReviewCreate, MentorReviewDetail, MentorReviewUpdate
-from api.v1.models.mentoring.mentor_review import MentorReview
+from src.api.v1.repositories.mentoring.mentor_review_repository import MentorReviewRepository
+from src.api.v1.schemas.mentoring.mentor_review_schema import MentorReviewCreate, MentorReviewDetail, MentorReviewUpdate
+from src.api.v1.models.mentoring.mentor_review import MentorReview
 from typing import List
 
 class MentorReviewService:

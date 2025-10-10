@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
-from core.database.database import get_db
-from api.v1.services.project.chat_service import ChatService
-from api.v1.schemas.project.chat_schema import ChatCreate, ChatUpdate, ChatDetail
-from core.security.auth import get_current_user
-from core.security.jwt import verify_token
-from core.utils.chat_websocket import websocket_handler
+from src.core.database.database import get_db
+from src.api.v1.services.project.chat_service import ChatService
+from src.api.v1.schemas.project.chat_schema import ChatCreate, ChatUpdate, ChatDetail
+from src.core.security.auth import get_current_user
+from src.core.security.jwt import verify_token
+from src.core.utils.chat_websocket import websocket_handler
 from typing import List, Optional
 import logging
 

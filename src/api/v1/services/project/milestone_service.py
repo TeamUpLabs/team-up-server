@@ -1,8 +1,8 @@
-from api.v1.models.project.milestone import Milestone
-from api.v1.repositories.project.milestone_repository import MilestoneRepository
-from api.v1.schemas.project.milestone_schema import MilestoneCreate, MilestoneUpdate, MilestoneDetail
-from api.v1.schemas.project.task_schema import TaskDetail
-from api.v1.schemas.brief import UserBrief
+from src.api.v1.models.project.milestone import Milestone
+from src.api.v1.repositories.project.milestone_repository import MilestoneRepository
+from src.api.v1.schemas.project.milestone_schema import MilestoneCreate, MilestoneUpdate, MilestoneDetail
+from src.api.v1.schemas.project.task_schema import TaskDetail
+from src.api.v1.schemas.brief import UserBrief
 from sqlalchemy.orm import Session
 from typing import List
 

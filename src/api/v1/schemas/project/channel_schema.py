@@ -1,8 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from api.v1.schemas.brief import UserBrief
-from api.v1.schemas.project.chat_schema import ChatDetail
+from src.api.v1.schemas.brief import UserBrief
 
 class ChannelBase(BaseModel):
   """채널 기본 스키마"""
