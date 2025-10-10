@@ -164,10 +164,14 @@ class UserRepository:
       raise HTTPException(status_code=500, detail=str(e))
     
     
-  def update(self, user_id: int, user: UserUpdate) -> User:
+  def update(self, user_id: int, user: UserUpdate) -> UserDetail:
     """사용자 정보 업데이트"""
     update_data = user.model_dump(exclude_unset=True)
-    db_user = self.get(user_id)
+    
+    # Get the actual SQLAlchemy User model instead of UserDetail schema
+    db_user = self.db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+      raise HTTPException(status_code=404, detail="User not found")
     
     # 비밀번호가 제공되면 해싱 처리
     if "password" in update_data:
@@ -180,6 +184,11 @@ class UserRepository:
     tech_stacks_data = update_data.pop("tech_stacks", None)
     interests_data = update_data.pop("interests", None)
     collaboration_preference_data = update_data.pop("collaboration_preference", None)
+    
+    # Update basic user fields
+    for field, value in update_data.items():
+      if hasattr(db_user, field):
+        setattr(db_user, field, value)
     
     # Update relationships if they were provided
     if social_links_data is not None:
@@ -196,10 +205,13 @@ class UserRepository:
         
     self.db.commit()
     self.db.refresh(db_user)
-    return db_user
+    
+    # Return UserDetail schema
+    return self.get(user_id)
   
   def remove(self, user_id: int) -> User:
-    db_user = self.get(user_id)
+    # Get the actual SQLAlchemy User model instead of UserDetail schema
+    db_user = self.db.query(User).filter(User.id == user_id).first()
     if not db_user:
       raise HTTPException(status_code=404, detail="User not found")
     self.db.delete(db_user)
