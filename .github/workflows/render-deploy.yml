@@ -79,11 +79,11 @@ jobs:
             # Debug: Print the raw response
             echo "Raw API response: $response"
             
-            # Get the latest deployment status
-            status=$(echo "$response" | jq -r '.[0].status' 2>/dev/null || echo "")
+            # Get the deployment status from the response
+            status=$(echo "$response" | jq -r '.status' 2>/dev/null || echo "")
             
             if [ -z "$status" ]; then
-              echo "Error: Could not parse deployment status. Will retry..."
+              echo "Error: Could not parse deployment status. Raw response: $response"
               sleep 10
               continue
             fi
@@ -91,20 +91,19 @@ jobs:
             echo "Current deployment status: $status"
             
             case "$status" in
-              "live")
-                echo "✅ Deployment completed successfully"
+              "live" | "deactivated")
+                echo "✅ Deployment completed successfully with status: $status"
                 break
                 ;;
-              "build_failed" | "canceled" | "deactivated" | "failed")
+              "build_failed" | "canceled" | "failed" | "inactive" | "killed" | "stopped")
                 echo "❌ Deployment failed with status: $status"
                 exit 1
                 ;;
               *)
                 echo "⏳ Deployment in progress. Current status: $status"
+                sleep 10
                 ;;
             esac
-            
-            sleep 10
           done
 
       - name: Update deployment status
