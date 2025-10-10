@@ -56,60 +56,90 @@ jobs:
             });
             
             return deployment.id;
-
+          
       - name: Trigger Render Deploy
+        id: render-deploy
         run: |
-          curl -X POST "https://api.render.com/deploy/${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}" \
-          -H "Accept: application/json"
+          DEPLOY_RESPONSE=$(curl -s -X POST "https://api.render.com/deploy/${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}" \
+            -H "Accept: application/json")
           
-      - name: Wait for Render deployment to complete
+          echo "Deploy response: $DEPLOY_RESPONSE"
+          
+          # Extract deploy ID from response
+          DEPLOY_ID=$(echo $DEPLOY_RESPONSE | jq -r '.id // empty')
+          
+          if [ -z "$DEPLOY_ID" ]; then
+            echo "Failed to get deploy ID from response"
+            exit 1
+          fi
+          
+          echo "deploy_id=$DEPLOY_ID" >> $GITHUB_OUTPUT
+          echo "Deploy ID: $DEPLOY_ID"
+
+      - name: Wait for Render Deploy to Complete
+        id: wait-for-render-deploy-to-complete
         run: |
-          echo "Waiting for Render deployment to complete..."
+          DEPLOY_ID="${{ steps.render-deploy.outputs.deploy_id }}"
+          SERVICE_ID="${{ secrets.RENDER_SERVICE_ID }}"
           
-          # Wait for initial deployment to start
-          sleep 30
+          echo "Waiting for deploy $DEPLOY_ID to complete..."
           
-          # Check deployment status for up to 15 minutes
-          for i in {1..90}; do
-            echo "Checking deployment status (attempt $i/90)..."
+          # Poll deploy status every 30 seconds for up to 30 minutes
+          for i in {1..60}; do
+            echo "Checking deploy status (attempt $i)..."
             
-            # Get service information from Render API
-            response=$(curl -s "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}" \
-              -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            STATUS_RESPONSE=$(curl -s "https://api.render.com/v1/services/$SERVICE_ID/deploys/$DEPLOY_ID" \
+              -H "Authorization: Bearer ${{ secrets.RENDER_GITHUB_ACTION_KEY }}" \
               -H "Accept: application/json")
             
-            # Check if we got a valid response
-            if echo "$response" | jq -e '.suspenders' > /dev/null 2>&1; then
-              echo "Service info retrieved successfully"
-              echo "$response" | jq '.suspenders'
-            else
-              echo "Failed to get service info or service not found"
+            echo "Status response: $STATUS_RESPONSE"
+            
+            STATUS=$(echo $STATUS_RESPONSE | jq -r '.status // empty')
+            
+            if [ -z "$STATUS" ]; then
+              echo "Failed to get status from response"
+              exit 1
             fi
             
-            # For now, we'll use a simple heuristic based on time
-            # In a real implementation, you'd check the deployment status from the API
-            # For this demo, we'll wait 5 minutes and then assume success
-            if [ $i -eq 60 ]; then
-              echo "Deployment completed successfully (based on time heuristic)"
+            echo "Current status: $STATUS"
+            
+            # Check if deploy is complete
+            if [[ "$STATUS" == "live" ]] || [[ "$STATUS" == "build_succeeded" ]]; then
+              echo "Deploy completed successfully with status: $STATUS"
+              echo "deploy_success=true" >> $GITHUB_OUTPUT
               break
+            elif [[ "$STATUS" == "failed" ]] || [[ "$STATUS" == "build_failed" ]] || [[ "$STATUS" == "canceled" ]]; then
+              echo "Deploy failed with status: $STATUS"
+              echo "deploy_success=false" >> $GITHUB_OUTPUT
+              exit 1
+            elif [[ "$STATUS" == "build_in_progress" ]] || [[ "$STATUS" == "created" ]]; then
+              echo "Deploy still in progress, waiting..."
+              sleep 30
+            else
+              echo "Unknown status: $STATUS, waiting..."
+              sleep 30
             fi
-            
-            sleep 10
           done
           
-          echo "Deployment wait completed"
+          if [ $i -eq 60 ]; then
+            echo "Deploy did not complete within 30 minutes"
+            echo "deploy_success=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
 
-      - name: Update deployment status based on deployment result
+      - name: Update deployment status
         uses: actions/github-script@v7
         with:
           script: |
+            const deploySuccess = '${{ steps.wait-for-render-deploy-to-complete.outputs.deploy_success }}' === 'true';
+            const state = deploySuccess ? 'success' : 'failure';
+            
             const { data: status } = await github.rest.repos.createDeploymentStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               deployment_id: ${{ steps.deployment.outputs.result }},
-              state: 'success',
-              log_url: 'https://dashboard.render.com/web/${{ secrets.RENDER_SERVICE_ID }}',
-              environment_url: 'https://team-up-server.onrender.com',
+              state: state,
               auto_inactive: false
             });
+            
             return status;
