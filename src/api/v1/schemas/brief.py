@@ -1,6 +1,6 @@
 from typing import Optional, List, Dict, Any
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class UserBrief(BaseModel):
   """간략한 사용자 정보"""
@@ -24,8 +24,7 @@ class UserBrief(BaseModel):
       }
     }
     
-  class Config:
-    from_attributes = True
+  model_config = ConfigDict(from_attributes=True)
   
 
 class ProjectBrief(BaseModel):
@@ -49,8 +48,7 @@ class ProjectBrief(BaseModel):
       }
     }
   
-  class Config:
-    from_attributes = True
+  model_config = ConfigDict(from_attributes=True)
     
 class TaskBrief(BaseModel):
   """간략한 업무 정보"""
@@ -80,8 +78,7 @@ class TaskBrief(BaseModel):
       }
     }
   
-  class Config:
-    from_attributes = True
+  model_config = ConfigDict(from_attributes=True)
   
 class MilestoneBrief(BaseModel):
   """간략한 마일스톤 정보"""
@@ -110,8 +107,7 @@ class MilestoneBrief(BaseModel):
       }
     }
   
-  class Config:
-    from_attributes = True
+  model_config = ConfigDict(from_attributes=True)
     
 class WhiteBoardBrief(BaseModel):
     id: int
@@ -149,5 +145,4 @@ class WhiteBoardBrief(BaseModel):
         }
       }
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
