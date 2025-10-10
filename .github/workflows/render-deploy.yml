@@ -8,6 +8,10 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      deployments: write
+      actions: read
 
     steps:
       - name: Checkout code
@@ -40,7 +44,8 @@ jobs:
           repo: ${{ github.event.repository.name }}
           ref: ${{ github.sha }}
           environment: production
-          required_contexts: '[]'  # 빈 리스트는 문자열로 처리해야 YAML 오류 없음
+          mediaType: |
+            application/vnd.github.v3+json
 
       - name: Trigger Render Deploy
         run: |
