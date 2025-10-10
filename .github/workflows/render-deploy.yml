@@ -50,7 +50,7 @@ jobs:
               ref: context.sha,
               auto_merge: false,
               required_contexts: [],
-              environment: 'production',
+              environment: 'Production',
               transient_environment: false,
               production_environment: true
             });
