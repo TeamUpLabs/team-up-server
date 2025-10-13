@@ -282,16 +282,26 @@ class ProjectRepository:
         detail=error_msg
       )
   
-  def delete(self, project_id: str) -> Project:
+  def delete(self, project_id: str) -> bool:
     """
     프로젝트 삭제
     """
-    db_obj = self.db.query(Project).filter(Project.id == project_id).first()
-    if not db_obj:
-      raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
-    self.db.delete(db_obj)
-    self.db.commit()
-    return db_obj
+    try:
+      db_obj = self.db.query(Project).filter(Project.id == project_id).first()
+      if not db_obj:
+        raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
+      self.db.delete(db_obj)
+      self.db.commit()
+    except HTTPException as e:
+      raise e
+    except Exception as e:
+      self.db.rollback()
+      error_msg = f"프로젝트 삭제 중 오류가 발생했습니다: {str(e)}"
+      raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail=error_msg
+      )
+    return True
   
   def get_project_members(self, project_id: str) -> List[Dict[str, Any]]:
     """

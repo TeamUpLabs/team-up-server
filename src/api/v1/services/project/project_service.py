@@ -30,7 +30,7 @@ class ProjectService:
   def update_project(self, project_id: str, project: ProjectUpdate) -> Project:
     return self.repository.update(project_id, project)
     
-  def delete_project(self, project_id: str) -> Project:
+  def delete_project(self, project_id: str) -> bool:
     return self.repository.delete(project_id)
   
   def get_project_members(self, project_id: str) -> List[Dict[str, Any]]:

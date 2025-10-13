@@ -9,7 +9,6 @@ from src.core.utils.sse_manager import project_sse_manager
 from fastapi.responses import StreamingResponse
 from fastapi import Request
 import json
-import logging
 
 router = APIRouter(prefix="/api/v1/projects", tags=["projects"])
 
@@ -89,7 +88,6 @@ async def get_all_projects(
   except HTTPException as e:
     raise e
   except Exception as e:
-    logging.error(f"Error getting all projects: {str(e)}")
     raise HTTPException(status_code=400, detail=str(e))
   
 @router.get("/exclude", response_model=List[ProjectDetail])
@@ -155,7 +153,7 @@ async def update_project(
     raise HTTPException(status_code=400, detail=str(e))
   
   
-@router.delete("/{project_id}", response_model=ProjectDetail)
+@router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_project(
   project_id: str,
   db: Session = Depends(get_db),
