@@ -16,7 +16,7 @@ class ProjectBase(BaseModel):
   end_date: Optional[datetime] = None
   tags: Optional[List[str]] = None
   location: Optional[str] = None
-  github_url: Optional[str] = None
+  github_url: Optional[List[str]] = []
     
 class ProjectCreate(ProjectBase):
   id: str = Field(..., min_length=6, max_length=6)
@@ -34,7 +34,7 @@ class ProjectUpdate(BaseModel):
   end_date: Optional[datetime] = None
   tags: Optional[List[str]] = None
   location: Optional[str] = None
-  github_url: Optional[str] = None
+  github_url: Optional[List[str]] = []
   
 class ProjectMember(BaseModel):
   user: UserBrief

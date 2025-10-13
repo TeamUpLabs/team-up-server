@@ -27,7 +27,7 @@ class Project(Base, BaseModel):
     # 추가 메타데이터
     tags = Column(JSON, nullable=True)
     location = Column(String(255), nullable=True)
-    github_url = Column(String(255), nullable=True)
+    github_url = Column(JSON, nullable=True)
     
     # 관계 정의
     owner = relationship(

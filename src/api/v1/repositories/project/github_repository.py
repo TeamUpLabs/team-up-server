@@ -24,7 +24,7 @@ class GitHubRepository:
         try:
           db_project = self.db.query(Project).filter(Project.id == project_id).first()
           if db_project:
-            db_project.github_url = res.json()["html_url"]
+            db_project.github_url.append(res.json()["html_url"])
             self.db.add(db_project)
             self.db.commit()
             self.db.refresh(db_project)
@@ -43,7 +43,7 @@ class GitHubRepository:
     try:
       db_project = self.db.query(Project).filter(Project.id == project_id).first()
       if db_project:
-        db_project.github_url = None
+        db_project.github_url = []
         self.db.add(db_project)
         self.db.commit()
         self.db.refresh(db_project)

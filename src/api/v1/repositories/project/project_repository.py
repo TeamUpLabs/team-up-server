@@ -24,6 +24,14 @@ class ProjectRepository:
       raise HTTPException(status_code=404, detail="프로젝트를 찾을 수 없습니다.")
     project_dict = project.__dict__.copy()
     
+    # Handle github_url field normalization
+    if project_dict.get('github_url') is not None:
+      github_url = project_dict['github_url']
+      if isinstance(github_url, str):
+        project_dict['github_url'] = [github_url]
+      elif not isinstance(github_url, list):
+        project_dict['github_url'] = [str(github_url)]
+    
     project_dict["owner"] = UserRepository(self.db).get(project.owner_id)
     
     formatted_members = [
@@ -47,6 +55,15 @@ class ProjectRepository:
     result = []
     for project in projects:
       project_dict = project.__dict__.copy()
+      
+      # Handle github_url field normalization
+      if project_dict.get('github_url') is not None:
+        github_url = project_dict['github_url']
+        if isinstance(github_url, str):
+          project_dict['github_url'] = [github_url]
+        elif not isinstance(github_url, list):
+          project_dict['github_url'] = [str(github_url)]
+      
       project_dict["owner"] = UserRepository(self.db).get(project.owner_id)
       formatted_members = [
           format_member_details(self.db, project.id, member)
@@ -74,6 +91,15 @@ class ProjectRepository:
     result = []
     for project in projects:
       project_dict = project.__dict__.copy()
+      
+      # Handle github_url field normalization
+      if project_dict.get('github_url') is not None:
+        github_url = project_dict['github_url']
+        if isinstance(github_url, str):
+          project_dict['github_url'] = [github_url]
+        elif not isinstance(github_url, list):
+          project_dict['github_url'] = [str(github_url)]
+      
       project_dict["owner"] = UserRepository(self.db).get(project.owner_id)
       formatted_members = [
           format_member_details(self.db, project.id, member)
@@ -109,6 +135,15 @@ class ProjectRepository:
     result = []
     for project in projects:
       project_dict = project.__dict__.copy()
+      
+      # Handle github_url field normalization
+      if project_dict.get('github_url') is not None:
+        github_url = project_dict['github_url']
+        if isinstance(github_url, str):
+          project_dict['github_url'] = [github_url]
+        elif not isinstance(github_url, list):
+          project_dict['github_url'] = [str(github_url)]
+      
       project_dict["owner"] = UserRepository(self.db).get(project.owner_id)
       formatted_members = [
           format_member_details(self.db, project.id, member)
@@ -200,7 +235,21 @@ class ProjectRepository:
       try:
         for key, value in update_data.items():
           try:
-            setattr(db_project, key, value)
+            if key == "github_url" and value is not None:
+              # github_url은 기존 데이터에 추가하는 방식으로 처리
+              existing_urls = getattr(db_project, key, []) or []
+              if isinstance(existing_urls, str):
+                existing_urls = [existing_urls]
+              elif not isinstance(existing_urls, list):
+                existing_urls = []
+
+              # 새로운 URL들 추가 (중복 제거)
+              new_urls = value if isinstance(value, list) else [value]
+              combined_urls = existing_urls + [url for url in new_urls if url not in existing_urls]
+
+              setattr(db_project, key, combined_urls)
+            else:
+              setattr(db_project, key, value)
           except Exception as attr_error:
             error_msg = f"Failed to set attribute {key}: {str(attr_error)}"
             raise ValueError(error_msg) from attr_error
